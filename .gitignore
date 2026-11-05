@@ -1,3 +1,7 @@
 node_modules
 dist
 .env
+# Data is too big for git. Rebuild it with scripts in data/scripts/.
+data/raw/
+data/*.duckdb
+data/*.pmtiles
