@@ -24,6 +24,8 @@ api/                 backend
   src/index.ts       Hono app, registers routes
   src/routes/        one file per dataset/endpoint
   src/db.ts          shared DuckDB connection (opens data/geomap.duckdb)
+docs/
+  PROFILE.md         standard for the address profile (read before touching rating, profile or the address panel)
 data/
   scripts/           one ingest script per dataset: download -> data/raw/ -> table in geomap.duckdb
   raw/               downloaded files (gitignored)
@@ -37,6 +39,13 @@ data/
 - Ingest scripts must be re-runnable: `CREATE OR REPLACE TABLE`.
 
 ## API conventions
+- **Every API response is JSON.** No HTML, CSV or plain text. This keeps every endpoint usable the same way by the web app, other agents and scripts.
+  - Map layers return GeoJSON (it is JSON). Everything else returns plain JSON objects.
+  - Field names in `camelCase`. Coordinates as numbers in EPSG:4326 (`lng`, `lat`). Dates as ISO 8601 strings.
+  - Errors are JSON too: an error code and a readable message, with a matching HTTP status.
+- **Missing data is left out, never faked.** No empty values, zeros or guesses standing in for data we do not have. Leave it out. In the address profile, list it as missing (see `docs/PROFILE.md`) so the UI can show it as "Unavailable".
+- **No guessing scores.** A score is computed only from data we actually have. If too much important data is missing, say "insufficient data" with a reason instead of giving a number.
+- The address profile (`GET /api/address/:id/profile`) follows the standard in `docs/PROFILE.md`. Change the standard there first, then the code.
 - `GET /api/<dataset>?bbox=minLng,minLat,maxLng,maxLat&q=text&limit=1000` returns GeoJSON FeatureCollection.
 - Always apply `limit` (default 1000). Filter by bbox with `ST_Intersects(geom, ST_MakeEnvelope(...))`.
 - Web dev server proxies `/api` to the API (Vite `server.proxy`), so no CORS setup.
