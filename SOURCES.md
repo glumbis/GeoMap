@@ -386,18 +386,6 @@ NGU datasets: https://www.ngu.no/geologiske-kart/datasett (download per county, 
   - Priority: medium
   - Notes: only open source we have for shops and health services. Quality is good in Oslo.
 
-- **Name:** Bredbåndsdekning
-  - Owner: Nkom
-  - URL: not found on Geonorge (only Agder). Try ekomstatistikken.nkom.no / Nkom bredbåndskart
-  - What: broadband coverage
-  - Format/access: unknown
-  - Coverage: unknown
-  - Licence/cost: unknown
-  - CRS: unknown
-  - Category: location
-  - Priority: low
-  - Notes: skip unless time.
-
 ### Nature & leisure
 - **Name:** Turrutebasen
   - Owner: Kartverket
@@ -484,26 +472,7 @@ NGU datasets: https://www.ngu.no/geologiske-kart/datasett (download per county, 
   - Priority: medium
   - Notes: protected buildings/zones limit what you can build. Also "Kulturminner - Freda bygninger" and "SEFRAK-bygninger".
 
-- **Name:** Reguleringsplaner
-  - Owner: Direktoratet for byggkvalitet (data from each kommune)
-  - URL: https://kartkatalog.geonorge.no/metadata/reguleringsplaner/dac27348-5c2e-4a6a-9497-c4c792108cae
-  - What: zoning plans (what land may be used for)
-  - Format/access: WMS (picture). Raw data is restricted
-  - Coverage: Norway
-  - Licence/cost: **Norge digitalt-lisens: NOT open data**
-  - CRS: n/a
-  - Category: area
-  - Priority: low
-  - Notes: we can probably show the WMS as a map layer, but not store or score on it. Check if Oslo / Akershus municipalities publish their own open plan data. Skip for scoring.
-
-- **Name:** Energimerking / energiattester
-  - Owner: Enova
-  - URL: not on Geonorge. Search "Enova energiattest åpne data"
-  - What: energy labels for buildings
-  - Format/access: unknown
-  - Coverage: unknown
-  - Licence/cost: unknown
-  - CRS: unknown
-  - Category: area
-  - Priority: low
-  - Notes: skip unless time.
+### Checked, not usable now
+- **Reguleringsplaner** (zoning plans, DiBK): Norge digitalt-lisens, not open data. WMS picture only, cannot be stored or scored. https://kartkatalog.geonorge.no/metadata/reguleringsplaner/dac27348-5c2e-4a6a-9497-c4c792108cae
+- **Bredbåndsdekning** (Nkom): no open download found (Geonorge only has Agder).
+- **Energimerking** (Enova): no open download found.
