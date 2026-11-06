@@ -9,6 +9,7 @@ See `PLAN.md` for product, roles and rating. Collect data sources in `SOURCES.md
 - `web/`: Vite + TypeScript (no framework) + MapLibre GL JS.
 - `api/`: Node + Hono + DuckDB (`@duckdb/node-api`) with the `spatial` extension.
 - One DuckDB file holds all data. No database server, no Docker.
+- AI summaries: Claude Haiku 5.5 (`claude-haiku-5-5`) via `@anthropic-ai/sdk`, called only from `api/`. See `PLAN.md`.
 
 ## Why this shape
 - Large data cannot ship to the browser. The browser asks the API for only what is in view or matches a search.

@@ -23,12 +23,29 @@ Categories, each 0–100. Overall = weighted average.
 
 Every score must show *why*: list the data points behind it.
 
+## AI summary (Lukas owns)
+A short plain-language summary on top of each address page, written by Claude Haiku 5.5 (`claude-haiku-5-5`).
+
+How it works:
+1. `GET /api/address/:id/summary` loads the address profile (data points, scores, sources).
+2. Template step: rules turn each data point into a fact sentence, sorted by severity. Example: quick clay zone → "Eiendommen ligger i en faresone for kvikkleireskred (NVE, faregrad middels)." Even writes these rules.
+3. AI step: send the fact sentences + scores to Haiku with `@anthropic-ai/sdk`. Prompt: "Write 4–6 sentences in plain Norwegian. Use only these facts. Most serious risks first. No advice. If data is missing, say so."
+4. Cache the result in DuckDB table `summaries` (address id, text, created). Generate once per address.
+5. If the API call fails, return the template sentences instead.
+
+Rules:
+- Call the AI only from `api/`. Key in `.env` as `ANTHROPIC_API_KEY`. Never send it to the browser or commit it.
+- The UI labels the text "AI-generert" and shows the facts and sources below it.
+- Test with Even's 5 test addresses. Check the summary invents nothing.
+- Cost: about $0.0005 per address. Negligible for the hackathon.
+
 ## Roles
 
 ### Lukas — lead, API, rating
 - Day 1: scaffold `web/` and `api/` from AGENTS.md. Add run commands to AGENTS.md. Push within the first hour, so others can start.
 - Build `api/src/db.ts` and the core endpoint `GET /api/address/:id/profile`: one call returns all data at a point, grouped by category.
 - Build the rating model in `api/src/rating.ts`.
+- Build the AI summary endpoint (see "AI summary" above).
 - Review and merge. Unblock others. Decide when scope must shrink.
 
 ### Sverre — data pipeline
@@ -46,6 +63,7 @@ Every score must show *why*: list the data points behind it.
 - Before coding: lead the hunt for data, fill `SOURCES.md` most.
 - During: easy ingests (CSV/GeoJSON) and SSB/municipal stats per municipality and grunnkrets. Use Sverre's scripts as template.
 - Write the info texts: what each data point means, in plain Norwegian.
+- Write the summary template rules: one fact sentence per data point (input for the AI summary and its fallback).
 - Own the demo: test addresses, pitch script, screenshots.
 
 ## Before coding (everyone)
