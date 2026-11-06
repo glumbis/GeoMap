@@ -34,6 +34,55 @@ Good data on slides, avalanches, and more. These should be important but probabl
 https://www.kulturminnesok.no/ 
 Cultural heritage and monument. Couldnt find an easy download site or database, but take a look and see if its possible. This is only one service as the other cultural history and herritage info was only available to employees of the government. 
 ## Sverre
+Terms for all Kartverket free data: CC BY 4.0, credit "© Kartverket". Details in `SOURCES_SUMMARY.md`.
+
+- **Name:** Eiendom REST-API (property lookup)
+  - Owner: Kartverket
+  - URL: https://api.kartverket.no/eiendom/v1/ (docs: https://ws.geonorge.no/eiendom/v1/)
+  - What: properties at a point (`/punkt`), parcel polygons as GeoJSON (`/punkt/omrader`), position of a matrikkelnummer (`/geokoding`)
+  - Format/access: REST/JSON, GeoJSON, no key
+  - Coverage: Norway
+  - Licence/cost: CC BY 4.0, free
+  - CRS: choose with `koordsys` / `utkoordsys` (4258, 25833, ...)
+  - Category: location (property base)
+  - Priority: high
+  - Notes: tested, works. Includes parcel accuracy class; the property map can be inaccurate.
+
+- **Name:** Matrikkelen bulk datasets (Eiendomskart Teig, Adresse, Bygningspunkt)
+  - Owner: Kartverket
+  - URL: https://kartkatalog.geonorge.no/?theme=Eiendom&organizations=Kartverket
+  - What: parcel polygons, all official addresses, building points (type, number, status)
+  - Format/access: download GML/SOSI (choose area + projection), some WMS/WFS/Atom
+  - Coverage: Norway (order Oslo + Akershus)
+  - Licence/cost: CC BY 4.0, free
+  - CRS: chosen at order time, pick EPSG:25833 or 4258
+  - Category: location (property base)
+  - Priority: high
+  - Notes: no owners, prices or mortgages (grunnbok is not open).
+
+- **Name:** Administrative enheter (kommuner, fylker) + Statistiske enheter grunnkretser
+  - Owner: Kartverket
+  - URL: https://kartkatalog.geonorge.no/metadata/administrative-enheter-kommuner/041f1e6e-bdbc-4091-b48f-8a5990f3cc5b , https://kartkatalog.geonorge.no/metadata/statistiske-enheter-grunnkretser/51d279f8-e2be-4f5e-9f72-1a53f7535ec1
+  - What: municipal/county boundaries; grunnkrets areas for SSB stats
+  - Format/access: download
+  - Coverage: Norway
+  - Licence/cost: CC BY 4.0, free
+  - CRS: chosen at order time
+  - Category: area
+  - Priority: high
+  - Notes: use for clipping to Oslo + Akershus (current 2024 boundaries) and joining SSB stats.
+
+- **Name:** Stormflo og havnivå
+  - Owner: Kartverket
+  - URL: https://kartkatalog.geonorge.no/?text=stormflo
+  - What: areas at risk of storm surge and sea level rise
+  - Format/access: download, WFS, WMS, REST API
+  - Coverage: Norwegian coast
+  - Licence/cost: CC BY 4.0 (check dataset page)
+  - CRS: check on download
+  - Category: hazard
+  - Priority: high
+  - Notes: relevant for Oslofjord addresses.
 
 ## Erik
 
