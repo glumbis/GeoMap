@@ -10,6 +10,7 @@ Checked against Kartverket's pages on 2026-11-06:
 - **Free:** property boundaries (teig), addresses, building points, municipal/county/grunnkrets boundaries, place names, plus REST APIs for address and property lookup. No key, no application.
 - **Not free/open:** owners, sales prices, mortgages and easements (all from the *grunnbok*), plus self-reported area/energy data. These need an application with a legal basis, or a paid third-party provider. **Skip for the hackathon.**
 - The open property map can be **inaccurate**. Each parcel has an accuracy class; show it, and say so in the UI.
+- **Climate:** ClimateCharts.net is too coarse for Norway (0.5° grid, no API). Use MET Norway's 1 km seNorge data, and copy ClimateCharts' chart style.
 
 ## 1. Terms of use (what we must do)
 
@@ -78,7 +79,26 @@ Only Lukas has added sources. Sverre, Erik and Even are empty.
 - **WMS = picture only.** It can be shown as a map layer but not used for scoring. Prefer download, WFS or OGC API Features.
 - **Coordinate systems:** most Norwegian data is EPSG:25833 or 4258. Convert to 4326 on ingest (see `AGENTS.md`).
 
-## 5. Gaps (no sources yet)
+## 5. Climate: ClimateCharts.net vs Norwegian data
+**ClimateCharts.net** (TU Dresden) draws a climate chart for any point in the world: monthly temperature and precipitation, a climate class, and a choice of time period (default: last 30 years).
+
+| | ClimateCharts.net |
+|---|---|
+| Data | CRU TS v4.07 grid (0.5°, about 55 × 28 km in Norway) and NOAA GHCN-Monthly weather stations |
+| Access | Web app only. **No API or data download.** Charts can be saved as PNG/SVG. |
+| Licence | Charts are CC BY 4.0. Cite Zepner et al. (2020). |
+| Fit for GeoMap | **Low as a data source.** Oslo + Akershus is only about a dozen grid cells, so nearly every address gets the same chart. |
+
+Within Oslo + Akershus, climate differs mainly by **elevation** and **distance from the fjord** (city centre vs Nordmarka/Romeriksåsen). We need a fine grid to see that. Use Norwegian data instead, and use ClimateCharts.net as the **design model** for the chart (monthly bars for precipitation, a line for temperature).
+
+| Norwegian alternative | What | Access | Licence | Priority |
+|---|---|---|---|---|
+| **seNorge_2018** (MET Norway) | Daily temperature and precipitation on a **1 × 1 km** grid for all of Norway, from 1957 | NetCDF on `thredds.met.no/thredds/catalog/senorge/seNorge_2018/` (OPeNDAP lets us cut out just Oslo + Akershus). No key. | CC BY 4.0, credit MET Norway | Medium |
+| **Frost API** (MET Norway) | Station observations and climate normals (1991–2020) | REST, `frost.met.no`. Needs a **free client ID** (registration). | CC BY 4.0 | Low |
+
+**How to use it:** pre-compute the 1991–2020 monthly normals once from seNorge for the Oslo + Akershus bbox, and store them in DuckDB as a 1 km point grid. The profile endpoint then picks the nearest cell, and the address page shows a small climate chart. This would mostly go in "Nature & leisure" (for example, colder and snowier on the hills: good for skiing), not in the main rating.
+
+## 6. Gaps (no sources yet)
 | Category | Missing | Suggested source | Owner |
 |---|---|---|---|
 | Environment | Noise, polluted ground, air quality | Miljødirektoratet, NILU | Sverre / Even |

@@ -84,6 +84,18 @@ Terms for all Kartverket free data: CC BY 4.0, credit "© Kartverket". Details i
   - Priority: high
   - Notes: relevant for Oslofjord addresses.
 
+- **Name:** ClimateCharts.net
+  - Owner: TU Dresden (data: CRU TS v4.07, NOAA GHCN-Monthly)
+  - URL: https://climatecharts.net/
+  - What: climate chart (monthly temperature + precipitation) for any point
+  - Format/access: web app only, no API or download; charts as PNG/SVG
+  - Coverage: world, 0.5° grid (~a dozen cells over Oslo + Akershus)
+  - Licence/cost: charts CC BY 4.0, cite Zepner et al. (2020)
+  - CRS: lat/lon grid
+  - Category: nature
+  - Priority: low (too coarse; use as design model for our climate chart)
+  - Notes: use seNorge_2018 (MET Norway, 1 km, CC BY 4.0, thredds.met.no) for the data instead. See `SOURCES_SUMMARY.md` section 5.
+
 ## Erik
 
 ## Even
