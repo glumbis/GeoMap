@@ -37,7 +37,7 @@ Every score must show *why*: list the data points behind it.
 - Add one `api/src/routes/<dataset>.ts` per dataset you load (bbox + search, GeoJSON out).
 - Agree table columns with Lukas early. Every table: `geom`, `name`, `source`.
 
-### Erik — frontend and design
+### EriK — frontend and design
 - Owns `web/`. Map, layer toggle panel, address search bar with autocomplete (Geonorge `adresser/v1/sok`).
 - Address page/side panel: rating, category cards, expandable details.
 - Design is the priority. Clean, few colours, readable on mobile. Sketch it before coding.
@@ -53,7 +53,7 @@ Every score must show *why*: list the data points behind it.
 2. Install Node 22+, Git, your coding agent, and the DuckDB CLI (good for poking at data).
 3. Find data. Add every source to `SOURCES.md` under your own heading (avoids merge conflicts). Check format, licence, coverage, and whether it is free.
 4. Download a sample of the top sources. Check it opens and its coordinate system.
-5. Erik: sketch the address page and map UI (paper or Figma). Share it with the group.
+5. EriK: sketch the address page and map UI (paper or Figma). Share it with the group.
 6. Lukas + Sverre: agree on the table schema and the profile endpoint shape.
 7. Even: pick 5 test addresses with interesting data (quick clay, flood zone, noisy road, quiet suburb, ski area).
 8. Agree on the rating categories and weights.

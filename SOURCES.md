@@ -27,6 +27,6 @@ covers all of norwat
 
 ## Sverre
 
-## Erik
+## EriK
 
 ## Even
