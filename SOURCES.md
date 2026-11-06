@@ -20,6 +20,10 @@ Copy this template per source:
 ```
 
 ## Lukas
+owner: geonorge but maybe different for specific sets? (probably not)
+https://kartkatalog.geonorge.no/?view=grid
+Lots of different datasets all in one place
+covers all of norwat
 
 ## Sverre
 
