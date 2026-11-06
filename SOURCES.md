@@ -28,6 +28,9 @@ covers all of norway
 https://www.ngu.no/geologiske-kart/datasett
 Info on all soil and ground. In different datasets easy to install, incorporate all of them, in rating make radon, uran and things like kvikkleire and bad soil important for the rating and flag and warn against possible high values or bad soil.
 
+https://kartkatalog.nve.no/#metadata
+Good data on slides, avalanches, and more. These should be important but probably dont impact most places. 
+
 ## Sverre
 
 ## Erik
