@@ -23,7 +23,10 @@ Copy this template per source:
 owner: geonorge but maybe different for specific sets? (probably not)
 https://kartkatalog.geonorge.no/?view=grid
 Lots of different datasets all in one place
-covers all of norwat
+covers all of norway
+
+https://www.ngu.no/geologiske-kart/datasett
+Info on all soil and ground. In different datasets easy to install, incorporate all of them, in rating make radon, uran and things like kvikkleire and bad soil important for the rating and flag and warn against possible high values or bad soil.
 
 ## Sverre
 
