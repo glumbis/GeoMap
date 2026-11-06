@@ -1,6 +1,7 @@
 # GeoMap
 
-Hackathon web map of Norway with large datasets you can search and see on the map.
+Hackathon web map: all public info about any property in Norway (start: Oslo + Akershus). Search an address, see data, stats and a rating.
+See `PLAN.md` for product, roles and rating. Collect data sources in `SOURCES.md`.
 4 people, each working with coding agents. Speed over polish. The repo starts empty on purpose.
 
 ## Stack
