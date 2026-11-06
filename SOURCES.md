@@ -31,6 +31,8 @@ Info on all soil and ground. In different datasets easy to install, incorporate 
 https://kartkatalog.nve.no/#metadata
 Good data on slides, avalanches, and more. These should be important but probably dont impact most places. 
 
+https://www.kulturminnesok.no/ 
+Cultural heritage and monument. Couldnt find an easy download site or database, but take a look and see if its possible. This is only one service as the other cultural history and herritage info was only available to employees of the government. 
 ## Sverre
 
 ## Erik
