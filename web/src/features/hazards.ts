@@ -5,6 +5,7 @@ import "./hazards.css";
 // Hazard and ground layers on the address map, plus the "Kartlag" panel to switch them on and off.
 // Naturfare (NVE): quick clay, flood, rockfall, debris slides, snow avalanches. Start ON.
 // Grunn og geologi (NGU): radon, soil, bedrock. They cover everything, so they start OFF.
+// Støy (Statens vegvesen): T-1442 noise zones and the strategic noise map. Large areas, so they start OFF too.
 // The tables are large: we fetch only the current view, refetch on moveend (debounced), and only from MIN_ZOOM in.
 // To add a layer: one entry in layerGroups(). Map layers, panel row, legend and popup are built from it.
 
@@ -26,6 +27,8 @@ type MapLayer = {
   hatch?: { filter: ExpressionSpecification; color: string };
   filter?: ExpressionSpecification;
   sortKey?: ExpressionSpecification;
+  /** Legend in three columns instead of two (long lists of very short labels). */
+  legendCols3?: boolean;
   /** Thinner, fainter outlines for layers made of many small polygons. */
   faintLines?: boolean;
   /** Which of several overlapping hits to show in the popup (default: the top one). */
@@ -86,6 +89,18 @@ function layerGroups(): Group[] {
   // ---- Radon ----
   const radon = { lav: mix(warn, surface, 0.55), middels: warn, hoy: bad, megetHoy: mix(bad, navy, 0.35) };
   const aktsomhet = str("aktsomhet");
+
+  // ---- Road noise: T-1442 zones (red/yellow), and the strategic map in 5 dB bands (50 = 50–55, ..., 75 = 75+) ----
+  const isRed: ExpressionSpecification = ["==", ["slice", ["downcase", str("stoysone")], 0, 1], "r"];
+  const lden: ExpressionSpecification = ["to-number", ["get", "lden"], 0];
+  const noise: [number, string][] = [
+    [50, mix(gold, surface, 0.45)],
+    [55, gold],
+    [60, warn],
+    [65, mix(warn, bad, 0.5)],
+    [70, bad],
+    [75, mix(bad, navy, 0.4)],
+  ];
 
   return [
     {
@@ -251,6 +266,55 @@ function layerGroups(): Group[] {
         },
       ],
     },
+    {
+      title: "Støy",
+      layers: [
+        {
+          id: "veistoy",
+          label: "Støysoner, vei",
+          endpoint: "/api/veistoy",
+          on: false,
+          classes: [
+            { label: "Rød sone", color: bad },
+            { label: "Gul sone", color: gold },
+          ],
+          fillColor: ["case", isRed, bad, gold],
+          sortKey: ["case", isRed, 2, 1], // red on top
+          facts: (f) => {
+            const red = String(f.properties.stoysone ?? "").toLowerCase().startsWith("r");
+            return item(
+              red ? "Rød støysone fra vei" : "Gul støysone fra vei",
+              red
+                ? "Mye støy fra veien. Her skal det som hovedregel ikke bygges nye boliger."
+                : "Merkbar støy fra veien. Nye boliger her må ha støytiltak.",
+              f.properties.forecastYear ? `Beregnet for trafikken i ${String(f.properties.forecastYear)}.` : null,
+              "Dekker bare riks- og fylkesveier.",
+              sourceLine(f),
+            );
+          },
+        },
+        {
+          id: "stoyStrategisk",
+          label: "Støykart, vei",
+          endpoint: "/api/stoy_strategisk",
+          on: false,
+          classes: noise.map(([db, color]) => ({ label: db >= 75 ? "75+ dB" : `${db} dB`, color })), // where each 5 dB band starts
+          fillColor: ["step", lden, noise[0][1], ...noise.slice(1).flatMap(([db, color]) => [db, color] as [number, string])],
+          sortKey: lden, // loudest on top
+          legendCols3: true,
+          faintLines: true,
+          facts: (f) => {
+            const db = Number(f.properties.lden);
+            return item(
+              `Veistøy ${db >= 75 ? "over 75" : `${db}–${db + 5}`} dB`,
+              "Gjennomsnittlig støy over døgnet (Lden), med kveld og natt vektet tyngre.",
+              f.properties.year ? `Strategisk støykart, ${String(f.properties.year)}.` : null,
+              sourceLine(f),
+            );
+          },
+        },
+      ],
+    },
   ];
 }
 
@@ -376,7 +440,11 @@ export default function (map: Map) {
             "ul",
             {
               // Long lists of short labels go in two columns.
-              class: L.classes.length > 3 ? "hz-panel__legend hz-panel__legend--cols" : "hz-panel__legend",
+              class: L.legendCols3
+                ? "hz-panel__legend hz-panel__legend--cols hz-panel__legend--cols3"
+                : L.classes.length > 3
+                  ? "hz-panel__legend hz-panel__legend--cols"
+                  : "hz-panel__legend",
               "aria-label": `Klasser for ${L.label.toLowerCase()}`,
             },
             ...L.classes.map((c) => h("li", {}, swatch(c), c.label)),
