@@ -105,7 +105,7 @@ Each role lists: what you own, your tasks in order, and when a task is done.
 **Owns:** `SOURCES.md` (your section), `docs/TEST_ADDRESSES.md`, `docs/TEXTS.md` (create it), `docs/FACTS.md` (create it), `docs/DEMO.md` (create it), and the ingest scripts you write.
 
 1. ~~**Municipal stats:** ingest SSB numbers per municipality (and grunnkrets if you can): population, income, age, housing. Copy `data/scripts/kommuner.ts`; join to the `kommuner` table by `kommunenummer`.~~ Done per municipality (`ssb_kommuner`, `/api/ssb`). Grunnkrets later.
-2. **Easy datasets:** any CSV/GeoJSON source from `SOURCES.md` that Sverre isn't doing (schools, kindergartens, transport stops, noise). Agree with Sverre who takes what.
+2. ~~**Easy datasets:** any CSV/GeoJSON source from `SOURCES.md` that Sverre isn't doing (schools, kindergartens, transport stops, noise). Agree with Sverre who takes what.~~ Done: `stops`, `schools`, `kindergartens`, `veistoy`.
 3. **Info texts** in `docs/TEXTS.md`: for each data point, 1–2 sentences in plain Norwegian on what it means for someone living there.
 4. **Fact-sentence rules** in `docs/FACTS.md`: one template sentence per data point and value, sorted by severity. Example: quick clay zone with faregrad "middels" → "Eiendommen ligger i en faresone for kvikkleireskred (NVE, faregrad middels)." Lukas turns these into code for the AI summary.
 5. **Demo** in `docs/DEMO.md`: the story (start with #4 quiet suburb, then #1 quick clay), a 3-minute pitch script, screenshots, and a checklist to run before presenting.
