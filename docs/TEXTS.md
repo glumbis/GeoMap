@@ -40,18 +40,18 @@ How to use this file:
 - **Når ikke kartlagt:** NVE har ikke kartlagt kvikkleire i dette området, så kartet sier ingenting om grunnen her. Der det er marin leire i grunnen, kan det likevel finnes kvikkleire.
 
 ### `flood200` — Flomsone (200-årsflom)
-**Forklaring:** En 200-årsflom er en flom som i snitt kommer én gang i løpet av 200 år. Det betyr omtrent 0,5 % sjanse hvert år, eller rundt 1 av 5 i løpet av 50 år.
+**Forklaring:** En 200-årsflom er en flom som i gjennomsnitt kommer én gang hvert 200. år. Det betyr omtrent 0,5 % sjanse hvert år, eller rundt 1 av 5 i løpet av 50 år.
 - **Når i flomsone:** Området kan bli oversvømt ved en slik flom. Nye boliger skal som hovedregel være sikret mot 200-årsflom.
 - **Når ikke i flomsone (kartlagt område):** NVE har laget flomsonekart her, og adressen ligger utenfor sonene. Adressen kan likevel få vann fra bekker, overvann eller kraftig regn.
 - **Når ikke kartlagt:** NVE har bare laget flomsonekart langs noen elver og vassdrag, og ikke her. Kartet sier derfor ingenting om flomfare på denne adressen.
 
 ### `rockfall` — Steinsprang
 **Forklaring:** Steinsprang er når stein løsner fra bratte fjellsider og faller eller ruller ned. Aktsomhetsområder viser hvor stein i verste fall kan nå, beregnet ut fra terrenget.
-- **Når i aktsomhetsområde:** Kartet er grovt og ikke sjekket på stedet, så forholdene på tomten kan avvike fra kartet. Det gir ikke svar for én enkelt tomt.
+- **Når i aktsomhetsområde:** Kartet er grovt og ikke sjekket på stedet, så forholdene på tomten kan avvike fra kartet. Det kan ikke brukes alene til å vurdere én enkelt tomt.
 
 ### `debrisFlow` — Jord- og flomskred
 **Forklaring:** Jordskred og flomskred er når løsmasser i bratte skråninger eller bekkeløp raser ut, ofte etter mye regn eller snøsmelting. Aktsomhetsområder viser hvor slike skred er mulige, beregnet ut fra terrenget.
-- **Når i aktsomhetsområde:** Kartet er grovt og ikke sjekket på stedet, så forholdene på tomten kan avvike fra kartet. Det gir ikke svar for én enkelt tomt.
+- **Når i aktsomhetsområde:** Kartet er grovt og ikke sjekket på stedet, så forholdene på tomten kan avvike fra kartet. Det kan ikke brukes alene til å vurdere én enkelt tomt.
 
 ### `avalanche` — Snøskred
 **Forklaring:** Aktsomhetsområder for snøskred viser hvor snøskred kan løsne og hvor langt de kan nå, beregnet ut fra terrenget. Kartet er grovt og ikke sjekket på stedet.
@@ -90,7 +90,7 @@ How to use this file:
 - Tallet sier ikke hvor ofte det går avganger fra stoppet.
 
 ### `transitDepartures` — Avganger innen 500 m
-**Forklaring:** Antall avganger på en vanlig hverdag fra den travleste holdeplassen innen 500 meter i luftlinje, med alle linjer som stopper der. Det sier mer om hvor lett det er å reise kollektivt enn avstanden til nærmeste stopp.
+**Forklaring:** Antall avganger på en vanlig hverdag fra den travleste holdeplassen innen 500 meter i luftlinje, med alle linjer som stopper der. Det kan si mer om hvor lett det er å reise kollektivt enn avstanden til nærmeste stopp alene.
 - **Når ingen avganger:** Det finnes ingen holdeplass med faste avganger innen 500 meter. Det kan gå bestillingstransport eller skolebuss som ikke er med i tallet.
 - Helger og ferier har ofte færre avganger.
 
@@ -98,7 +98,7 @@ How to use this file:
 **Forklaring:** Avstanden er målt i luftlinje til nærmeste barne- eller ungdomsskole. Det er ikke sikkert dette er skolen adressen hører til, for kommunen bestemmer skolekretsen, og skolen kan være privat.
 
 ### `kindergarten` — Nærmeste barnehage
-**Forklaring:** Avstanden er målt i luftlinje til nærmeste barnehage. Barnehageplass tildeles gjennom kommunens opptak, etter kommunens egne kriterier.
+**Forklaring:** Avstanden er målt i luftlinje til nærmeste barnehage. Kommunen tildeler barnehageplass etter egne kriterier.
 
 ## Natur og friluft
 

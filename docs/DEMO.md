@@ -12,45 +12,50 @@ Two homes, both in Bærum/Oslo, both near a bus and a school. On paper they look
 
 | Role | Address | Id | What it shows |
 |---|---|---|---|
-| Start: the calm case | Grevlingåsen 17, 1362 Hosle | `3201-1574-17` | Overall **75**. Naturfare 100: no rockfall, debris-slide, avalanche or storm-surge area, no noise zone. NVE has not mapped quick clay or flood here, so both show "Ikke kartlagt her" (neutral, not scored). One warning: høy radonaktsomhet (common around Oslo). Busiest stop within 500 m: Jegeråsen, 212 m, 161 departures a weekday. School 256 m, kindergarten 226 m. |
-| Contrast: the hidden risk | Arendalsgata 22, 0463 Oslo | `0301-10223-22` | Overall **20**, held down by three serious warnings: quick-clay zone with faregrad **høy** (NVE), meget høy radonaktsomhet and road noise 65–70 dB. Also marine clay and a polluted-ground site 17 m away. Naturfare 30. Busiest stop within 500 m: Sagene, 1154 departures. |
-| Backup / extra | Nedre Rælingsveg 148, 2005 Rælingen | `3224-8900-148` | Overall 65. Two warnings: 200-year flood zone and red road noise zone. |
+| Start: the calm case | Grevlingåsen 17, 1362 Hosle | `3201-1574-17` | Overall **67**, held down a little by one warning: høy radonaktsomhet (Grunn og geologi 33, the weakest category). Naturfare 100: no rockfall, debris-slide, avalanche or storm-surge area, no noise zone. NVE has not mapped quick clay or flood here, so both show "Ikke kartlagt her" (neutral, not scored). Busiest stop within 500 m: Jegeråsen, 212 m, 161 departures a weekday. School 256 m, kindergarten 226 m. Perspectives: Bo her 64, Bygge her 65, Familie 67, Pendler 91. |
+| Contrast: the hidden risk | Arendalsgata 22, 0463 Oslo | `0301-10223-22` | Overall **13**, held down by three serious warnings: quick-clay zone with faregrad **høy** (NVE), meget høy radonaktsomhet and road noise 65–70 dB. Also marine clay and a polluted-ground site 17 m away. Naturfare 24. Nearest stop 31 m, kindergarten 40 m, school 146 m. Busiest stop within 500 m: Sagene, 1154 departures. Perspectives: Bo her 13, Bygge her 15, Familie 13, **Pendler 100**. |
+| Backup / extra | Nedre Rælingsveg 148, 2005 Rælingen | `3224-8900-148` | Overall 49. Two warnings: 200-year flood zone and red road noise zone. Perspectives: Bo her 46, Bygge her 62, Familie 46, Pendler 89. |
 
-Numbers above are from the profile on 2026-11-07. Check them again before the demo (see checklist): they change when data or the rating changes.
+Numbers above are from the profile on 2026-11-07, after Lukas's soft caps and perspective scores. Check them again before the demo (see checklist): they change when data or the rating changes.
 
 ## Pitch (about 3 minutes)
 
 Times are a guide. Bold = what you click or show.
 
 **0:00–0:30 — Problemet**
-> Når du kjøper bolig, er det mye du ikke ser. Ligger huset på kvikkleire? I en flomsone? Hvor bråkete er veien? Informasjonen finnes, men den er spredt på titalls offentlige kart og tabeller hos NVE, NGU, Kartverket, SSB og andre. Nesten ingen sjekker alt.
+> Når du kjøper bolig, er det mye du ikke ser. Ligger huset på kvikkleire? I en flomsone? Hvor bråkete er veien? Informasjonen finnes, men den er spredt på titalls offentlige kart og tabeller hos NVE, NGU, Kartverket, SSB og andre. Få har tid til å sjekke alt.
 
 **0:30–0:45 — Løsningen**
-> Omnium samler all offentlig informasjon om en adresse på ett sted. Du skriver inn en adresse, og får svaret på sekunder.
+> Omnium samler all offentlig informasjon om en adresse på ett sted. Du skriver inn en adresse, og får svaret raskt.
 
 **Show the start page.** One big address field.
 
 **0:45–1:30 — Det rolige eksempelet: Grevlingåsen 17**
 **Type "Grevlingåsen 17", pick the one in 1362 Hosle.** There is also a Grevlingåsen 17 in 1386 Asker: don't pick that one.
-> Her er et vanlig hus på Hosle i Bærum. Samlet karakter 75. Det ligger ikke i aktsomhetsområder for skred og ikke i støysone. Kvikkleire og flom har NVE ikke kartlagt her, og det står rett ut på siden. Den eneste advarselen er høy aktsomhet for radon, som er vanlig rundt Oslo. Nærmeste skole er 256 meter unna i luftlinje, og fra Jegeråsen, 212 meter unna, går det 161 avganger på en vanlig hverdag.
+> Her er et vanlig hus på Hosle i Bærum. Samlet karakter 67. Det ligger ikke i aktsomhetsområder for skred og ikke i støysone. Kvikkleire og flom har NVE ikke kartlagt her, og det står rett ut på siden. Den eneste advarselen er høy aktsomhet for radon. Nærmeste skole er 256 meter unna i luftlinje, og fra Jegeråsen, 212 meter unna, går det 161 avganger på en vanlig hverdag.
 **Point at the category cards, then open one data point to show its source and explanation.**
 > Alt vi viser har en kilde. Og vi forklarer hva det betyr for den som bor der.
 
 **1:30–2:15 — Kontrasten: Arendalsgata 22**
 **Go back, type "Arendalsgata 22", pick it.**
-> Så ser vi en leilighet på Sagene i Oslo. Like nær buss og skole. Men øverst ser du advarsler, den alvorligste først: eiendommen ligger i en faresone for kvikkleireskred med høy faregrad, fra NVE. I tillegg veistøy på 65–70 dB og et registrert sted med mulig forurenset grunn i nærheten.
+> Så ser vi en adresse på Sagene i Oslo. Enda nærmere buss og skole. Men øverst ser du advarsler, den alvorligste først: eiendommen ligger i en faresone for kvikkleireskred med høy faregrad, fra NVE. I tillegg meget høy aktsomhet for radon, veistøy på 65–70 dB og et registrert sted med mulig forurenset grunn i nærheten.
 **Point at the warnings and the low Naturfare score, then at the red quick-clay zone around the pin on the map (screenshot 5).**
 **Point at the score and the warnings listed under it.**
-> Samlet karakter faller fra 75 til 20, og naturfare fra 100 til 30. Og siden sier hvorfor: kvikkleiren, radon og støy holder karakteren nede. Den alvorligste risikoen står alltid først, og den kan ikke gjemmes i et snitt.
+> Samlet karakter faller fra 67 til 13, og naturfare fra 100 til 24. Og siden sier hvorfor: kvikkleiren, radon og støy holder karakteren nede. Den alvorligste risikoen står alltid først, og den kan ikke gjemmes i et snitt.
+
+**Only if the perspective cards are on the page (Erik, `PLAN.md` item 8):** point at them on Arendalsgata and add:
+> Og svaret avhenger av hvem du er. For en pendler får adressen 100. For å bo her får den 13.
 
 **2:15–2:40 — Ærlighet om data**
 **Open Miljø on Grevlingåsen: "Veistøy (strategisk støykart)" shows "Ikke tilgjengelig" (screenshot 3).**
 > Når vi mangler data, sier vi det. Vi gjetter aldri, og vi gir ikke en samlet karakter hvis viktige data mangler. Derfor vet du alltid hva tallene bygger på.
 
 **2:40–3:00 — Avslutning**
-> Omnium bruker bare åpne, offentlige data, og dekker i dag Oslo og Akershus. Neste steg er hele Norge. Én adresse, all offentlig informasjon, på sekunder.
+> Omnium bruker bare åpne, offentlige data, og dekker i dag Oslo og Akershus. Neste steg er hele Norge. Én adresse, all offentlig informasjon, på ett sted.
 
 The "Sammendrag" card sits under the warnings. With `ANTHROPIC_API_KEY` in `.env` it is written by AI and labelled "AI-generert"; without the key it lists the plain fact sentences from `docs/FACTS.md` (still correct, no label). If the AI version works on the day, show it on the Arendalsgata page at 1:30 and say: *"Et kort sammendrag skrevet av AI, bare fra faktaene vi har, og merket som AI-generert."*
+
+Why "Enda nærmere buss og skole" is true: Arendalsgata has a stop 31 m and a school 146 m away, Grevlingåsen 212 m and 256 m.
 
 ## Ready for the demo?
 
@@ -63,14 +68,56 @@ What the pitch needs, and who it depends on. Update this as things land.
 | Address page: warnings, category cards, data points with source | Works | Erik |
 | "Ikke tilgjengelig" for missing data | Works (e.g. "Veistøy (strategisk støykart)" under Miljø on Grevlingåsen) | Erik |
 | Quick-clay zone visible on the map | Works: quick-clay and flood zones on the address map, on by default, with a "Kartlag" panel | Erik |
-| Overall rating (a number) | Works: Grevlingåsen 75, Arendalsgata 20 (caps stack: high 40, medium 75, minus 10 per extra serious warning) | Lukas |
-| Explanations under each data point | Main text from `docs/TEXTS.md` is in the profile. Per-outcome texts ("Når ...") not yet | Lukas |
+| Overall rating (a number) | Works: Grevlingåsen 67, Arendalsgata 13 (soft caps: a capped score is scaled into the cap, see `docs/PROFILE.md`) | Lukas |
+| Perspective scores (Bo her, Bygge her, Familie, Pendler) | In the profile. Not on the page yet | Erik |
+| Explanations under each data point | Works: main text and the matching "Når ..." text from `docs/TEXTS.md` | Lukas |
 | AI summary | Works. Checked with the key on 2026-11-07: Arendalsgata names the quick clay first, Grevlingåsen invents nothing and says NVE has not mapped quick clay or flood there. Without the key the card shows the fact sentences | Erik, Lukas |
+| "Område" card | Says "Kan ikke vurderes" although all 3 data points are there. Don't open it in the demo | Lukas, Erik |
 | Map tiles | Take 3–5 seconds to appear the first time. Open both pages before presenting | — |
 
 For the 2:15 part, open Miljø on Grevlingåsen: the strategic noise map shows "Ikke tilgjengelig".
 
-Timing: the spoken text is about 280 words, about 2:10 at a calm pace, which leaves about 50 seconds for typing and clicks. The two address parts are the tightest (about 80 words in 45 seconds): keep talking while the page loads.
+Timing: the spoken text is about 290 words (about 300 with the perspective line), about 2:15 at a calm pace, which leaves about 45 seconds for typing and clicks. The two address parts are the tightest (about 85 words in 45 seconds): keep talking while the page loads. If time runs short, drop the perspective line first.
+
+## Questions the judges may ask
+
+Short answers in Norwegian, ready to say. Agree on the business-model answer as a team before the demo.
+
+**Er dette råd? Hvem har ansvaret hvis noe er feil?**
+> Nei, vi gir ikke råd. Vi samler det offentlige kart allerede viser, sier hvor hvert faktum kommer fra, og merker AI-teksten. Den som skal kjøpe eller bygge, må fortsatt sjekke med kommunen eller en fagperson.
+
+**Hvor ferske er dataene?**
+> Vi henter dem direkte fra NVE, NGU, Kartverket, Entur og de andre, og kan bygge databasen på nytt med én kommando. Hver kilde har sin egen oppdateringstakt, og vi viser hvilken kilde hvert tall kommer fra.
+
+Note: there is no automatic refresh yet. Rebuilding is `npm run setup` (about 4 minutes).
+
+**Hvordan regner dere ut karakteren?**
+> Hver kategori får en karakter fra datapunktene. Alvorlige advarsler setter et tak, så en kvikkleiresone kan ikke jevnes ut av at det er kort vei til bussen. Og vi viser alltid hvorfor: hvilke advarsler som holder karakteren nede.
+
+**Kan AI-en finne på ting?**
+> AI-en får bare faktasetningene vi har laget fra dataene, og skal bare bruke dem. Vi har sjekket sammendraget for alle testadressene. Hvis AI-en ikke svarer, viser vi faktasetningene i stedet.
+
+**Hvorfor ikke bare bruke Norgeskart eller NVE sine kart?**
+> De kartene er gode, men hvert av dem viser ett tema, og de er laget for fagfolk. Omnium samler nitten datasett for én adresse, forklarer hva de betyr, og sier ærlig fra når et område ikke er kartlagt.
+
+**Hva skal til for å dekke hele Norge?**
+> De fleste kildene våre er nasjonale. I dag klipper vi dem til Oslo og Akershus. For hele landet er det mest et spørsmål om mer data og en kraftigere server, ikke ny kode.
+
+Note: the strategic noise map only exists for some cities, so it will stay "Ikke tilgjengelig" in many places.
+
+**Hvem skal betale for dette?** (suggestion, agree as a team)
+> Gratis for den som skal kjøpe bolig. Banker, forsikringsselskaper, meglere og utbyggere kan betale for et API eller en rapport om mange adresser.
+
+**Hva koster AI-en?**
+> Under én øre per adresse, og hvert sammendrag lages bare én gang.
+
+Note: Haiku costs about $0.0005 per address (`PLAN.md`), cached in the database.
+
+**Hva med personvern?**
+> Vi viser bare offentlige data om stedet, ikke om personer. Vi viser ikke hvem som eier boligen.
+
+**Hvorfor er ikke boligpriser med?**
+> Salgspriser per bolig er ikke åpne data. De koster penger hos private leverandører, så vi har latt dem ligge.
 
 ## Checklist before presenting
 
@@ -79,7 +126,9 @@ Timing: the spoken text is about 280 words, about 2:10 at a calm pace, which lea
 - [ ] Open both demo addresses and check the numbers in "The two addresses" table. Update the pitch if they changed.
 - [ ] Read the AI summary for both addresses (if it works). It must mention the quick clay for Arendalsgata and invent nothing for Grevlingåsen.
 - [ ] Take the screenshots (below) as a backup.
+- [ ] Record the whole demo once as a screen recording (Windows: Win+Alt+R with Xbox Game Bar, or the Snipping Tool's video mode), as a second backup.
 - [ ] Rehearse once with a timer. Cut words, not clicks, if it runs long.
+- [ ] Read "Questions the judges may ask" aloud once.
 
 **One hour before**
 - [ ] Stop every other `npm run dev` on the laptop (old clones too). If port 5173 or 3000 is taken, the page can silently come from an old copy. Check that Vite prints `Local: http://localhost:5173/`.
@@ -87,11 +136,11 @@ Timing: the spoken text is about 280 words, about 2:10 at a calm pace, which lea
 - [ ] Open each demo address once, so the data and AI summary are cached and load fast.
 - [ ] Wi-Fi works (the address search and map tiles need the internet). Have a phone hotspot ready.
 - [ ] Close other tabs, turn off notifications, charger plugged in.
-- [ ] Screenshots open in a second window, in case the live demo fails.
+- [ ] Screenshots and the recording open in a second window, in case the live demo fails.
 
 **If something breaks during the demo**
 - Search fails → type the id straight in the address bar: `http://localhost:5173/a/3201-1574-17` and `/a/0301-10223-22`.
-- Page fails → switch to the screenshots and keep talking. Don't debug on stage.
+- Page fails → switch to the recording or the screenshots and keep talking. Don't debug on stage.
 - Data looks wrong → say "vi ser på dette", move to the next part.
 
 ## Screenshots
@@ -99,10 +148,10 @@ Timing: the spoken text is about 280 words, about 2:10 at a calm pace, which lea
 Saved in `docs/demo/` at 1440×900. Retake them after big changes (headless Edge works: `msedge --headless=new --window-size=1440,900 --virtual-time-budget=15000 --screenshot=<file> <url>`).
 
 1. `1-start.png`: the start page with the empty address field. **Taken.**
-2. `2-grevlingasen.png`: the Grevlingåsen 17 page, top part (no warnings, scores). **Taken.**
+2. `2-grevlingasen.png`: the Grevlingåsen 17 page, top part (no warnings, scores). **Retake:** it shows the old score 75.
 3. `3-data-point.png`: the Miljø card opened on Grevlingåsen, with explanations, sources and one "Ikke tilgjengelig". **Taken.** It also covers 6.
-4. `4-arendalsgata.png`: the Arendalsgata 22 page with the quick-clay warning at the top. **Taken.**
-5. `5-map.png`: the map with the quick-clay zone around Arendalsgata. **Taken.** Screenshots 2 and 4 were retaken at the same time, with the map layers and the summary card (fact sentences, no AI key).
-6. `6-missing.png`: a data point shown as "Ikke tilgjengelig".
+4. `4-arendalsgata.png`: the Arendalsgata 22 page with the quick-clay warning at the top. **Retake:** it shows the old score 20.
+5. `5-map.png`: the map with the quick-clay zone around Arendalsgata. **Taken.**
+6. `6-missing.png`: a data point shown as "Ikke tilgjengelig". Covered by 3.
 
-Not taken yet: 5 needs the quick-clay map layer.
+Retake 2 and 4 once Erik's perspective cards are on the page, so they only need taking once.

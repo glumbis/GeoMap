@@ -267,6 +267,8 @@ From `docs/TEST_ADDRESSES.md`. After a change here or in `summary.ts`, the facts
 |---|---|---|---|
 | 1 | Arendalsgata 22 | Kvikkleire, høy faregrad (rank 1). Veistøy 65–70 dB from the strategic map (rank 2) | Any T-1442 noise zone (no coverage in Oslo) |
 | 2 | Nedre Rælingsveg 148 | 200-årsflom (rank 2). Rød støysone (rank 2) | A second noise warning (strategic map does not warn outside Oslo) |
-| 3 | Gamle Drammensvei 207 | Rød støysone (rank 2) | Kvikkleire, flom |
-| 4 | Grevlingåsen 17 | "ikke i en kartlagt" for quick clay and flood, no noise zone, no rockfall/debris/avalanche area (rank 5). Høy radonaktsomhet (rank 2). Jegeråsen, 161 avganger | Any other warning |
-| 5 | Holmenkollveien 196 | Høy radonaktsomhet (rank 2). Frognerseteren as nearest stop | Kvikkleire, flom, støy |
+| 3 | Gamle Drammensvei 207 | Rød støysone (rank 2). Meget høy radonaktsomhet (rank 2). "NVE har ikke kartlagt ..." for quick clay and "NVE har ikke laget flomsonekart ..." (rank 7) | A quick-clay or flood zone sentence (the address is outside NVE's mapping) |
+| 4 | Grevlingåsen 17 | Høy radonaktsomhet (rank 2). No noise zone, no rockfall/debris/avalanche area (rank 5). "NVE har ikke kartlagt ..." for quick clay and "NVE har ikke laget flomsonekart ..." (rank 7). Jegeråsen, 161 avganger | Any other warning. Any sentence saying the address is outside a quick-clay or flood zone |
+| 5 | Holmenkollveien 196 | Høy radonaktsomhet (rank 2). Frognerseteren as nearest stop. "NVE har ikke kartlagt ..." for quick clay and "NVE har ikke laget flomsonekart ..." (rank 7) | A quick-clay or flood zone sentence. A noise warning (50–55 dB is below the yellow level) |
+
+Checked against the API on 2026-11-07: all three match. The storm-surge fact still comes out as the plain fallback "Stormflo: Ikke i stormflosone (Kartverket)." until the `stormSurge` rule above is in `RULES` in `api/src/summary.ts`.
