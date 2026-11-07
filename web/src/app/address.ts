@@ -4,6 +4,7 @@ import { h, titleCase } from "./dom";
 import { navigate } from "./router";
 import { createSearch } from "./search";
 import { showMap } from "./map";
+import { summaryCard } from "./summary";
 import type { Category, DataPoint, Missing, Profile, Rating, Severity } from "./profile";
 
 let current = 0; // ignore responses for an address we already left
@@ -41,7 +42,12 @@ export async function renderAddress(app: HTMLElement, id: string) {
   a.place = titleCase(a.place);
   a.municipality = titleCase(a.municipality);
   document.title = `${a.text}, ${a.place} · Omnium`;
-  panel.replaceChildren(summary(profile), ...profile.categories.map((c) => categoryCard(c, profile)), sourcesBlock(profile));
+  panel.replaceChildren(
+    summary(profile),
+    summaryCard(id, () => req === current),
+    ...profile.categories.map((c) => categoryCard(c, profile)),
+    sourcesBlock(profile),
+  );
   showMap(mapEl, a.lng, a.lat);
 }
 

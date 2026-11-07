@@ -51,7 +51,9 @@ The start page should feel like the logo: a round window onto a soft, living map
   - **Weakest category**, always shown next to the overall score (see `suggestions.md`): "Svakest: Grunnforhold 31".
   - When the profile can't be rated: "Kan ikke vurderes" with the reason. Never a number.
   - **Up to 3 warnings**, most serious first. Each has a colour dot and a word for severity, and clicking it opens its data point.
-  - **AI summary**, labelled "AI-generert".
+  - **Summary card** from `GET /api/address/<id>/summary`. Loads after the rest of the page (skeleton lines meanwhile).
+    - Label "AI-generert" only when `aiGenerated` is true, plus a note to check the sources and an expandable "Faktaene bak" list.
+    - When the API falls back to plain fact sentences (no key, AI down), no AI label: show the 4 most serious facts as a list, the rest behind "Vis alle", and the note "Faktasetninger fra datakildene".
   - **Category cards**, one per category in the profile (never a fixed list, see `docs/PROFILE.md`). Each card shows the score (or "Kan ikke vurderes" with the reason) and opens to show every data point: colour dot, label, value, a plain-language explanation and the source. Missing data points show "Ikke tilgjengelig" and why, in `--unknown` grey.
 - **Right side:** the map fills the rest of the window, zoomed to the address with an orange pin. The layer panel floats on the map (top right), with a legend for the visible layers below it.
 - **States:** loading (skeleton blocks, no spinner wall), error ("Noe gikk galt" + try again), address outside Oslo/Akershus, address not found.
