@@ -1,36 +1,50 @@
-/* Top-bar logo ring: spins on hover and while loading (.is-loading). The mark itself never rotates (the pin stays upright). */
+/* Logo mark split in two with masks on the same image (web/public/logo-mark.png):
+   the outer rim (bottom copy) spins on hover and while loading; the inner map with pin and river (top copy) stays still.
+   The inner map is a centred circle, about 59% of the logo's width (measured from the PNG). */
 .logo-ring {
   position: relative;
-  display: inline-flex;
+  display: inline-block;
   flex: none;
 }
-.logo-ring::after {
-  content: "";
+.topbar-logo .logo-ring {
+  width: 2rem;
+  height: 2rem;
+}
+.logo-ring img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.logo-ring .logo-core {
   position: absolute;
-  inset: -0.1875rem;
-  border-radius: 50%;
-  background: conic-gradient(var(--orange), var(--teal), var(--navy), var(--orange));
-  -webkit-mask-image: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
-  mask-image: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
-  pointer-events: none;
-  animation: logo-ring-spin 1.6s linear infinite;
+  inset: 0;
+  -webkit-mask-image: radial-gradient(circle closest-side, #000 60%, transparent 61%);
+  mask-image: radial-gradient(circle closest-side, #000 60%, transparent 61%);
+}
+.logo-ring .logo-rim {
+  -webkit-mask-image: radial-gradient(circle closest-side, transparent 58%, #000 59%);
+  mask-image: radial-gradient(circle closest-side, transparent 58%, #000 59%);
+  animation: logo-rim-spin 1.6s linear infinite;
   animation-play-state: paused;
 }
-.topbar-logo:hover .logo-ring::after,
-.topbar-logo:focus-visible .logo-ring::after,
-.topbar-logo.is-loading .logo-ring::after {
+.topbar-logo:hover .logo-rim,
+.topbar-logo:focus-visible .logo-rim,
+.topbar-logo.is-loading .logo-rim,
+.start-logo:hover .logo-rim,
+.start-logo.is-searching .logo-rim {
   animation-play-state: running;
 }
-.topbar-logo.is-loading .logo-ring::after {
+.topbar-logo.is-loading .logo-rim,
+.start-logo.is-searching .logo-rim {
   animation-duration: 1s; /* a bit faster while working */
 }
-@keyframes logo-ring-spin {
+@keyframes logo-rim-spin {
   to {
     transform: rotate(360deg);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .logo-ring::after {
+  .logo-ring .logo-rim {
     animation: none;
   }
 }

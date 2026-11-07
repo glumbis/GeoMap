@@ -79,24 +79,6 @@
   height: 3.5rem;
   font-size: 1rem;
 }
-.page-start .start-mark::after {
-  content: "";
-  position: absolute;
-  inset: -0.25rem;
-  border-radius: 50%;
-  background: conic-gradient(var(--orange), var(--teal), var(--navy), var(--orange));
-  mask-image: radial-gradient(farthest-side, transparent calc(100% - 2px), var(--ink) calc(100% - 1.5px));
-  pointer-events: none;
-  animation: start-logo-outline-spin 1.6s linear infinite;
-  animation-play-state: paused;
-}
-.page-start .start-logo:hover .start-mark::after,
-.page-start .start-logo.is-searching .start-mark::after {
-  animation-play-state: running;
-}
-@keyframes start-logo-outline-spin {
-  to { transform: rotate(360deg); }
-}
 .page-start .start-mark img {
   display: block;
   width: 100%;
@@ -152,8 +134,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .page-start::before,
-  .page-start::after,
-  .page-start .start-mark::after {
+  .page-start::after {
     animation: none;
   }
 }

@@ -3,6 +3,7 @@ import { h } from "./dom";
 import { navigate } from "./router";
 import { createSearch } from "./search";
 import { destroyMap } from "./map";
+import { logoMark } from "./logo";
 import "./start.css";
 
 export function renderStart(app: HTMLElement) {
@@ -27,7 +28,7 @@ export function renderStart(app: HTMLElement) {
   const logo = h(
     "h1",
     { class: "start-logo" },
-    h("span", { class: "start-mark", "aria-hidden": "true" }, h("img", { src: "/logo-mark.png", alt: "" })),
+    logoMark("start-mark"),
     h("span", { class: "start-word" }, "Omnium"),
   );
   const actions = h("div", { class: "start-actions" }, mapLink);

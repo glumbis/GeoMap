@@ -8,7 +8,7 @@ export function topbarLogo(): HTMLAnchorElement {
   const logo = h(
     "a",
     { href: "/", class: "topbar-logo", "aria-label": "Til forsiden" },
-    h("span", { class: "logo-ring", "aria-hidden": "true" }, h("img", { src: "/logo-mark.png", alt: "" })),
+    logoMark(),
     h("span", {}, "Omnium"),
   );
   logo.addEventListener("click", (e) => {
@@ -20,6 +20,16 @@ export function topbarLogo(): HTMLAnchorElement {
 
 const MIN_SPIN_MS = 1000; // one full turn at the loading speed, so a fast (cached) load still shows the spin
 const spinStart = new WeakMap<HTMLElement, number>();
+
+/** The logo mark as two masked copies: the rim (spins) under the inner map (stays still). See logo.css. */
+export function logoMark(extraClass = ""): HTMLElement {
+  return h(
+    "span",
+    { class: `logo-ring ${extraClass}`.trim(), "aria-hidden": "true" },
+    h("img", { class: "logo-rim", src: "/logo-mark.png", alt: "" }),
+    h("img", { class: "logo-core", src: "/logo-mark.png", alt: "" }),
+  );
+}
 
 /** Spin the ring while `loading` is true. Several loaders can overlap; the ring stops when all are done. */
 export function setLogoLoading(logo: HTMLElement, loading: boolean) {
