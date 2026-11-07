@@ -39,6 +39,7 @@ export function renderStart(app: HTMLElement) {
     h("span", { class: "start-word" }, "Omnium"),
   );
   const actions = h("div", { class: "start-actions" }, mapLink, finnLink);
+  const uses = usesLine(search);
 
   const disclaimer = h(
     "p",
@@ -56,8 +57,91 @@ export function renderStart(app: HTMLElement) {
     }).observe(list);
 
   const bg = background();
-  app.replaceChildren(bg, h("main", { class: "start" }, h("div", { class: "start-content" }, logo, search, spacer, actions), disclaimer));
+  app.replaceChildren(bg, h("main", { class: "start" }, h("div", { class: "start-content" }, logo, uses, search, spacer, actions), disclaimer));
   followPointer(app);
+}
+
+// "Brukes av <hvem> til <hva>": who uses Omnium and for what. The two changing parts flick through many pairs fast,
+// then stop on one for a moment. Each pair makes sense on its own when it stops.
+const USES: [string, string][] = [
+  ["boligkjøpere", "å sjekke grunnen før bud"],
+  ["meglere", "å svare før visningen"],
+  ["utbyggere", "å finne trygg byggegrunn"],
+  ["barnefamilier", "å finne skole og barnehage"],
+  ["pendlere", "å sjekke bussen hjem"],
+  ["arkitekter", "å planlegge fundamentet"],
+  ["leietakere", "å unngå støy om natta"],
+  ["banker", "å vurdere pant"],
+  ["forsikringsselskaper", "å se flomfaren"],
+  ["kommuner", "å se faresoner samlet"],
+  ["journalister", "å grave i offentlige data"],
+  ["seniorer", "å finne lege og butikk nær"],
+  ["studenter", "å finne et rolig sted"],
+  ["huseiere", "å måle radon i tide"],
+];
+const ROLL_ITEMS = 28; // words that scroll past before it stops
+const ROLL_MS = 1100; // one roll: a fast, blurred spin that overshoots and snaps back onto the pair
+const HOLD_MS = 2600; // how long a pair stays
+
+/**
+ * The line sits between the logo and the field. The static words are in their own grid column, right-aligned against
+ * the centre, and the changing words start at the centre, so nothing shifts sideways as the words change.
+ * The changing words spin up like a slot machine: a long column of words races past, motion-blurred, overshoots a
+ * little and snaps back onto the next pair, sharp. It fades out (keeping its space, so nothing moves) while the field has text.
+ */
+function usesLine(search: HTMLElement): HTMLElement {
+  const whoSlot = h("span", { class: "uses-slot", "aria-hidden": "true" });
+  const whatSlot = h("span", { class: "uses-slot", "aria-hidden": "true" });
+  const line = h(
+    "p",
+    { class: "start-uses" },
+    h("span", { class: "sr-only" }, `Brukes av ${USES.map((u) => u[0]).join(", ")}, til alt fra å sjekke grunnen til å finne skole.`),
+    h("span", { class: "uses-fixed", "aria-hidden": "true" }, "Brukes av"),
+    whoSlot,
+    h("span", { class: "uses-fixed", "aria-hidden": "true" }, "til"),
+    whatSlot,
+  );
+  const track = (words: string[]) => h("span", { class: "uses-track" }, ...words.map((w) => h("span", { class: "uses-var" }, w)));
+  whoSlot.append(track([USES[0][0]]));
+  whatSlot.append(track([USES[0][1]]));
+
+  /** Spin a slot from its current word through `fill` to `to`. Both slots get the same pairs, so every row reads right. */
+  const roll = (slot: HTMLElement, part: 0 | 1, fill: number[], to: string) => {
+    const from = slot.textContent ?? "";
+    const t = track([from, ...fill.map((k) => USES[k][part]), to, USES[fill[0]][part]]); // one word past "to" shows in the overshoot
+    slot.replaceChildren(t);
+    const end = (ROLL_ITEMS - 1) * 1.5; // em; each word is 1.5em tall
+    t.animate(
+      [
+        { transform: "translateY(0)", filter: "blur(0)", easing: "cubic-bezier(0.5, 0, 0.9, 0.6)" },
+        { transform: `translateY(-3em)`, filter: "blur(3px)", offset: 0.12, easing: "cubic-bezier(0.1, 0.5, 0.3, 1)" },
+        { transform: `translateY(${-end - 0.35}em)`, filter: "blur(0.5px)", offset: 0.82, easing: "ease-out" },
+        { transform: `translateY(${-end + 0.08}em)`, filter: "blur(0)", offset: 0.93, easing: "ease-in-out" },
+        { transform: `translateY(${-end}em)`, filter: "blur(0)" },
+      ],
+      { duration: ROLL_MS, fill: "forwards" },
+    ).finished.then(() => slot.replaceChildren(track([to])), () => {});
+  };
+
+  const input = search.querySelector("input");
+  const sync = () => line.classList.toggle("is-hidden", !!input?.value.trim());
+  input?.addEventListener("input", sync);
+
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    let i = 0;
+    const step = () => {
+      if (!line.isConnected) return; // left the page
+      if (!document.hidden && !line.classList.contains("is-hidden")) {
+        i = (i + 1) % USES.length;
+        const fill = Array.from({ length: ROLL_ITEMS - 2 }, () => Math.floor(Math.random() * USES.length));
+        roll(whoSlot, 0, fill, USES[i][0]);
+        roll(whatSlot, 1, fill, USES[i][1]);
+      }
+      window.setTimeout(step, ROLL_MS + HOLD_MS);
+    };
+    window.setTimeout(step, HOLD_MS);
+  }
+  return line;
 }
 
 // Faint shapes behind the page. Each has a depth: deeper ones move more with the mouse (start.css), which gives a little parallax.

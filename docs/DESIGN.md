@@ -25,13 +25,14 @@ Three pages: the start page, the address page and the map page (`/kart`, full-wi
 
 ### 1. Start page (the first thing anyone sees)
 
-A minimal, centred page on a white background (`--surface`), with faint abstract rings drifting slowly around the edges, plus a few small rings and dots. All lean gently toward the mouse pointer (smaller ones more, for a little depth), and a click sends one soft ring out from the pointer. The central search area stays clear. No background map, lens, slogans or tagline.
+A minimal, centred page on a white background (`--surface`), with faint abstract rings drifting slowly around the edges, plus a few small rings and dots. All lean gently toward the mouse pointer (smaller ones more, for a little depth), and a click sends one soft ring out from the pointer. The central search area stays clear. No background map or lens.
 
 - One centred column, up to 40 rem wide, with generous space around it.
 - The logo mark sits next to the serif word mark "Omnium", centred above the search field. The outer ring turns slowly all the time, faster while an address search is pending and when the logo is hovered. The central map (scaled up slightly so no gap opens under the turning ring) and the word stay still. Reduced-motion settings disable the rotation and background movement.
+- Under the logo, one line "Brukes av <hvem> til <hva>" (e.g. "boligkjøpere" / "å sjekke grunnen før bud"). The two changing parts spin up like a slot machine (both through the same pairs, so every passing row reads right): about 28 words race past in about 1.1 s, motion-blurred, overshoot a little and snap back sharp onto the next pair, which holds for a few seconds, to show how many uses there are. The static words sit right-aligned against the centre and the changing words start at the centre, so nothing moves sideways. It fades out (keeping its space) while the field has text, and stays still with reduced motion.
 - One large address search field: "Skriv inn en adresse".
 - Autocomplete searches street addresses throughout Norway using Geonorge, showing at most eight suggestions with street, number, postcode and place. Profiles outside Oslo + Akershus explain the limited data coverage.
-- The column is anchored a fixed distance from the top, so the logo and the field never move while typing. Results float in a bounded scrolling list below the input; a spacer takes their height with a short transition, so the map link glides down (never jumps, never overlapped). Arrow keys keep the selected result visible; Enter selects it and Escape closes the list.
+- The column is anchored a fixed distance from the top, so the logo and the field never move while typing. Results float in a bounded scrolling list below the input. While a new search runs, the old results stay, dimmed and not pickable, instead of the list closing on every letter; a spacer takes their height with a short transition, so the map link glides down (never jumps, never overlapped). Arrow keys keep the selected result visible; Enter selects it and Escape closes the list.
 - A quiet "Gå til kartet →" link below the search opens `/kart`.
 - At the bottom, a small muted disclaimer: the data is public and may be wrong, incomplete or out of date; Omnium takes no responsibility for choices made from it; check with the source, the municipality or professionals.
 - The content stays horizontally centred when results open. If the screen is too short, the page scrolls vertically so every control remains reachable. No horizontal scrolling.
@@ -40,13 +41,15 @@ A minimal, centred page on a white background (`--surface`), with faint abstract
 
 - The URL changes to `/a/<address-id>` so the page can be shared and reloaded. Id format: `docs/PROFILE.md` → "Address id".
 - Fills the browser window; the page itself does not scroll.
-- **Top bar** (full width, 4 rem): small logo mark (click it to go back to the start page) and a compact search field.
-- **Left column** (30 rem, about 480 px on a 1920 screen; scrolls on its own), top to bottom. Every block after the warnings starts with a small uppercase label on a heavy rule:
-  - **Address**, large, with quiet Del / Skriv ut / Sammenlign buttons.
-  - **Overall rating:** a big serif number with "/100" on a heavy rule (no ring), a word (Svak / Middels / God / Svært god) and "basert på X av Y datapunkter", with "Svakest: <category> <score>" when that category is below the overall score.
-  - **Capped score:** the word is never above "Middels", plus an ink line "Begrenset av N advarsler under". The cap reasons are the warnings right below; they are not repeated in the headline.
+- **Top bar** (full width, 4 rem): small logo mark (click it to go back to the start page), a compact search field, and quiet Del / Skriv ut / Sammenlign buttons at the right.
+- **Lines:** one style only, 1 px `--line`. No heavy rules, no coloured edge bars. Whitespace separates blocks.
+- **Left column** (30 rem, about 480 px on a 1920 screen; scrolls on its own), top to bottom. Every block after "Sjekk dette" starts with a small uppercase label on a thin rule:
+  - **Address**, large, and postcode, place and municipality.
+  - **Overall rating:** a big serif number with "/100" (no ring, no rule), then in plain ink text: the word (Svak / Middels / God / Svært god), one sentence on what the word means ("Få kjente farer og gode forhold rundt adressen."), one on why ("Trekker ned: Kvikkleire faresone, veistøy og radon." from what caps the score and what costs points; else "Svakest er <category> (<score>)." when it is below the overall), and a quiet line "Skår 0–100 fra X av Y offentlige datapunkter." Details are left to the sections below.
+  - **Capped score:** the word is never above "Middels". What caps it is named in the "Trekker ned" sentence.
   - When the profile can't be rated: "Kan ikke vurderes" with the reason. Never a number.
-  - **Warnings**, most serious first: 3 shown, the rest behind "Vis N advarsler til" (never hides just one; "Vis færre" folds them back). Each has a coloured edge and a word for severity, and clicking it opens its data point.
+  - **Warnings**, most serious first: 3 shown, the rest behind "Vis N advarsler til" (never hides just one; "Vis færre" folds them back). Each has a coloured dot and a word for severity (no edge bar, no rules between rows), and clicking it opens its data point.
+  - **Sjekk dette:** a quiet list under the warnings for common findings that are not hazards (radon likelihood, NVE awareness areas), each with one quiet line: a short action and how common it is ("Mål radon i boligen, helst om vinteren. 50 % av Oslo har det samme."). They never cap the score but cost points; the overall names them in "Trekker ned". Clicking one opens its data point.
   - **Vurdering for deg:** one ruled row per perspective in the profile (Bo her, Bygge her, Familie, Pendler): name, its question in small text, and the score with a colour underline that follows the number. Clicking a row opens it: "Trekker ned" (up to 3 factors under 70, with their values; those that capped the score say "begrenser skåren"), "Trekker opp" (up to 3 factors at 80 or more, not counting hazards that are simply absent), one quiet line "Ingen treff i: …" for absent hazards, up to 2 "Sjekk før du bestemmer deg" tips, and the data count. A perspective built on fewer than 3 data points says so on its closed row.
   - **Summary** from `GET /api/address/<id>/summary`. Loads after the rest of the page (skeleton lines meanwhile).
     - Label "AI-generert" only when `aiGenerated` is true. First paragraph shown, the rest behind "Les mer". A note to check the sources (the facts behind it are the data points below).

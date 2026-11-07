@@ -67,8 +67,8 @@ Write `{display}` with a lower-case first letter inside the sentence: "Grunnen b
 
 | When | Sentence | Rank |
 |---|---|---|
-| value "megetHøy" | Adressen ligger i et område med meget høy aktsomhet for radon ({src}). | 2 |
-| value "høy" | Adressen ligger i et område med høy aktsomhet for radon ({src}). | 2 |
+| value "megetHøy" | Adressen ligger i et område med meget høy aktsomhet for radon ({src}). | 3 |
+| value "høy" | Adressen ligger i et område med høy aktsomhet for radon ({src}). | 3 |
 | value "middels" | Adressen ligger i et område med middels aktsomhet for radon ({src}). | 6 |
 | value "lav" | Adressen ligger i et område med lav aktsomhet for radon ({src}). | 5 |
 
@@ -104,7 +104,7 @@ Example (Grevlingåsen 17): "NGU vurderer at det er ofte marin leire i grunnen h
 | warning, value "lav" | Eiendommen ligger i en faresone for kvikkleireskred med lav faregrad ({src}). | 3 |
 | value "ingen" (zone without faregrad) | Eiendommen ligger i en kartlagt kvikkleiresone der NVE ikke har satt noen faregrad ({src}). | 6 |
 | no zone | Eiendommen ligger ikke i en kartlagt faresone for kvikkleireskred ({src}). | 5 |
-| value "ikkeKartlagt" (NVE has not mapped quick clay here) | NVE har ikke kartlagt faresoner for kvikkleireskred i området der eiendommen ligger, så kartet sier ingenting om kvikkleire her ({src}). | 7 |
+| value "ikkeKartlagt" (NVE has not mapped quick clay here) | NVE har ikke laget faresonekart for kvikkleireskred der eiendommen ligger, så det finnes ingen kartlagt faregrad her ({src}). | 7 |
 
 "ingen" is neither a risk nor an all-clear: never write "faresone" or "trygt" for it, and don't add a faregrad.
 
@@ -117,9 +117,26 @@ Example (Grevlingåsen 17): "NGU vurderer at det er ofte marin leire i grunnen h
 | warning, value ≤ 20 | Eiendommen ligger i en flomsone som kan bli oversvømt ved en {value}-årsflom ({src}). | 1 |
 | warning, other value | Eiendommen ligger i en flomsone som kan bli oversvømt ved en {value}-årsflom ({src}). | 2 |
 | no warning | Eiendommen ligger ikke i en kartlagt flomsone ({src}). | 5 |
-| value "ikkeKartlagt" (NVE has no flood zone map here) | NVE har ikke laget flomsonekart for området der eiendommen ligger, så kartet sier ingenting om flomfare her ({src}). | 7 |
+| value "ikkeKartlagt" (NVE has no flood zone map here) | NVE har ikke laget flomsonekart der eiendommen ligger, så det finnes ingen kartlagt flomsone her ({src}). | 7 |
 
 NVE flood zone maps cover only selected rivers and towns. Like quick clay, "not mapped" gets its own sentence and never merges with the rank 5 sentences.
+
+**`quickClayAwareness` (Aktsomhetsområde for kvikkleireskred)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| in an awareness area | Eiendommen ligger i et aktsomhetsområde for kvikkleireskred, et grovt kart over hvor kvikkleire kan finnes, som ikke er en kartlagt faresone ({src}). | 3 |
+| value "ikkeKartlagt" | NVE har ikke vurdert aktsomhet for kvikkleireskred i området der eiendommen ligger ({src}). | 7 |
+| not in one | Eiendommen ligger ikke i et aktsomhetsområde for kvikkleireskred ({src}). | 5 |
+
+**`floodAwareness` (Aktsomhetsområde for flom)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| in an awareness area | Eiendommen ligger i et aktsomhetsområde for flom, et grovt kart over områder langs vassdrag som kan bli oversvømt, som ikke er en kartlagt flomsone ({src}). | 3 |
+| not in one | Eiendommen ligger ikke i et aktsomhetsområde for flom ({src}). | 5 |
+
+An awareness area and a hazard zone are different maps (coarse "possible" vs. mapped in detail), so both can hold at once. The sentences say what kind of map each is, and the AI prompt tells the model to join them logically ("i et aktsomhetsområde …, men ikke i en kartlagt faresone") and never to say data is missing about a hazard it has a finding for.
 
 **`rockfall` (Steinsprang)**
 

@@ -146,6 +146,7 @@ function body(x: Perspective, info: Map<string, Info>): HTMLElement[] {
   if (r.status !== "ok" || r.score == null) return [h("p", { class: "aud-note" }, r.reason || "For lite data til å gi en skår.")];
 
   const capping = new Set(r.cappedBy?.map((c) => c.dataPointId));
+  const penalty = new Map(r.penalties?.map((x) => [x.dataPointId, x.points]));
   const factors = mergeNoise(r.factors.filter((f) => f.score != null && !info.get(f.dataPointId)?.unmapped));
   const down = factors.filter((f) => f.score < DOWN).sort((a, b) => a.score - b.score || b.weight - a.weight).slice(0, 3);
   const high = factors.filter((f) => f.score >= UP).sort((a, b) => b.weight - a.weight || b.score - a.score);
@@ -156,7 +157,13 @@ function body(x: Perspective, info: Map<string, Info>): HTMLElement[] {
     h(
       "li",
       { class: "aud-factor" },
-      h("span", { class: "aud-factor-label" }, f.label, capping.has(f.dataPointId) ? h("span", { class: "aud-tag" }, "begrenser skåren") : null),
+      h(
+        "span",
+        { class: "aud-factor-label" },
+        f.label,
+        capping.has(f.dataPointId) ? h("span", { class: "aud-tag" }, "begrenser skåren") : null,
+        penalty.has(f.dataPointId) ? h("span", { class: "aud-tag" }, `trekker ${penalty.get(f.dataPointId)} poeng ekstra`) : null,
+      ),
       h("span", { class: "aud-factor-value" }, info.get(f.dataPointId)?.display ?? ""),
     );
   const head = (title: string, kind: "up" | "down") =>

@@ -132,6 +132,11 @@ Terms for all Kartverket free data: CC BY 4.0, credit "© Kartverket". Details i
   - Columns: `id` (grunnkretsnummer), `name`, `kommunenummer`, `year`, `population`, `under20`, `over70`, `areaKm2`, `perKm2`, `pctUnder20`, `pctOver70`, `source`, `geom`. SSB hides age groups of 1–2 people, so age sums can be slightly low.
   - Info only (never scored). The age share is left out under 20 inhabitants. These are also the grunnkrets polygons Even's grunnkrets stats can join to (`id` = grunnkretsnummer).
   - Checked: #1 Sagene rode 6 (851 people, 15,569 per km²), #4 Hosle nord 06 (220), #5 Tryvann (29).
+- **Area scores (Omnium, computed)** → tables `adresser`, `adresse_scores`, `grunnkrets_scores`, `kommune_scores`, script `data/area-scores.ts` (`npm run scores`, after `npm run ingest`), API `/api/grunnkrets_scores` (map layer) and `/api/omrade/<id>` (2026-11-07).
+  - Every street address (vegadresse, 362,241) from Kartverket's address file (Matrikkelen Adresse CSV, EPSG:4258, Oslo + Akershus) is rated with the same rules as the address page: `assembleProfile()` in `api/src/profile.ts`, fed by one spatial join per data point table for each block of 10,000 addresses. About 17 minutes on Sverre's PC.
+  - `grunnkrets_scores` / `kommune_scores`: median and quartiles of the overall score, share of addresses with a high or a serious (high/medium) warning, median per perspective. Only areas with at least 5 rated addresses.
+  - `/api/omrade/<id>`: the address's live score plus its percentile in its grunnkrets and kommune (share of rated addresses that score lower, ties half).
+  - Scores are a snapshot (`computedAt`): rerun `npm run scores` after a data or rating change.
 - Shared helpers in `data/scripts/lib.ts`: `studyBbox()`, `arcgisFeatures()` (pages any ArcGIS REST layer, e.g. NVE, as GeoJSON) and `readZipEntry()` (reads one file out of a downloaded zip).
 
 - **Name:** Eiendom REST-API (property lookup)
@@ -622,6 +627,24 @@ NGU datasets: https://www.ngu.no/geologiske-kart/datasett (download per county, 
   - Notes: protected buildings/zones limit what you can build. Also "Kulturminner - Freda bygninger" and "SEFRAK-bygninger".
   - **Loaded** (2026-11-07) as table `kulturminner` by `data/scripts/kulturminner.ts`, API `/api/kulturminner`: 17 993 sites (layer `lokalitet`) from the Oslo and Akershus FGDB zips (`https://nedlasting.geonorge.no/geonorge/Kulturminner/Kulturminner/FGDB/Kulturminner_<03_Oslo|32_Akershus>_25833_Kulturminner_FGDB.zip`, read from the zip, EPSG:25833 → 4326). Kept only sites with a protection status today (dropped: removed, protection lifted, no protection). Codes in `statusCode`, bokmål in `status` ([code list](https://register.geonorge.no/sosi-kodelister/kulturminner/vernetype)). Data point `culturalHeritage` (sites within 50 m, info only, not scored).
   - Watch out: in Oslo, "kommunalt listeført" (KOM) is Byantikvaren's gule liste. Buildings in it are worth preserving but not fredet.
+
+### Ideas, not checked yet (2026-11-07)
+New datasets that would make the profile better. URLs, table numbers and licences are from memory: check each one before writing a script. Short form; fill in the full template when checked.
+
+- **Høyspentlinjer (Nettanlegg)**: NVE. Power lines and substations as lines/points. Search Geonorge for "Nettanlegg". Distance to the nearest high-voltage line: many buyers ask. Category: environment. Priority: high.
+- **Trafikkmengde (ÅDT)**: Statens vegvesen, NVDB API Les (`https://nvdbapiles.atlas.vegvesen.no/`, object type 540). Daily traffic per road link. Busy-road context beside the noise maps. Category: environment. Priority: medium.
+- **Trafikkulykker**: Statens vegvesen, NVDB (object type 570). Police-recorded injury accidents with location. Safe route to school. Category: location. Priority: medium.
+- **Grunnskolepoeng og nasjonale prøver**: Udir (Skoleporten / Udir statistikkbanken). Results per school, joinable to `schools` by organisation number. School quality, not only distance. Watch out: small schools are hidden for privacy. Category: location. Priority: high.
+- **Kvadratmeterpris, selveierboliger**: SSB (table 06035, check the number). Average price per m² per region (larger municipalities, Oslo). Free price level without buying sales data. Category: area. Priority: high.
+- **Kommunale gebyrer (vann, avløp, renovasjon)**: SSB KOSTRA (table 12842, check the number). Yearly fees per municipality. The fixed cost of owning a home. Category: area. Priority: medium.
+- **Eiendomsskatt**: SSB KOSTRA (table to find). Whether the municipality has property tax on homes, and the rate. Category: area. Priority: medium.
+- **Ladestasjoner for elbil**: NOBIL (Enova), `https://info.nobil.no/api`. Needs a free API key, so lower priority (we prefer keyless). Category: location. Priority: low.
+- **Bysykkelstasjoner**: Oslo Bysykkel, GBFS `https://gbfs.urbansharing.com/oslobysykkel.no/station_information.json`, NLOD. Oslo only. Category: location. Priority: low.
+- **Mobildekning**: Nkom (coverage maps per operator). Check whether there is an open download; bredbånd had none. Category: location. Priority: low.
+- **Klimaframskrivninger**: Norsk klimaservicesenter (klimaservicesenter.no), climate profiles per county (more heavy rain, flood). Text per county, not per address: for the "fremtidig klima" idea. Category: hazard. Priority: low.
+- **Reisetid til egen adresse**: Entur Journey Planner API (we already use it for `stops`). Not a dataset: a feature where the user types their work address and sees door-to-door time. Category: location. Priority: medium.
+
+Already in this file (not repeated): NADAG, NILU luftkvalitet, PVGIS (sun), Naturbase, kulturminner, stormflo og havnivå. Rechecks worth doing: Enova energiattester and Nkom bredbånd (both "no open download" below, but may have an API on request), and reguleringsplaner through the municipalities' own map services.
 
 ### Checked, not usable now
 - **Reguleringsplaner** (zoning plans, DiBK): Norge digitalt-lisens, not open data. WMS picture only, cannot be stored or scored. https://kartkatalog.geonorge.no/metadata/reguleringsplaner/dac27348-5c2e-4a6a-9497-c4c792108cae

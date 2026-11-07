@@ -1,5 +1,6 @@
 // Address page: top bar, left column, map on the right. Layout: docs/DESIGN.md.
-// Left column, top to bottom: address, overall rating, warnings, the perspectives ("Vurdering for deg"), summary,
+// Top bar: logo, search, Del / Skriv ut / Sammenlign. Left column, top to bottom: address, overall rating, warnings,
+// the perspectives ("Vurdering for deg"), summary,
 // PDF report, every data point by category, sources.
 // Renders whatever the profile contains (docs/PROFILE.md). Never a hard-coded category list, never a fake number.
 import { h, titleCase } from "./dom";
@@ -13,7 +14,7 @@ import { shareActions } from "./share";
 import { reportLink } from "./report";
 import { finnBackLink } from "./finn";
 import "./address.css";
-import type { Category, DataPoint, Missing, Profile, Rating, Severity } from "./profile";
+import type { Category, DataPoint, Missing, Profile, Severity } from "./profile";
 
 let current = 0; // ignore responses for an address we already left
 
@@ -35,6 +36,7 @@ export async function renderAddress(app: HTMLElement, id: string) {
       { class: "topbar" },
       logo,
       createSearch({ size: "compact", onPick: (hit) => navigate(`/a/${hit.id}`), onLoadingChange: (on) => setLogoLoading(logo, on) }),
+      shareActions(id), // Del, Skriv ut, Sammenlign: page actions live in the bar, not in the reading column
     ),
     h("div", { class: "address-layout" }, panel, mapEl),
   );
@@ -83,15 +85,14 @@ export async function renderAddress(app: HTMLElement, id: string) {
 
 function summary(p: Profile) {
   const a = p.address;
-  const r = p.rating;
   return h(
     "div",
     { class: "summary" },
     h("h1", { class: `address-title${a.text.length > 20 ? " is-long" : ""}` }, a.text),
     h("p", { class: "address-sub" }, `${a.postcode} ${a.place} · ${a.municipality} kommune`),
-    shareActions(a.id),
-    overall(r),
+    overall(p),
     p.warnings.length ? warnings(p) : null,
+    p.checks?.length ? checks(p) : null,
   );
 }
 
@@ -118,11 +119,33 @@ function ring(score?: number) {
   return el;
 }
 
-function overall(r: Rating) {
+// What each word means, in one plain sentence. The word follows the number (scoreWord).
+const MEANING: Record<string, string> = {
+  "Svært god": "Få kjente farer og gode forhold rundt adressen.",
+  God: "Gode forhold, men noe er verdt å sjekke.",
+  Middels: "Noen forhold trekker tydelig ned.",
+  Svak: "Alvorlige forhold trekker skåren ned.",
+};
+
+/**
+ * The big number and what it means: the word, one sentence on what the word means, one on why (what pulls it down),
+ * and one quiet line on what the number is. The details are further down; this block only orients.
+ */
+function overall(p: Profile) {
+  const r = p.rating;
   const ok = r.status === "ok" && r.score != null;
-  const capped = ok && !!r.cappedBy?.length;
-  const cov = `${ok ? "B" : "b"}asert på ${r.coverage.present} av ${r.coverage.expected} datapunkter`;
-  const weakest = r.weakestCategory && (!ok || r.weakestCategory.score < r.score!) ? r.weakestCategory : undefined;
+  // A capped score never gets "God" or better (docs/PROFILE.md).
+  const word = ok ? scoreWord(r.cappedBy?.length ? Math.min(r.score!, 59) : r.score!) : "Kan ikke vurderes";
+  // Short names: "Veistøy (strategisk støykart)" reads as "Veistøy" here.
+  const label = (id: string) => p.categories.flatMap((c) => c.dataPoints).find((d) => d.id === id)?.label.replace(/\s*\(.*\)$/, "");
+  // Why: what caps the score, then what costs points (radon, awareness areas). Named by data point, each once.
+  const down = [...new Set([...(r.cappedBy ?? []), ...(r.penalties ?? [])].map((x) => label(x.dataPointId)).filter((x): x is string => !!x))];
+  const weakest = r.weakestCategory && ok && r.weakestCategory.score < r.score! ? r.weakestCategory : undefined;
+  const why = down.length
+    ? `Trekker ned: ${list(down.map((x, i) => (i ? x.toLowerCase() : x)))}.`
+    : weakest
+      ? `Svakest er ${weakest.name.toLowerCase()} (${weakest.score}).`
+      : null;
   return h(
     "div",
     { class: "overall" },
@@ -130,38 +153,29 @@ function overall(r: Rating) {
     h(
       "div",
       { class: "overall-text" },
-      // A capped score never gets "God" or better (docs/PROFILE.md). The cap reasons are the warnings right below,
-      // so the line under the word points at them instead of repeating one.
-      h("div", { class: "overall-word" }, !ok ? "Kan ikke vurderes" : scoreWord(capped ? Math.min(r.score!, 59) : r.score!)),
-      !ok && r.reason ? h("p", { class: "overall-reason" }, r.reason) : null,
-      capped
-        ? h("p", { class: "overall-cap" }, `Begrenset av ${r.cappedBy!.length === 1 ? "1 advarsel" : `${r.cappedBy!.length} advarsler`} under`)
-        : null,
-      h(
-        "p",
-        { class: "overall-coverage" },
-        weakest ? "Svakest: " : null,
-        weakest ? h("strong", {}, `${weakest.name} ${weakest.score}`) : null,
-        weakest ? " · " : null,
-        cov,
-      ),
+      h("div", { class: "overall-word" }, word),
+      ok ? h("p", { class: "overall-meaning" }, MEANING[word]) : r.reason ? h("p", { class: "overall-meaning" }, r.reason) : null,
+      ok && why ? h("p", { class: "overall-why" }, why) : null,
+      h("p", { class: "overall-coverage" }, `Skår 0–100 fra ${r.coverage.present} av ${r.coverage.expected} offentlige datapunkter.`),
     ),
   );
 }
+
+/** "a, b og c" */
+const list = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} og ${xs[xs.length - 1]}`);
 
 const SEVERITY_WORD: Record<Severity, string> = { high: "Alvorlig", medium: "Viktig", low: "Merk" };
 
 const WARNINGS_SHOWN = 3; // most serious first; the rest wait behind "Vis N advarsler til" (never hide just one)
 
 function warnings(p: Profile) {
-  const capping = new Set(p.rating.cappedBy?.map((c) => c.dataPointId));
   const item = (w: Profile["warnings"][number]) => {
     const btn = h(
       "button",
       { class: `warning warning--${w.severity}`, type: "button" },
       h("span", { class: "dot" }),
       h("span", { class: "warning-sev" }, SEVERITY_WORD[w.severity]),
-      h("span", { class: "warning-text" }, w.text, capping.has(w.dataPointId) ? h("span", { class: "warning-cap" }, "begrenser skåren") : null),
+      h("span", { class: "warning-text" }, w.text),
     );
     btn.addEventListener("click", () => openDataPoint(w.categoryId, w.dataPointId));
     return h("li", {}, btn);
@@ -184,6 +198,41 @@ function warnings(p: Profile) {
   });
   show(false);
   return h("div", { class: "warnings-block" }, list, more);
+}
+
+// What to do about each check, in a few words.
+const CHECK_ACTION: Record<string, string> = {
+  radon: "Mål radon i boligen, helst om vinteren.",
+  quickClayAwareness: "Spør om grunnundersøkelse før graving eller tilbygg.",
+  floodAwareness: "Spør om vann i kjeller før, og sjekk forsikringen.",
+};
+
+/** "Sjekk dette": common findings that don't cap the score, how common they are in the municipality, and what to do. */
+function checks(p: Profile) {
+  return h(
+    "div",
+    { class: "checks" },
+    h("h2", { class: "checks-title" }, "Sjekk dette"),
+    h(
+      "ul",
+      { class: "checks-list" },
+      ...p.checks!.map((c) => {
+        const btn = h(
+          "button",
+          { class: "check", type: "button" },
+          h("span", { class: "check-text" }, c.text),
+          // What to do, then how common it is around here (so it reads as the area, not this plot only).
+          h(
+            "span",
+            { class: "check-action" },
+            [CHECK_ACTION[c.dataPointId], c.areaShare ? `${c.areaShare.percent} % av ${titleCase(c.areaShare.municipality)} har det samme.` : ""].filter(Boolean).join(" "),
+          ),
+        );
+        btn.addEventListener("click", () => openDataPoint(c.categoryId, c.dataPointId));
+        return h("li", {}, btn);
+      }),
+    ),
+  );
 }
 
 function openDataPoint(categoryId: string, dataPointId: string) {

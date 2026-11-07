@@ -17,6 +17,12 @@ export interface Cap {
   text: string;
 }
 
+export interface Penalty {
+  dataPointId: string;
+  points: number;
+  text: string;
+}
+
 export interface Rating {
   status: Status;
   score?: number;
@@ -24,6 +30,8 @@ export interface Rating {
   coverage: Coverage;
   /** Warnings that pulled the score down to a cap. */
   cappedBy?: Cap[];
+  /** Points taken off after caps (overall and perspectives), e.g. for radon. */
+  penalties?: Penalty[];
   /** Overall only: the weakest rated category, always shown next to the overall score. */
   weakestCategory?: { id: string; name: string; score: number };
 }
@@ -61,7 +69,7 @@ function pointScore(r: Reading): number | undefined {
 function caps(points: Scored[], table: Partial<Record<Severity, number>>): Cap[] {
   return points.flatMap((p) => {
     const w = p.reading.warning;
-    const cap = w && table[w.severity];
+    const cap = w && !w.check ? table[w.severity] : undefined; // checks never cap
     return cap != null ? [{ dataPointId: p.id, cap, text: w!.text }] : [];
   });
 }
@@ -82,6 +90,22 @@ function applyCaps(score: number, found: Cap[]): Pick<Rating, "score" | "cappedB
   if (!found.length) return { score: Math.round(score) };
   const cap = Math.min(...found.map((c) => c.cap));
   return { score: Math.round((score * cap) / 100), cappedBy: found };
+}
+
+/**
+ * Fixed point deductions (Reading.penalty) for things that must count but never cap, like radon.
+ * Taken off the average before caps, so an already capped address is not pushed to the floor by them.
+ */
+function rateWithPenalties(avg: number, points: Scored[]): Pick<Rating, "score" | "cappedBy" | "penalties"> {
+  const penalties = points.flatMap((p) =>
+    p.reading.penalty ? [{ dataPointId: p.id, points: p.reading.penalty, text: p.reading.warning?.text ?? p.label }] : [],
+  );
+  const total = penalties.reduce((s, x) => s + x.points, 0);
+  const rated = applyCaps(Math.max(0, avg - total), overallCaps(points));
+  if (!penalties.length) return rated;
+  // A soft cap scales the penalty too: report what each one really cost the shown score.
+  const scale = rated.cappedBy?.length ? Math.min(...rated.cappedBy.map((c) => c.cap)) / 100 : 1;
+  return { ...rated, penalties: penalties.map((x) => ({ ...x, points: Math.max(1, Math.round(x.points * scale)) })) };
 }
 
 /** Plain average of the scored points, before caps. undefined when none has a score. */
@@ -136,7 +160,8 @@ export function ratePerspective(
   if (!factors.length) return { status: "unavailable", reason: "Ingen data som gir karakter her.", coverage, factors };
   const total = factors.reduce((s, f) => s + f.weight, 0);
   const avg = factors.reduce((s, f) => s + f.score * f.weight, 0) / total;
-  return { status: "ok", ...applyCaps(avg, overallCaps(points.map((p) => p.point))), coverage, factors };
+  const listed = points.map((p) => p.point);
+  return { status: "ok", ...rateWithPenalties(avg, listed), coverage, factors };
 }
 
 export function rateOverall(categories: { category: Category; rating: Rating; present: Scored[] }[]): Rating {
@@ -182,5 +207,5 @@ export function rateOverall(categories: { category: Category; rating: Rating; pr
   // Uses each category's score before its own cap, so one warning is not scaled down twice.
   const avg = ok.reduce((s, c) => s + average(c.present)! * c.category.weight, 0) / okWeight;
   const allPresent = categories.flatMap((c) => c.present);
-  return { status: "ok", ...applyCaps(avg, overallCaps(allPresent)), coverage, weakestCategory };
+  return { status: "ok", ...rateWithPenalties(avg, allPresent), coverage, weakestCategory };
 }

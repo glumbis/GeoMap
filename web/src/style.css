@@ -111,6 +111,12 @@ button {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+  transition: opacity 150ms ease;
+}
+/* Results for older text while the new search runs (search.ts): dimmed and not pickable, so the list doesn't blink. */
+.search-list.is-stale {
+  opacity: 0.55;
+  pointer-events: none;
 }
 .search-hit {
   display: flex;
