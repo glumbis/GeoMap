@@ -83,8 +83,11 @@ Write `{display}` with a lower-case first letter inside the sentence: "Grunnen b
 | warning, value "lav" | Eiendommen ligger i en faresone for kvikkleireskred med lav faregrad ({src}). | 3 |
 | value "ingen" (zone without faregrad) | Eiendommen ligger i en kartlagt kvikkleiresone der NVE ikke har satt noen faregrad ({src}). | 6 |
 | no zone | Eiendommen ligger ikke i en kartlagt faresone for kvikkleireskred ({src}). | 5 |
+| not mapped (NVE has not mapped quick clay here) | NVE har ikke kartlagt faresoner for kvikkleireskred i området der eiendommen ligger, så kartet sier ingenting om kvikkleire her ({src}). | 7 |
 
 "ingen" is neither a risk nor an all-clear: never write "faresone" or "trygt" for it, and don't add a faregrad.
+
+"Not mapped" is a gap, not an all-clear. It gets its own sentence (not the grouped `noCoverage` sentence under "Missing data") and never merges with the rank 5 "ikke i en kartlagt faresone" sentences, so the summary can't read as "no quick clay".
 
 **`flood200` (Flomsone)**
 
@@ -93,6 +96,9 @@ Write `{display}` with a lower-case first letter inside the sentence: "Grunnen b
 | warning, value ≤ 10 | Eiendommen ligger i en flomsone som kan bli oversvømt ved en {value}-årsflom ({src}). | 1 |
 | warning, other value | Eiendommen ligger i en flomsone som kan bli oversvømt ved en {value}-årsflom ({src}). | 2 |
 | no warning | Eiendommen ligger ikke i en kartlagt flomsone ({src}). | 5 |
+| not mapped (NVE has no flood zone map here) | NVE har ikke laget flomsonekart for området der eiendommen ligger, så kartet sier ingenting om flomfare her ({src}). | 7 |
+
+NVE flood zone maps cover only selected rivers and towns. Like quick clay, "not mapped" gets its own sentence and never merges with the rank 5 sentences.
 
 **`rockfall` (Steinsprang)**
 
@@ -231,6 +237,8 @@ Group the missing data points by reason and write one sentence per reason. List 
 | `sourceUnavailable` | Data om {labels} var ikke tilgjengelig da sammendraget ble laget. |
 
 The summary must never fill a gap: if radon is missing, it says we don't know, not "no radon".
+
+Exception: when `quickClay` or `flood200` is "not mapped", use its own sentence from "Natural hazards" instead of putting it in a group here.
 
 ## Rating (rank 8, always last)
 
