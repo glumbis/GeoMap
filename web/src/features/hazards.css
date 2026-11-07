@@ -5,8 +5,11 @@
   top: 0.75rem;
   right: 0.75rem;
   z-index: 2;
-  min-width: 11rem;
+  /* Fixed width: switching a layer on (its legend appears) must never make the panel jump sideways. */
+  width: 16.5rem;
+  box-sizing: border-box;
   padding: 0.75rem 0.875rem;
+  scrollbar-gutter: stable;
   background: var(--surface);
   color: var(--ink);
   border-radius: var(--radius);
@@ -97,6 +100,9 @@
   font-weight: 400;
   color: var(--ink-muted);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 .hz-panel__status[hidden] {
   display: none;
