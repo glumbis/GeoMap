@@ -1,7 +1,8 @@
 // Address page: top bar, left column, map on the right. Layout: docs/DESIGN.md.
-// Top bar: logo, search, Del / Skriv ut / Sammenlign. Left column, top to bottom: address, overall rating, warnings,
-// the perspectives ("Vurdering for deg"), summary,
-// PDF report, ("Spør megleren" checklist: switched off, see SHOW_CHECKLIST), every data point by category, sources.
+// Top bar: logo, search, Del / Skriv ut / Sammenlign. Left column, top to bottom: address, main score with one
+// sentence on what it is, notices (warnings, "Sjekk dette"), the perspectives ("Andre skårer"), summary,
+// ("Spør megleren" checklist: switched off, see SHOW_CHECKLIST), then closed: every data point by category and the
+// sources; last the PDF report link.
 // Renders whatever the profile contains (docs/PROFILE.md). Never a hard-coded category list, never a fake number.
 import { h, titleCase } from "./dom";
 import { navigate } from "./router";
@@ -64,19 +65,22 @@ export async function renderAddress(app: HTMLElement, id: string) {
   a.place = titleCase(a.place);
   a.municipality = titleCase(a.municipality);
   document.title = `${a.text}, ${a.place} · Omnium`;
+  // Kept short on purpose (Lukas, 2026-11-07): main score, notices, other scores, summary. Every data point and
+  // every source is still one click away, in the closed "Alle datapunkter" section at the bottom.
+  const n = profile.categories.reduce((s, c) => s + c.dataPoints.length + c.missing.length, 0);
   fill(
     summary(profile),
     audienceSection(profile) ?? "",
     summaryCard(id, () => req === current),
-    reportLink(a.id),
     (SHOW_CHECKLIST && checklistSection(profile, openDataPoint)) || "",
     h(
-      "section",
-      { class: "all-points", "aria-labelledby": "all-points-title" },
-      h("h2", { class: "section-label", id: "all-points-title" }, "Alle datapunkter"),
+      "details",
+      { class: "all-points", id: "all-points" },
+      h("summary", { class: "section-label all-points-toggle" }, `Alle datapunkter (${n})`),
       ...profile.categories.map((c) => categoryCard(c, profile)),
+      sourcesBlock(profile),
     ),
-    sourcesBlock(profile),
+    reportLink(a.id),
   );
   // Fade the column in, one block after the other (transitions.css).
   Array.from(panel.children).forEach((el, i) => {
@@ -84,48 +88,6 @@ export async function renderAddress(app: HTMLElement, id: string) {
     (el as HTMLElement).style.setProperty("--reveal-i", String(Math.min(i, 8)));
   });
   showMap(mapEl, a.lng, a.lat);
-  void areaLine(id, req);
-}
-
-// ---------- compared with the area (GET /api/omrade/:id, built by `npm run scores`) ----------
-
-type AreaStat = { name: string; medianScore: number; percentile?: number };
-
-/** Grunnkrets names often end in a serial number ("Hosle nord 02"): people don't say it. */
-const placeName = (name: string) => name.replace(/\s+\d+$/, "").trim() || name;
-
-/**
- * One quiet line under the score: "Bedre enn 38 % av adressene i Bærum (median 61) og 45 % i Hosle nord (median 60)."
- * Fetched after the page is drawn, so it never delays it. Any failure (not built yet, 404, 503): no line at all.
- */
-async function areaLine(id: string, req: number) {
-  let body: { score: number | null; kommune?: AreaStat; grunnkrets?: AreaStat };
-  try {
-    const res = await fetch(`/api/omrade/${encodeURIComponent(id)}`);
-    if (!res.ok) return;
-    body = await res.json();
-  } catch {
-    return;
-  }
-  const el = document.querySelector<HTMLElement>(".overall-area");
-  if (req !== current || !el) return;
-  const areas = [body.kommune, body.grunnkrets && { ...body.grunnkrets, name: placeName(body.grunnkrets.name) }]
-    .filter((x): x is AreaStat => !!x && Number.isFinite(x.medianScore));
-  if (!areas.length) return;
-  let text: string;
-  if (body.score != null && areas.every((x) => x.percentile != null)) {
-    // "Bedre enn 0 %" reads oddly: under 1 % it says "blant de laveste" instead.
-    const part = (x: AreaStat) =>
-      x.percentile! < 1
-        ? `blant de laveste av adressene i ${x.name} (median ${x.medianScore})`
-        : `bedre enn ${x.percentile} % av adressene i ${x.name} (median ${x.medianScore})`;
-    const joined = areas.map(part).join(" og ");
-    text = joined.charAt(0).toUpperCase() + joined.slice(1) + ".";
-  } else {
-    text = `Median i ${areas.map((x) => `${x.name}: ${x.medianScore}`).join(", i ")}.`;
-  }
-  el.textContent = text;
-  el.hidden = false;
 }
 
 // ---------- summary ----------
@@ -166,17 +128,12 @@ function ring(score?: number) {
   return el;
 }
 
-// What each word means, in one plain sentence. The word follows the number (scoreWord).
-const MEANING: Record<string, string> = {
-  "Svært god": "Få kjente farer og gode forhold rundt adressen.",
-  God: "Gode forhold, men noe er verdt å sjekke.",
-  Middels: "Noen forhold trekker tydelig ned.",
-  Svak: "Alvorlige forhold trekker skåren ned.",
-};
+/** What the main score is and why it matters, in one sentence. */
+const WHAT = "Samlet skår 0–100 for farer, grunn, miljø og nærområde, ut fra offentlige data. Gir et raskt bilde av adressen før du kjøper eller bygger.";
 
 /**
- * The big number and what it means: the word, one sentence on what the word means, one on why (what pulls it down),
- * and one quiet line on what the number is. The details are further down; this block only orients.
+ * The big number: the word, and one sentence on what the number is. When a serious warning caps it, one short line
+ * names what caps it (docs/PROFILE.md: a capped score must show its cap reason). Details are in the notices below.
  */
 function overall(p: Profile) {
   const r = p.rating;
@@ -185,14 +142,7 @@ function overall(p: Profile) {
   const word = ok ? scoreWord(r.cappedBy?.length ? Math.min(r.score!, 59) : r.score!) : "Kan ikke vurderes";
   // Short names: "Veistøy (strategisk støykart)" reads as "Veistøy" here.
   const label = (id: string) => p.categories.flatMap((c) => c.dataPoints).find((d) => d.id === id)?.label.replace(/\s*\(.*\)$/, "");
-  // Why: what caps the score, then what costs points (radon, awareness areas). Named by data point, each once.
-  const down = [...new Set([...(r.cappedBy ?? []), ...(r.penalties ?? [])].map((x) => label(x.dataPointId)).filter((x): x is string => !!x))];
-  const weakest = r.weakestCategory && ok && r.weakestCategory.score < r.score! ? r.weakestCategory : undefined;
-  const why = down.length
-    ? `Trekker ned: ${list(down.map((x, i) => (i ? x.toLowerCase() : x)))}.`
-    : weakest
-      ? `Svakest er ${weakest.name.toLowerCase()} (${weakest.score}).`
-      : null;
+  const caps = [...new Set((r.cappedBy ?? []).map((x) => label(x.dataPointId)).filter((x): x is string => !!x))];
   return h(
     "div",
     { class: "overall" },
@@ -201,10 +151,9 @@ function overall(p: Profile) {
       "div",
       { class: "overall-text" },
       h("div", { class: "overall-word" }, word),
-      ok ? h("p", { class: "overall-meaning" }, MEANING[word]) : r.reason ? h("p", { class: "overall-meaning" }, r.reason) : null,
-      ok && why ? h("p", { class: "overall-why" }, why) : null,
-      h("p", { class: "overall-area", hidden: true }), // filled by areaLine() once /api/omrade answers
-      h("p", { class: "overall-coverage" }, `Skår 0–100 fra ${r.coverage.present} av ${r.coverage.expected} offentlige datapunkter.`),
+      ok && caps.length ? h("p", { class: "overall-why" }, `Begrenset av ${list(caps.map((x) => x.toLowerCase()))}.`) : null,
+      !ok && r.reason ? h("p", { class: "overall-why" }, r.reason) : null,
+      h("p", { class: "overall-meaning" }, WHAT),
     ),
   );
 }
@@ -284,6 +233,8 @@ function checks(p: Profile) {
 }
 
 function openDataPoint(categoryId: string, dataPointId: string) {
+  const all = document.getElementById("all-points") as HTMLDetailsElement | null;
+  if (all) all.open = true;
   const card = document.getElementById(`cat-${categoryId}`) as HTMLDetailsElement | null;
   if (card) card.open = true;
   const row = document.getElementById(`dp-${dataPointId}`);

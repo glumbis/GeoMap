@@ -31,3 +31,12 @@
 .aud-absent { margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--ink-muted); }
 .aud-thin { font-size: 0.75rem; color: var(--ink-muted); font-style: italic; }
 .aud-score--thin { color: var(--ink-muted); border-bottom: 1px dashed var(--unknown); }
+
+/* Compact grid (Lukas, 2026-11-07): two columns of name + score; an opened cell takes the full width. */
+.aud-list { display: grid; grid-template-columns: 1fr 1fr; column-gap: 1.25rem; }
+.aud-row[open] { grid-column: 1 / -1; }
+.aud-head { padding: 0.5rem 0; gap: 0.5rem; }
+.aud-name { font-size: 0.9375rem; }
+.aud-score { font-size: 1.125rem; min-width: 2rem; }
+.aud-body .aud-question { margin: 0; }
+@media (max-width: 360px) { .aud-list { grid-template-columns: 1fr; } }
