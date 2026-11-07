@@ -134,9 +134,9 @@ One overall number can't say whether a place is good to live in *and* good to bu
 
 | id | name | question | weighs most |
 |---|---|---|---|
-| `living` | Bo her | Hvordan er det å bo her til daglig? | radon, quick clay, flood, noise (road + aircraft), transit, trails |
-| `building` | Bygge her | Hvor krevende er grunnen å bygge eller grave i? | quick clay, soil, flood, polluted ground |
-| `family` | Familie | Hvor godt passer stedet for barnefamilier? | school, kindergarten, violent crime, trails, noise, radon |
+| `living` | Bo her | Hvordan er det å bo her til daglig? | radon, quick clay, flood, noise (road, rail, aircraft), transit, grocery store, trails |
+| `building` | Bygge her | Hvor krevende er grunnen å bygge eller grave i? | quick clay, soil, flood, polluted ground, marine clay |
+| `family` | Familie | Hvor godt passer stedet for barnefamilier? | school, kindergarten, violent crime, trails, noise, radon, doctor |
 | `commuter` | Pendler | Hvor lett er det å reise kollektivt herfra? | departures within 500 m, nearest stop |
 
 - Each has `id`, `name`, `question` and a `rating` with the same fields as any rating (status, score or reason, coverage, `cappedBy`), plus `factors`.
