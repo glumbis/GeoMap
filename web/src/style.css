@@ -115,7 +115,7 @@ button {
 }
 /* Results for older text while the new search runs (search.ts): dimmed and not pickable, so the list doesn't blink. */
 .search-list.is-stale {
-  opacity: 0.55;
+  opacity: 0.75; /* a light dim while new results load: enough to see, too little to flash */
   pointer-events: none;
 }
 .search-hit {
