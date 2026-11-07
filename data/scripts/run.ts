@@ -5,7 +5,12 @@ import { readdirSync } from "node:fs";
 
 const dir = new URL("./", import.meta.url);
 const skip = new Set(["run.ts", "lib.ts"]);
-const all = readdirSync(dir).filter((f) => f.endsWith(".ts") && !skip.has(f)).map((f) => f.replace(/\.ts$/, ""));
+// Scripts other scripts depend on run first (e.g. most scripts clip to the `kommuner` table).
+const first = ["kommuner"];
+const all = readdirSync(dir)
+  .filter((f) => f.endsWith(".ts") && !skip.has(f))
+  .map((f) => f.replace(/\.ts$/, ""))
+  .sort((a, b) => Number(first.includes(b)) - Number(first.includes(a)) || a.localeCompare(b));
 const names = process.argv.slice(2);
 const todo = names.length ? names : all;
 
