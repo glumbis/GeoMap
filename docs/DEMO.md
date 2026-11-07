@@ -73,7 +73,7 @@ For the 2:15 part, open Naturfare on Grevlingåsen: Steinsprang shows "Ikke tilg
 ## Checklist before presenting
 
 **The day before**
-- [ ] Pull `main` on the demo laptop and run `npm run setup` (fresh database with every dataset).
+- [ ] Pull `main` on the demo laptop and run `npm run setup` (fresh database with every dataset). Tested from a fresh clone on 2026-11-07: about 4 minutes and ~500 MB of downloads, no errors. Stop `npm run dev` first.
 - [ ] Open both demo addresses and check the numbers in "The two addresses" table. Update the pitch if they changed.
 - [ ] Read the AI summary for both addresses (if it works). It must mention the quick clay for Arendalsgata and invent nothing for Grevlingåsen.
 - [ ] Take the screenshots (below) as a backup.
