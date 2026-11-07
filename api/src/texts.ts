@@ -70,6 +70,18 @@ export const OUTCOMES: Record<string, Record<string, (r: Reading) => boolean>> =
   pollutedGround: {
     "registrert i nærheten": (r) => r.value !== null,
   },
+  energyWell: {
+    "ingen brønn i nærheten": (r) => r.value === null,
+  },
+  protectedNature: {
+    "inne i verneområdet": (r) => r.value === 0,
+  },
+  culturalHeritage: {
+    "fredet": (r) => ["AUT", "VED", "FOR", "MID", "WHS"].includes(String(r.value)),
+    "listeført eller regulert til bevaring": (r) => ["KOM", "STAT", "LIST", "PBL", "REG", "FVERN"].includes(String(r.value)),
+    "uavklart vernestatus": (r) => ["UAV", "FPG", "SAM"].includes(String(r.value)),
+    "ingen registrert": (r) => r.value === null,
+  },
   transitDepartures: {
     "ingen avganger": (r) => r.value === 0,
   },

@@ -72,6 +72,17 @@ Write `{display}` with a lower-case first letter inside the sentence: "Grunnen b
 | value "middels" | Adressen ligger i et område med middels aktsomhet for radon ({src}). | 6 |
 | value "lav" | Adressen ligger i et område med lav aktsomhet for radon ({src}). | 5 |
 
+**`energyWell` (Nærmeste energibrønn)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value is a number, `{display}` has "fjell" | Nærmeste registrerte energibrønn er {distance} unna i luftlinje, og der var det {rock} m ned til fjell ({src}). | 6 |
+| value is a number, no "fjell" in `{display}` | Nærmeste registrerte energibrønn er {distance} unna i luftlinje ({src}). | 6 |
+| value is empty | Det er ikke registrert noen energibrønn innen 500 m fra adressen ({src}). | 6 |
+
+`{display}` is "59 m unna, fjell 2 m under bakken": `{distance}` is the part before " unna", `{rock}` the number before " m under bakken". Example (Grevlingåsen 17): "Nærmeste registrerte energibrønn er 59 m unna i luftlinje, og der var det 2 m ned til fjell (NGU)."
+Info only. Never say the depth holds for this plot, and never turn it into advice about heat pumps.
+
 ### Natural hazards
 
 **`quickClay` (Kvikkleire faresone)**
@@ -233,6 +244,19 @@ Never call it "skolen adressen hører til": we do not know the school catchment.
 Example (Grevlingåsen 17): "Nærmeste registrerte tursti er 32 m unna i luftlinje (Kartverket)." Not "… er Tursti, 32 m unna".
 | value is empty | Det er ingen registrert tursti eller skiløype innen 3 km i luftlinje ({src}). | 4 |
 
+**`protectedNature` (Nærmeste verneområde)** and **`recreationArea` (Nærmeste sikra friluftsområde)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| `protectedNature`, value 0 | Adressen ligger inne i {name} ({src}). | 6 |
+| `protectedNature`, value is a number | Nærmeste verneområde er {name}, {distance} unna i luftlinje ({src}). | 6 |
+| `protectedNature`, value is empty | Det er ikke noe verneområde innen 3 km i luftlinje ({src}). | 6 |
+| `recreationArea`, value 0 | Adressen ligger inne i det statlig sikra friluftsområdet {name} ({src}). | 6 |
+| `recreationArea`, value is a number | Nærmeste statlig sikra friluftsområde er {name}, {distance} unna i luftlinje ({src}). | 6 |
+| `recreationArea`, value is empty | Det er ikke noe statlig sikra friluftsområde innen 3 km i luftlinje ({src}). | 6 |
+
+`{display}` is "Kalvøya naturreservat, 662 m": `{name}` is the part before the last comma, `{distance}` the part after it. When value is 0, `{display}` is "Inne i <name>". Example (Gamle Drammensvei 207): "Nærmeste verneområde er Kalvøya naturreservat, 662 m unna i luftlinje (Miljødirektoratet)."
+
 ### Area
 
 Area numbers are for the whole municipality. Always say "i kommunen", never "i nabolaget".
@@ -245,6 +269,17 @@ Area numbers are for the whole municipality. Always say "i kommunen", never "i n
 
 - `{year}` is the year in brackets at the end of `{display}` ("728 714 (2026)" → 2026). Write `{value}` with spaces between thousands, as in `{display}`.
 - `municipality`: `{display}` is "Bærum (Akershus)". When the two names are the same, write the name once: "Adressen ligger i Oslo (Kartverket)."
+
+**`culturalHeritage` (Kulturminner innen 50 m)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value is empty | Det er ikke registrert kulturminner med vern innen 50 m fra adressen ({src}). | 6 |
+| value set, `{display}` has "på adressen" | Adressen ligger innenfor et registrert kulturminne: {name}, {status} ({src}). | 6 |
+| value set | Det er registrert et kulturminne {distance} fra adressen: {name}, {status} ({src}). | 6 |
+
+`{display}` is "Myren arbeiderboliger - Arendalsgata (vernet etter plan- og bygningsloven), 26 m unna, og 1 til": `{name}` is the text before the last bracket pair, `{status}` the text in it, `{distance}` the "26 m" part. Leave out "og 1 til". Example (Arendalsgata 22): "Det er registrert et kulturminne 26 m fra adressen: Myren arbeiderboliger - Arendalsgata, vernet etter plan- og bygningsloven (Riksantikvaren)."
+Use `{status}` exactly. Only write "fredet" when the status says so ("kommunalt listeført" is not fredet).
 
 Example (Arendalsgata 22): "Kommunen hadde 728 714 innbyggere i 2026 (SSB)." and "Medianinntekten etter skatt for husholdninger i kommunen var 635 200 kr i 2024 (SSB)."
 

@@ -106,6 +106,10 @@ export const SOURCES: Source[] = [
   { id: "udir-skoler", name: "Grunnskoler", owner: "Utdanningsdirektoratet", url: "https://kartkatalog.geonorge.no/metadata/grunnskoler/db4b872f-264d-434c-9574-57232f1e90d2", licence: "NLOD 2.0" },
   { id: "udir-barnehager", name: "Barnehager", owner: "Utdanningsdirektoratet", url: "https://kartkatalog.geonorge.no/metadata/barnehager/e229a364-0caa-4a24-8dbe-225b3d83e075", licence: "NLOD 2.0" },
   { id: "kartverket-turruter", name: "Turrutebasen", owner: "Kartverket", url: "https://kartkatalog.geonorge.no/metadata/turrutebasen/d1422d17-6d95-4ef1-96ab-8af31744dd63", licence: "CC BY 4.0" },
+  { id: "ngu-granada", name: "Grunnvannsborehull (Granada), energibrønner", owner: "NGU", url: "https://kartkatalog.geonorge.no/metadata/grunnvannsborehull/82cd33ef-52dd-4c83-b2d6-e55a0941b33b", licence: "NLOD 2.0" },
+  { id: "mdir-naturvern", name: "Naturvernområder (Naturbase)", owner: "Miljødirektoratet", url: "https://kartkatalog.geonorge.no/metadata/naturvernomraader/5857ec0a-8d2c-4cd8-baa2-0dc54ae213b4", licence: "NLOD 2.0" },
+  { id: "mdir-friluft", name: "Statlig sikra friluftslivsområder", owner: "Miljødirektoratet", url: "https://kart.miljodirektoratet.no/arcgis/rest/services/friluftsliv_statlig_sikra/MapServer/0", licence: "NLOD 2.0" },
+  { id: "ra-kulturminner", name: "Kulturminner - Lokaliteter, Enkeltminner og Sikringssoner", owner: "Riksantikvaren", url: "https://kartkatalog.geonorge.no/metadata/kulturminner-lokaliteter-enkeltminner-og-sikringssoner/c72906a0-2bc2-41d7-bea2-c92d368e3c49", licence: "NLOD 2.0" },
   { id: "ssb-kommune", name: "Statistikkbanken", owner: "SSB", url: "https://www.ssb.no/statbank", licence: "CC BY 4.0" },
 ];
 
@@ -176,6 +180,18 @@ export const DATA_POINTS: DataPoint[] = [
       }
       // The rock type itself is information, not a judgement: neutral, not scored.
       return { value: r.name, display, effect: "neutral" };
+    },
+  },
+  {
+    // data/scripts/energibronner.ts (Even): NGU Granada energy wells, depthToBedrockM, drilledM. Info only: never scored.
+    id: "energyWell", label: "Nærmeste energibrønn", category: "ground", source: "ngu-granada", importance: "normal",
+    table: "energibronner", find: { kind: "nearest", maxM: 500 },
+    read: (rows) => {
+      if (!rows.length) return { value: null, display: "Ingen registrert innen 500 m", effect: "neutral" };
+      const d = Number(rows[0].distanceM);
+      const rock = rows[0].depthToBedrockM;
+      const display = `${metres(d)} unna${rock != null ? `, fjell ${String(Math.round(Number(rock) * 10) / 10).replace(".", ",")} m under bakken` : ""}`;
+      return { value: Math.round(d), unit: "m", display, effect: "neutral" };
     },
   },
 
@@ -399,6 +415,29 @@ export const DATA_POINTS: DataPoint[] = [
     table: "turruter", find: { kind: "nearest", maxM: 3000 },
     read: nearestScore([[300, 100], [1000, 75], [2000, 40], [3000, 20]]),
   },
+  {
+    // data/scripts/verneomrader.ts (Even): Naturbase, name (official, e.g. "Kolsås-Dælivann landskapsvernområde"), protectionType.
+    // Info only: being near (or inside) protected nature is neither good nor bad for the score.
+    id: "protectedNature", label: "Nærmeste verneområde", category: "nature", source: "mdir-naturvern", importance: "normal",
+    table: "verneomrader", find: { kind: "nearest", maxM: 3000 },
+    read: (rows) => {
+      if (!rows.length) return { value: null, display: "Ingen innen 3 km", effect: "neutral" };
+      const d = Number(rows[0].distanceM);
+      if (d === 0) return { value: 0, unit: "m", display: `Inne i ${rows[0].name}`, effect: "neutral" };
+      return { value: Math.round(d), unit: "m", display: `${rows[0].name}, ${metres(d)}`, effect: "neutral" };
+    },
+  },
+  {
+    // data/scripts/friluftsomrader.ts (Even): state-secured outdoor recreation areas (beaches, parks, forest). Info only.
+    id: "recreationArea", label: "Nærmeste sikra friluftsområde", category: "nature", source: "mdir-friluft", importance: "normal",
+    table: "friluftsomrader", find: { kind: "nearest", maxM: 3000 },
+    read: (rows) => {
+      if (!rows.length) return { value: null, display: "Ingen innen 3 km", effect: "neutral" };
+      const d = Number(rows[0].distanceM);
+      if (d === 0) return { value: 0, unit: "m", display: `Inne i ${rows[0].name}`, effect: "neutral" };
+      return { value: Math.round(d), unit: "m", display: `${rows[0].name}, ${metres(d)}`, effect: "neutral" };
+    },
+  },
 
   // Area. kommuner: data/scripts/kommuner.ts. ssb_kommuner: data/scripts/ssb.ts (Even), one row per municipality with its geom.
   // Stats are information, not judgement: neutral, not scored.
@@ -422,5 +461,19 @@ export const DATA_POINTS: DataPoint[] = [
       rows[0]?.incomeMedianAfterTax != null
         ? { value: Number(rows[0].incomeMedianAfterTax), display: `${Number(rows[0].incomeMedianAfterTax).toLocaleString("nb-NO")} kr (${rows[0].incomeYear})`, unit: "kr", effect: "neutral" }
         : null,
+  },
+  {
+    // data/scripts/kulturminner.ts (Even): Riksantikvaren sites, status (e.g. "vedtaksfredet"), statusCode (AUT, KOM, ...), fredet.
+    // value = statusCode of the nearest site within 50 m (null = none). Info only: never scored.
+    id: "culturalHeritage", label: "Kulturminner innen 50 m", category: "area", source: "ra-kulturminner", importance: "normal",
+    table: "kulturminner", find: { kind: "around", radiusM: 50 },
+    read: (rows) => {
+      if (!rows.length) return { value: null, display: "Ingen registrert innen 50 m", effect: "neutral" };
+      const r = rows[0];
+      const d = Number(r.distanceM);
+      const where = d === 0 ? "på adressen" : `${metres(d)} unna`;
+      const more = rows.length > 1 ? `, og ${rows.length - 1} til` : "";
+      return { value: r.statusCode, display: `${r.name} (${r.status ?? "registrert"}), ${where}${more}`, effect: "neutral" };
+    },
   },
 ];

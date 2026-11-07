@@ -309,6 +309,8 @@ NGU datasets: https://www.ngu.no/geologiske-kart/datasett (download per county, 
   - Category: ground
   - Priority: low
   - Notes: nearest well gives a rough bedrock depth.
+  - **Loaded** (2026-11-07) as table `energibronner` by `data/scripts/energibronner.ts`, API `/api/energibronner`: 22 866 energy wells (22 105 with depth to bedrock) from NGU's OGC API Features (`https://geo.ngu.no/api/features/grunnvannborehull/collections/energibronn/items`, GeoJSON, EPSG:4326, keyless, paged 10 000 at a time). Data point `energyWell` (nearest within 500 m, info only, not scored).
+  - Watch out: depth to bedrock is what the driller wrote down, for one well. It can change a lot over short distances.
 
 - **Name:** NADAG (Nasjonal database for grunnundersøkelser)
   - Owner: NGU
@@ -504,6 +506,20 @@ NGU datasets: https://www.ngu.no/geologiske-kart/datasett (download per county, 
   - Category: nature
   - Priority: medium
   - Notes: nice "near protected nature" info; also limits building.
+  - **Loaded** (2026-11-07) as table `verneomrader` by `data/scripts/verneomrader.ts`, API `/api/verneomrader`: 326 areas (223 naturreservat, 54 naturminne, 12 landskapsvernområde, 1 nasjonalpark, ...) from the ArcGIS service `https://kart.miljodirektoratet.no/arcgis/rest/services/vern/MapServer/0` (keyless). Data point `protectedNature` (nearest within 3 km, info only, not scored).
+
+- **Name:** Statlig sikra friluftslivsområder
+  - Owner: Miljødirektoratet
+  - URL: https://kart.miljodirektoratet.no/arcgis/rest/services/friluftsliv_statlig_sikra/MapServer/0
+  - What: outdoor areas the state has bought or secured so everyone can use them: beaches, swimming spots, islands, parks, forest
+  - Format/access: ArcGIS REST (GeoJSON), WMS
+  - Coverage: Norway
+  - Licence/cost: NLOD 2.0 (credit Miljødirektoratet)
+  - CRS: any (asked for EPSG:4326)
+  - Category: nature
+  - Priority: medium
+  - **Loaded** (2026-11-07) as table `friluftsomrader` by `data/scripts/friluftsomrader.ts`, API `/api/friluftsomrader`: 182 named areas. Data point `recreationArea` (nearest within 3 km, info only, not scored).
+  - Watch out: only state-secured areas. Most parks and forests that are open to everyone are not in it.
 
 ### Area (stats, heritage, plans)
 - **Name:** Befolkning på grunnkretsnivå
@@ -560,6 +576,8 @@ NGU datasets: https://www.ngu.no/geologiske-kart/datasett (download per county, 
   - Category: area
   - Priority: medium
   - Notes: protected buildings/zones limit what you can build. Also "Kulturminner - Freda bygninger" and "SEFRAK-bygninger".
+  - **Loaded** (2026-11-07) as table `kulturminner` by `data/scripts/kulturminner.ts`, API `/api/kulturminner`: 17 993 sites (layer `lokalitet`) from the Oslo and Akershus FGDB zips (`https://nedlasting.geonorge.no/geonorge/Kulturminner/Kulturminner/FGDB/Kulturminner_<03_Oslo|32_Akershus>_25833_Kulturminner_FGDB.zip`, read from the zip, EPSG:25833 → 4326). Kept only sites with a protection status today (dropped: removed, protection lifted, no protection). Codes in `statusCode`, bokmål in `status` ([code list](https://register.geonorge.no/sosi-kodelister/kulturminner/vernetype)). Data point `culturalHeritage` (sites within 50 m, info only, not scored).
+  - Watch out: in Oslo, "kommunalt listeført" (KOM) is Byantikvaren's gule liste. Buildings in it are worth preserving but not fredet.
 
 ### Checked, not usable now
 - **Reguleringsplaner** (zoning plans, DiBK): Norge digitalt-lisens, not open data. WMS picture only, cannot be stored or scored. https://kartkatalog.geonorge.no/metadata/reguleringsplaner/dac27348-5c2e-4a6a-9497-c4c792108cae

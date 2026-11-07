@@ -30,6 +30,11 @@ How to use this file:
 - **Når middels aktsomhet:** Noen hus i området kan ha for mye radon. Bare en måling i huset kan si hvor mye det faktisk er.
 - **Når lav aktsomhet:** Det er mindre sjanse for høye radonverdier, men enkelthus kan likevel ha mye radon.
 
+### `energyWell` — Nærmeste energibrønn
+**Forklaring:** En energibrønn er et borehull i fjellet som henter varme til en bergvarmepumpe. Avstanden er i luftlinje til nærmeste brønn i NGUs brønndatabase, og dybden til fjell er det brønnboreren målte der.
+- **Når ingen brønn i nærheten:** Det er ikke registrert noen energibrønn innen 500 meter. Det betyr ikke at det ikke går an å bore her, for ikke alle brønner er registrert.
+- Dybden til fjell kan endre seg mye over korte avstander, så den kan være en annen akkurat på denne tomten.
+
 ## Naturfare
 
 ### `quickClay` — Kvikkleire faresone
@@ -111,6 +116,13 @@ How to use this file:
 ### `trails` — Nærmeste tursti eller skiløype
 **Forklaring:** Avstanden er målt i luftlinje til nærmeste registrerte tursti, sykkelrute eller skiløype. Ikke alle stier og løyper er registrert, og skiløyper er bare preparert når det er snø.
 
+### `protectedNature` — Nærmeste verneområde
+**Forklaring:** Verneområder er natur som er vernet etter naturmangfoldloven, for eksempel naturreservater, landskapsvernområder og nasjonalparker. Avstanden er i luftlinje til nærmeste kant av området.
+- **Når inne i verneområdet:** Adressen ligger inne i et verneområde. Der gjelder en egen verneforskrift, som kan begrense bygging og andre tiltak.
+
+### `recreationArea` — Nærmeste sikra friluftsområde
+**Forklaring:** Statlig sikra friluftsområder er strender, badeplasser, øyer, parker og skog som staten har sikret slik at alle kan bruke dem. Avstanden er i luftlinje, og mange andre turområder og parker er ikke med i denne listen.
+
 ## Område
 
 ### `municipality` — Kommune
@@ -121,6 +133,13 @@ How to use this file:
 
 ### `medianIncome` — Medianinntekt etter skatt (husholdning)
 **Forklaring:** Halvparten av husholdningene i kommunen har mer enn dette etter skatt, og halvparten har mindre. Inntektene kan variere mye mellom ulike deler av kommunen, særlig i Oslo.
+
+### `culturalHeritage` — Kulturminner innen 50 m
+**Forklaring:** Kulturminner er spor etter menneskers liv og virke, for eksempel bygninger, gravhauger og fornminner, registrert av Riksantikvaren. Her vises kulturminner med vern innen 50 meter i luftlinje, det nærmeste først.
+- **Når fredet:** Et fredet kulturminne er vernet etter kulturminneloven og kan ikke endres eller skades uten tillatelse. Automatisk fredete kulturminner har i tillegg en sikringssone på minst 5 meter rundt seg.
+- **Når listeført eller regulert til bevaring:** Kulturminnet er ikke fredet, men kommunen eller staten mener det bør tas vare på. Det kan gi krav ved riving, ombygging og endring av fasader, og kommunen avgjør det i hver byggesak.
+- **Når uavklart vernestatus:** Kulturminnet er registrert, men det er ikke avgjort hvilket vern det har. Kulturminnemyndighetene kan avklare det før man bygger eller graver.
+- **Når ingen registrert:** Det er ikke registrert kulturminner med vern innen 50 meter. Det kan likevel finnes kulturminner som ikke er registrert, særlig under bakken.
 
 ---
 
