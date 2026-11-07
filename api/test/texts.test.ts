@@ -15,7 +15,6 @@ test("every 'Når ...' text in docs/TEXTS.md has a rule, and every rule has a te
 
 test("every data point has a main text", () => {
   for (const dp of DATA_POINTS) {
-    if (dp.id === "stormSurge") continue; // no section in docs/TEXTS.md yet (Even)
     assert.ok(INFO_TEXTS.get(dp.id)?.main, `${dp.id} has no **Forklaring:** in docs/TEXTS.md`);
   }
 });

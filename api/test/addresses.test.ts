@@ -12,6 +12,7 @@ interface Profile {
   rating: { status: string; score?: number; cappedBy?: { dataPointId: string }[] };
   warnings: { dataPointId: string; severity: string }[];
   categories: { dataPoints: DataPoint[]; missing: { id: string; importance: string }[] }[];
+  perspectives: { id: string; rating: { status: string; score?: number; cappedBy?: unknown[]; factors: { dataPointId: string }[] } }[];
 }
 interface Summary { facts: { text: string; rank: number; severity?: string; dataPointId?: string }[] }
 
@@ -98,6 +99,26 @@ describe("scores", () => {
       const capped = (profiles[k].rating.cappedBy ?? []).map((c) => c.dataPointId).sort();
       if (capped.length) assert.deepEqual(capped, serious, k);
     }
+  });
+});
+
+describe("perspectives", () => {
+  const persp = (k: Key, id: string) => profiles[k].perspectives.find((p) => p.id === id)!.rating;
+
+  test("every test address gets all four perspective scores", () => {
+    for (const k of Object.keys(ADDRESSES) as Key[]) {
+      assert.deepEqual(profiles[k].perspectives.map((p) => p.id), ["living", "building", "family", "commuter"], k);
+      for (const p of profiles[k].perspectives) assert.equal(p.rating.status, "ok", `${k} ${p.id}`);
+    }
+  });
+
+  test("#1 (quick clay) is the worst place to build, and quick clay is its biggest factor", () => {
+    for (const k of ["flood", "noisyRoad", "quiet", "ski"] as const) assert.ok(persp("quickClay", "building").score! + 20 <= persp(k, "building").score!, k);
+    assert.equal(persp("quickClay", "building").factors[0].dataPointId, "quickClay");
+  });
+
+  test("Pendler follows transit only: no hazard caps it", () => {
+    for (const k of Object.keys(ADDRESSES) as Key[]) assert.equal(persp(k, "commuter").cappedBy, undefined, k);
   });
 });
 

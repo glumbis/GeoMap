@@ -57,26 +57,35 @@ test("no warnings: overall is the plain average", () => {
 
 test("one medium warning caps the overall at 75", () => {
   const o = overall([warn("radon", "medium", 30), good("flood", "critical")]);
-  assert.equal(o.score, 75);
+  assert.ok(o.score! <= 75);
   assert.deepEqual(o.cappedBy?.map((c) => c.dataPointId), ["radon"]);
 });
 
 test("one high warning caps the overall at 40, and the category at 30", () => {
   const o = overall([warn("quickClay", "high"), good("flood", "critical")]);
-  assert.equal(o.score, 40);
+  assert.ok(o.score! <= 40);
   assert.equal(rateCategory([warn("quickClay", "high", 100)], []).score, 30);
+});
+
+test("soft caps: the underlying score is scaled into the cap, so capped addresses don't tie", () => {
+  // Category: underlying 100 -> 60 (the cap), underlying 50 -> 30.
+  assert.equal(rateCategory([warn("radon", "medium", 100)], []).score, 60);
+  assert.equal(rateCategory([warn("radon", "medium", 100), good("x"), { ...good("y"), reading: { value: 1, display: "", effect: "bad", score: 0 } }], []).score, 40);
+  const better = overall([warn("radon", "medium", 30), good("flood", "critical")]);
+  const worse = overall([warn("radon", "medium", 30), { ...good("flood", "critical"), reading: { value: 1, display: "", effect: "bad", score: 40 } }]);
+  assert.ok(better.score! > worse.score!, `${better.score} should beat ${worse.score}`);
 });
 
 test("caps stack: each further serious warning lowers the cap by 10, worst listed first", () => {
   const o = overall([warn("radon", "medium", 30), warn("quickClay", "high"), warn("noise", "medium", 20)]);
-  assert.equal(o.score, 20); // 40 - 10 - 10
+  assert.ok(o.score! <= 20); // cap 40 - 10 - 10
   assert.deepEqual(o.cappedBy?.map((c) => c.dataPointId), ["quickClay", "radon", "noise"]);
   assert.ok(o.cappedBy!.every((c) => c.cap === 20));
 });
 
 test("stacked caps never go below 10", () => {
   const many = ["a", "b", "c", "d", "e", "f"].map((id) => warn(id, "high"));
-  assert.equal(overall(many).score, 10);
+  assert.ok(overall(many).score! <= 10);
 });
 
 test("low warnings never cap the overall", () => {

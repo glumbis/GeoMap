@@ -73,10 +73,9 @@ export interface DataPoint {
 }
 
 /** Hazard map with a coverage table: no zone outside the mapped area is unknown, not good. Not scored. */
-const notMapped = (what: string): Reading => ({
+const NOT_MAPPED: Reading = {
   value: "ikkeKartlagt", display: "Ikke kartlagt her", effect: "neutral",
-  explanation: `NVE har ikke kartlagt ${what} der adressen ligger. At det ikke finnes en faresone her, betyr derfor ikke at det er trygt.`,
-});
+};
 
 export const CATEGORIES: Category[] = [
   { id: "ground", name: "Grunn og geologi", weight: 20, required: true },
@@ -187,7 +186,7 @@ export const DATA_POINTS: DataPoint[] = [
     coverage: "kvikkleire_kartlagt", // data/scripts/nve_kartlagt.ts
     read: (rows, _address, mapped) => {
       if (!rows.length) {
-        return mapped ? { value: null, display: "Ikke i faresone (kartlagt område)", effect: "good" } : notMapped("kvikkleire");
+        return mapped ? { value: null, display: "Ikke i faresone (kartlagt område)", effect: "good" } : NOT_MAPPED;
       }
       const order = ["høy", "middels", "lav"];
       const graded = rows.filter((r) => order.includes(String(r.faregrad).toLowerCase()));
@@ -214,7 +213,7 @@ export const DATA_POINTS: DataPoint[] = [
     coverage: "flom_kartlagt", // data/scripts/nve_kartlagt.ts
     read: (rows, _address, mapped) => {
       if (!rows.length) {
-        return mapped ? { value: false, display: "Ikke i flomsone (kartlagt område)", effect: "good" } : notMapped("flomfare");
+        return mapped ? { value: false, display: "Ikke i flomsone (kartlagt område)", effect: "good" } : NOT_MAPPED;
       }
       const years = Math.min(...rows.map((r) => Number(r.gjentaksintervall) || 200));
       // lavpunkt: below the flood level but not directly connected to the river
@@ -287,14 +286,12 @@ export const DATA_POINTS: DataPoint[] = [
         return {
           value: years, unit: "år", display: `I ${years}-årsstormflosone i dag (${cm(worst)})`, effect: "bad", score: high ? 0 : 20,
           warning: { severity: high ? "high" : "medium", text: `Ligger i ${years}-årsstormflosone` },
-          explanation: "Ved stormflo stiger havet over vanlig høyvann. Området kan bli oversvømt fra sjøen.",
         };
       }
       // Only flooded with the sea level expected in 2100.
       return {
         value: 2100, display: `I 200-årsstormflosone i år 2100 (${cm(rows[0])})`, effect: "bad", score: 60,
         warning: { severity: "low", text: "Stormflo i år 2100 med havnivåstigning" },
-        explanation: "Ikke utsatt i dag, men med havnivåstigningen som er ventet innen 2100 kan en 200-årsstormflo nå hit.",
       };
     },
   },

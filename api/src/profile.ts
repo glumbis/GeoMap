@@ -3,7 +3,8 @@ import { lookupAddress, type Address } from "./address.ts";
 import { CATEGORIES, DATA_POINTS, SOURCES, type DataPoint, type Find, type Reading, type Row, type Severity } from "./datapoints.ts";
 import { query } from "./db.ts";
 import { infoText } from "./texts.ts";
-import { rateCategory, rateOverall, type MissingPoint, type Rating, type Scored } from "./rating.ts";
+import { PERSPECTIVES } from "./perspectives.ts";
+import { rateCategory, rateOverall, ratePerspective, type Factor, type MissingPoint, type Rating, type Scored } from "./rating.ts";
 
 export const PROFILE_VERSION = 1;
 
@@ -38,6 +39,8 @@ export interface Profile {
     dataPoints: PresentDataPoint[];
     missing: MissingDataPoint[];
   }[];
+  /** Scores for one kind of use (docs/PROFILE.md -> "Perspectives"). */
+  perspectives: { id: string; name: string; question: string; rating: Rating & { factors: Factor[] } }[];
   sources: typeof SOURCES;
 }
 
@@ -116,6 +119,16 @@ export async function buildProfile(id: string): Promise<Profile> {
     .flatMap((c) => c.dataPoints.filter((p) => p.warning).map((p) => ({ ...p.warning!, dataPointId: p.id, categoryId: c.category.id })))
     .sort((a, b) => order.indexOf(a.severity) - order.indexOf(b.severity));
 
+  const perspectives = PERSPECTIVES.map((p) => {
+    const mine = results.filter((r) => p.weights[r.dp.id]);
+    const points = mine.filter((r) => r.reading).map((r) => ({
+      point: { id: r.dp.id, label: r.dp.label, importance: r.dp.importance, reading: r.reading! },
+      weight: p.weights[r.dp.id],
+    }));
+    const missing = mine.filter((r) => !r.reading).map((r) => ({ id: r.dp.id, label: r.dp.label, importance: r.dp.importance, required: p.required.includes(r.dp.id) }));
+    return { id: p.id, name: p.name, question: p.question, rating: ratePerspective(points, missing) };
+  });
+
   const usedSources = new Set(["geonorge-adresser", ...DATA_POINTS.map((d) => d.source)]);
 
   return {
@@ -132,6 +145,7 @@ export async function buildProfile(id: string): Promise<Profile> {
       dataPoints: c.dataPoints,
       missing: c.missing,
     })),
+    perspectives,
     sources: SOURCES.filter((s) => usedSources.has(s.id)),
   };
 }

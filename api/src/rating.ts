@@ -42,7 +42,8 @@ export interface MissingPoint {
 }
 
 // docs/PROFILE.md -> "Severity caps". Category: high caps at 30, medium at 60. Low: no cap.
-// Overall: the worst warning sets the cap (high 40, medium 75); each further high/medium warning lowers it by 10.
+// Overall and perspectives: the worst warning sets the cap (high 40, medium 75); each further high/medium warning lowers it by 10.
+// Caps are soft: see applyCaps.
 const CATEGORY_CAP: Partial<Record<Severity, number>> = { high: 30, medium: 60 };
 const OVERALL_CAP: Partial<Record<Severity, number>> = { high: 40, medium: 75 };
 const OVERALL_STEP = 10;
@@ -72,10 +73,20 @@ function overallCaps(points: Scored[]): Cap[] {
   return found.map((c) => ({ ...c, cap }));
 }
 
+/**
+ * Soft cap: the lowest cap becomes the ceiling, and the underlying score is scaled into it (score × cap / 100).
+ * A serious warning still decides the range, but two capped addresses of different quality no longer tie at the cap.
+ */
 function applyCaps(score: number, found: Cap[]): Pick<Rating, "score" | "cappedBy"> {
-  const binding = found.filter((c) => c.cap < score);
-  if (!binding.length) return { score: Math.round(score) };
-  return { score: Math.round(Math.min(score, ...binding.map((c) => c.cap))), cappedBy: binding };
+  if (!found.length) return { score: Math.round(score) };
+  const cap = Math.min(...found.map((c) => c.cap));
+  return { score: Math.round((score * cap) / 100), cappedBy: found };
+}
+
+/** Plain average of the scored points, before caps. undefined when none has a score. */
+function average(present: Scored[]): number | undefined {
+  const scores = present.map((p) => pointScore(p.reading)).filter((s): s is number => s != null);
+  return scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : undefined;
 }
 
 export function rateCategory(present: Scored[], missing: MissingPoint[]): Rating {
@@ -89,12 +100,44 @@ export function rateCategory(present: Scored[], missing: MissingPoint[]): Rating
   if (present.length * 2 < coverage.expected) {
     return { status: "insufficientData", reason: `For få datapunkter (${present.length} av ${coverage.expected}).`, coverage };
   }
-  const scores = present.map((p) => pointScore(p.reading)).filter((s): s is number => s != null);
-  if (!scores.length) {
+  const avg = average(present);
+  if (avg == null) {
     return { status: "insufficientData", reason: "Datapunktene her er bare informasjon og gir ingen karakter ennå.", coverage };
   }
-  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
   return { status: "ok", ...applyCaps(avg, caps(present, CATEGORY_CAP)), coverage };
+}
+
+/** One data point's part in a perspective score, biggest impact on the score first. */
+export interface Factor {
+  dataPointId: string;
+  label: string;
+  weight: number;
+  score: number;
+}
+
+/**
+ * Perspective score: weighted average of the listed data points that have a score, then soft caps from their
+ * high/medium warnings (same caps as the overall). Missing required points -> insufficient data.
+ */
+export function ratePerspective(
+  points: { point: Scored; weight: number }[],
+  missing: (MissingPoint & { required: boolean })[],
+): Rating & { factors: Factor[] } {
+  const coverage = { present: points.length, expected: points.length + missing.length, criticalMissing: missing.filter((m) => m.required).length };
+  const factors = points
+    .flatMap(({ point, weight }) => {
+      const score = pointScore(point.reading);
+      return score == null ? [] : [{ dataPointId: point.id, label: point.label, weight, score }];
+    })
+    .sort((a, b) => (100 - b.score) * b.weight - (100 - a.score) * a.weight);
+  const requiredMissing = missing.filter((m) => m.required);
+  if (requiredMissing.length) {
+    return { status: "insufficientData", reason: `Mangler viktige data: ${list(requiredMissing.map((m) => m.label))}.`, coverage, factors };
+  }
+  if (!factors.length) return { status: "unavailable", reason: "Ingen data som gir karakter her.", coverage, factors };
+  const total = factors.reduce((s, f) => s + f.weight, 0);
+  const avg = factors.reduce((s, f) => s + f.score * f.weight, 0) / total;
+  return { status: "ok", ...applyCaps(avg, overallCaps(points.map((p) => p.point))), coverage, factors };
 }
 
 export function rateOverall(categories: { category: Category; rating: Rating; present: Scored[] }[]): Rating {
@@ -136,7 +179,8 @@ export function rateOverall(categories: { category: Category; rating: Rating; pr
   }
 
   // Weighted average of rated categories only (weights rescaled), then capped by serious warnings anywhere.
-  const avg = ok.reduce((s, c) => s + c.rating.score! * c.category.weight, 0) / okWeight;
+  // Uses each category's score before its own cap, so one warning is not scaled down twice.
+  const avg = ok.reduce((s, c) => s + average(c.present)! * c.category.weight, 0) / okWeight;
   const allPresent = categories.flatMap((c) => c.present);
   return { status: "ok", ...applyCaps(avg, overallCaps(allPresent)), coverage, weakestCategory };
 }

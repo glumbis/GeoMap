@@ -58,12 +58,14 @@ We build in three phases. Don't polish phase 1 work before phase 1 works end to 
 ## Status (2026-11-07, updated by Lukas)
 
 Phase 1 is done. Phase 2 is well along: 19 datasets loaded, and all 5 test addresses have full hazard data, a real score, an AI summary and info texts.
-Scores now: #4 Grevlingåsen 75, #5 Holmenkollveien 75, #2 Rælingen 65, #3 Sandvika 65, #1 Arendalsgata 20. Backup Strandvegen 81: 40 (20-year flood zone is now high, see TEK17 note in `api/src/datapoints.ts`).
+Scores now (soft caps, 2026-11-07): #4 Grevlingåsen 67, #5 Holmenkollveien 63, #2 Rælingen 49, #3 Sandvika 49, #1 Arendalsgata 13. Backup Strandvegen 81: 31. Perspective scores per address: `docs/TEST_ADDRESSES.md`.
 
 **Review 2026-11-07: done by Lukas**
 - Scores no longer tie: stacked caps (`docs/PROFILE.md` → "Severity caps"). PROFILE.md now says what the overall number means, and that a capped score must not be labelled "God".
 - "Not in a zone" only counts as good where NVE has mapped the area (`nve_kartlagt` ingest, `coverage` on a data point). Elsewhere quick clay and flood show "Ikke kartlagt her", neutral, not scored. #3, #4 and #5 are outside NVE's quick-clay and flood mapping.
 - Info texts from `docs/TEXTS.md` are in the profile (`explanation`).
+- Soft caps: a capped score is the everyday score scaled into the cap, not cut at it, so capped addresses no longer bunch at 65/75 (`docs/PROFILE.md` → "Severity caps").
+- **Perspectives:** every profile now has `perspectives`: Bo her, Bygge her, Familie, Pendler, each its own score with `factors` (what pulls it down). `docs/PROFILE.md` → "Perspectives", `api/src/perspectives.ts`.
 - Tests: `npm test` (rating rules, also in CI on every push) and `npm run test:addresses` (5 test addresses: hazards, scores, caps, summary facts; needs `npm run dev`).
 
 What the demo still needs, most important first:
@@ -74,6 +76,8 @@ What the demo still needs, most important first:
 5. ~~**Erik:** show "Ikke kartlagt her" (value `ikkeKartlagt`, effect neutral) as neutral grey, never green.~~ Done.
 6. ~~**Sverre + Even:** check radon and soil type for the 5 test addresses against NGU's own map (radon: geo.ngu.no aktsomhetskart, soil: løsmassekart) and write the result in `docs/TEST_ADDRESSES.md`. The test notes say this is not checked yet.~~ Done 2026-11-07: all 5 match NGU (`docs/TEST_ADDRESSES.md`). Sverre added an independent radon check (NGU's v2 map service), bedrock, and distance to the nearest polygon edge: #1's bedrock is only 7 m from an edge, so don't use it in the demo.
 7. ~~**Even:** update `docs/DEMO.md` and `docs/TEST_ADDRESSES.md`: scores above, Strandvegen 81 now 40, the bus caveat can go (Jegeråsen, 212 m, 161 weekday departures), and #3–#5 show "Ikke kartlagt her" for quick clay and flood. (FACTS.md rules for `ikkeKartlagt` are done, and the code matches them.)~~ Done 2026-11-07.
+8. **Erik (new, big for the demo):** show the four perspective scores (`profile.perspectives`) on the address page. Today the page has one number; make the perspectives the main way to read an address: a row of four score cards under the address (name, score or reason, the `question` as subtitle), and opening one shows its top 3 `factors` as "Hva trekker ned" with each data point's display and score. Overall stays, smaller, with its cap reason. Same rule as overall: when `cappedBy` is present, show the cap reason, never "God". Render the list as given; never hard-code the four. Spec: `docs/PROFILE.md` → "Perspectives".
+9. **Even:** scores changed again (soft caps + perspectives): update the numbers in `docs/DEMO.md`, and consider pitching with the perspectives ("bra å bo, krevende å bygge").
 
 After these, stop adding data and move to phase 3 (demo).
 

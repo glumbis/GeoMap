@@ -29,6 +29,7 @@ Every address has one id, used in the URL (`/a/<id>` in the web app, `/api/addre
 - **Version:** a version number for this standard, raised on breaking changes.
 - **Address:** the id used in the URL, the address text, postcode, place, municipality and its number, and the coordinates (lng, lat in EPSG:4326).
 - **Overall rating:** see Rating below.
+- **Perspectives:** the same data scored for one kind of use (living, building, family, commuting). See Perspectives below.
 - **Warnings:** the most serious findings, most important first. Each has a severity (high, medium, low), a short text, and points to the data point it comes from.
 - **Categories:** a list of any length, shown in the order given.
 - **Sources:** one entry per source used: name, owner, link, licence.
@@ -44,7 +45,7 @@ Every address has one id, used in the URL (`/a/<id>` in the web app, `/api/addre
 - **Coverage:** how many data points we have, how many we expected, and how many critical ones are missing. The UI can show this as "8 of 10 data points".
 
 **What the overall score means.** It is a summary of what the public data we have says about the address. It is not a safety rating, a price signal or a promise that a risk is absent.
-- The number comes from two steps. First, a weighted average of the rated categories gives everyday quality. Then serious warnings cap it, so one serious hazard can never be averaged away.
+- The number comes from two steps. First, a weighted average of the rated categories gives everyday quality. Then serious warnings cap it, so one serious hazard can never be averaged away. Caps are soft: the score is the everyday quality scaled into the cap (`score × cap / 100`), so the cap is the best a capped address can get, and two capped addresses of different quality still get different numbers.
 - Severity says how serious a finding is. The cap is the scoring penalty that follows from it. A warning's severity never changes; only the cap rules below turn it into points.
 - When `cappedBy` is present, the hazard decides the number, not the everyday quality. The UI must then show the cap reason next to the number. It must not show a word like "God" (good) for a capped score.
 - A hazard map only counts as good where the source has mapped the area (see "Mapped area" under Data points). "Not mapped" is shown, but not scored.
@@ -119,10 +120,27 @@ The code is the source of truth (`api/src/profile.ts`, `api/src/rating.ts`, `api
 - `cappedBy`: warnings that pulled the score down. `weakestCategory`: overall only, whenever at least one category is rated.
 - A data point's `source` is a source `id` from `sources`. `unit`, `score`, `warning` and `explanation` are optional.
 - `missing[].reason`: `noCoverage` | `sourceUnavailable` | `notLoaded`.
-- Severity caps, category: a `high` warning caps its category at 30, `medium` at 60; `low` gives no cap.
-- Severity caps, overall: the worst warning sets the cap (`high` 40, `medium` 75). Every further `high` or `medium` warning lowers it by 10, down to 10. `low` gives no cap. When the cap binds, `cappedBy` lists every `high` and `medium` warning, each with the final cap.
+- Severity caps, category: a `high` warning caps its category at 30, `medium` at 60; `low` gives no cap. All caps are soft: score = uncapped score × cap / 100. The overall averages the categories' uncapped scores, so a warning is not scaled down twice.
+- Severity caps, overall: the worst warning sets the cap (`high` 40, `medium` 75). Every further `high` or `medium` warning lowers it by 10, down to 10. `low` gives no cap. `cappedBy` lists every `high` and `medium` warning, each with the final cap, whenever there is one.
   Why: one medium cap of 60 made most addresses score exactly 60 (high radon is common around Oslo), so a quiet suburb tied with a flood zone next to a loud road.
 - Data point without `score`: `good` counts 100, `bad` counts 0, `neutral` is not scored.
+
+## Perspectives
+
+One overall number can't say whether a place is good to live in *and* good to build on. `perspectives` scores the same data points for one kind of use each. Defined in `api/src/perspectives.ts` (one entry per perspective: weight per data point, and which data points are required).
+
+| id | name | question | weighs most |
+|---|---|---|---|
+| `living` | Bo her | Hvordan er det å bo her til daglig? | radon, quick clay, flood, noise, transit, trails |
+| `building` | Bygge her | Hvor krevende er grunnen å bygge eller grave i? | quick clay, soil, flood, polluted ground |
+| `family` | Familie | Hvor godt passer stedet for barnefamilier? | school, kindergarten, trails, noise, radon |
+| `commuter` | Pendler | Hvor lett er det å reise kollektivt herfra? | departures within 500 m, nearest stop |
+
+- Each has `id`, `name`, `question` and a `rating` with the same fields as any rating (status, score or reason, coverage, `cappedBy`), plus `factors`.
+- Score: weighted average of the listed data points that have a score, then soft caps from *their own* high/medium warnings (same cap numbers as the overall). A data point not listed doesn't count, so a quick clay zone caps "Bygge her" but not "Pendler".
+- `factors`: every scored data point in the perspective, `{ dataPointId, label, weight, score }`, biggest drag on the score first (`(100 − score) × weight`). The UI can show the top few as "why".
+- A required data point missing gives `insufficientData` with a reason, never a number.
+- Treat the list like categories: render whatever comes, in the order given.
 
 ## Rules for anyone reading the profile (web app, agents, scripts, AI summary)
 

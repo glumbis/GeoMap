@@ -29,11 +29,18 @@ export const OUTCOMES: Record<string, Record<string, (r: Reading) => boolean>> =
   quickClay: {
     "i faresone": (r) => ["høy", "middels", "lav"].includes(String(r.value)),
     "i kartlagt sone uten faregrad": (r) => r.value === "ingen",
-    "ikke i kartlagt faresone": (r) => r.value === null, // inside NVE's mapped area; outside it is "ikkeKartlagt"
+    "ikke i faresone (kartlagt område)": (r) => r.value === null,
+    "ikke kartlagt": (r) => r.value === "ikkeKartlagt",
   },
   flood200: {
     "i flomsone": (r) => typeof r.value === "number",
-    "ikke i kartlagt flomsone": (r) => r.value === false, // inside NVE's mapped area
+    "ikke i flomsone (kartlagt område)": (r) => r.value === false,
+    "ikke kartlagt": (r) => r.value === "ikkeKartlagt",
+  },
+  stormSurge: {
+    "i stormflosone i dag": (r) => typeof r.value === "number" && r.value !== 2100,
+    "bare i år 2100": (r) => r.value === 2100,
+    "ikke i stormflosone": (r) => r.value === false,
   },
   rockfall: {
     "i aktsomhetsområde": (r) => r.value === true,
