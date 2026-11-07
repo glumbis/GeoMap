@@ -143,6 +143,14 @@ export const SOURCES: Source[] = [
   { id: "ssb-krim", name: "Anmeldte lovbrudd etter gjerningssted (SSB 08487; Oslo per bydel: Oslo kommune KRI002)", owner: "SSB / Oslo kommune", url: "https://www.ssb.no/statbank/table/08487", licence: "CC BY 4.0 / NLOD" },
   { id: "met-vind", name: "Vindobservasjoner fra værstasjoner (vindretning og middelvind)", owner: "Meteorologisk institutt (MET Norway)", url: "https://thredds.met.no/thredds/catalog/met.no/observations/surface/catalog.html", licence: "CC BY 4.0" },
   { id: "ssb-kommune", name: "Statistikkbanken", owner: "SSB", url: "https://www.ssb.no/statbank", licence: "CC BY 4.0" },
+  { id: "nve-nettanlegg", name: "Nettanlegg utbygd (transmisjons- og regionalnett)", owner: "NVE", url: "https://kart.nve.no/enterprise/rest/services/Nettanlegg5/MapServer", licence: "NLOD 2.0" },
+  { id: "ssb-boligpriser", name: "Selveierboliger, kvadratmeterpris etter region og boligtype (tabell 06035)", owner: "SSB", url: "https://www.ssb.no/statbank/table/06035", licence: "CC BY 4.0" },
+  { id: "nvdb-trafikkmengde", name: "Trafikkmengde (ÅDT) fra Nasjonal vegdatabank, vegobjekttype 540", owner: "Statens vegvesen", url: "https://nvdbapiles.atlas.vegvesen.no/", licence: "NLOD 2.0" },
+  { id: "nvdb-trafikkulykker", name: "Trafikkulykker med personskade fra Nasjonal vegdatabank, vegobjekttype 570", owner: "Statens vegvesen", url: "https://nvdbapiles.atlas.vegvesen.no/", licence: "NLOD 2.0" },
+  { id: "oslo-bysykkel", name: "Oslo Bysykkel, stasjoner (GBFS)", owner: "Oslo Bysykkel (UIP Oslo Bysykkel AS)", url: "https://oslobysykkel.no/apne-data", licence: "NLOD 2.0" },
+  { id: "ssb-gebyrer", name: "Kommunale gebyrer knyttet til bolig (KOSTRA, tabell 12842)", owner: "SSB", url: "https://www.ssb.no/statbank/table/12842", licence: "CC BY 4.0" },
+  { id: "ssb-eiendomsskatt", name: "Eiendomsskatt (KOSTRA, tabell 14674)", owner: "SSB", url: "https://www.ssb.no/statbank/table/14674", licence: "CC BY 4.0" },
+  { id: "udir-elevundersokelsen", name: "Elevundersøkelsen, mobbing på skolen", owner: "Utdanningsdirektoratet", url: "https://www.udir.no/tall-og-forskning/statistikk/statistikk-grunnskole/elevundersokelsen/", licence: "NLOD 2.0" },
 ];
 
 // ---- Helpers for common shapes -------------------------------------------------------------
@@ -532,6 +540,33 @@ export const DATA_POINTS: DataPoint[] = [
       return w ? windReading(w) : null; // no usable station within 25 km: not covered
     },
   },
+  {
+    // data/scripts/nve_kraftlinjer.ts (Even): kraftlinjer, NVE overhead lines, level 'transmisjonsnett' | 'regionalnett', voltageKv.
+    // The local distribution grid (up to 22 kV) is not in the source. Info only: never scored.
+    id: "powerLine", label: "Nærmeste høyspentlinje", category: "environment", source: "nve-nettanlegg", importance: "normal",
+    table: "kraftlinjer", find: { kind: "nearest", maxM: 1000 },
+    read: (rows) => {
+      const r = rows[0];
+      if (!r) return { value: null, display: "Ingen innen 1 km (regional- og transmisjonsnett)", effect: "neutral" };
+      const kv = r.voltageKv != null ? `${Number(r.voltageKv).toLocaleString("nb-NO")} kV ` : "";
+      return { value: Math.round(Number(r.distanceM)), unit: "m", display: `${metres(Number(r.distanceM))} unna (${kv}${r.level})`, effect: "neutral" };
+    },
+  },
+  {
+    // data/scripts/nvdb_trafikkmengde.ts (Even): trafikkmengde, NVDB road links with ÅDT (vehicles per day, both ways).
+    // Busiest counted road within 100 m. Most small residential streets have no count. Info only: never scored.
+    id: "trafficVolume", label: "Mest trafikkerte vei innen 100 m", category: "environment", source: "nvdb-trafikkmengde", importance: "normal",
+    table: "trafikkmengde", find: { kind: "around", radiusM: 100 },
+    read: (rows) => {
+      if (!rows.length) return { value: null, display: "Ingen vei med trafikktelling innen 100 m", effect: "neutral" };
+      const r = rows.reduce((a, b) => (Number(b.aadt) > Number(a.aadt) ? b : a));
+      const heavy = r.heavyPct != null ? `, ${r.heavyPct} % tunge kjøretøy` : "";
+      return {
+        value: Number(r.aadt), unit: "kjøretøy/døgn",
+        display: `${Number(r.aadt).toLocaleString("nb-NO")} kjøretøy i døgnet, ${metres(Number(r.distanceM))} unna (${r.year}${heavy})`, effect: "neutral",
+      };
+    },
+  },
 
   // Location. Points, nearest within a distance.
   {
@@ -559,9 +594,48 @@ export const DATA_POINTS: DataPoint[] = [
     },
   },
   {
+    // data/scripts/bysykkel.ts (Even): bysykkel, Oslo Bysykkel stations. Oslo only: outside Oslo the source has no coverage.
+    id: "cityBike", label: "Nærmeste bysykkelstasjon", category: "location", source: "oslo-bysykkel", importance: "normal",
+    table: "bysykkel", find: { kind: "nearest", maxM: 1000 },
+    read: (rows, address) => {
+      const r = rows[0];
+      if (!r) return address.municipalityNumber === "0301" ? { value: null, display: "Ingen innen 1 km", effect: "neutral" } : null;
+      return { value: Math.round(Number(r.distanceM)), unit: "m", display: `${metres(Number(r.distanceM))} unna (${r.name})`, effect: "neutral" };
+    },
+  },
+  {
+    // data/scripts/nvdb_trafikkulykker.ts (Even): trafikkulykker, police-recorded injury accidents since 2016 (NVDB).
+    // Count within 200 m, and how many involved a pedestrian or cyclist. Info only: never scored.
+    id: "trafficAccidents", label: "Trafikkulykker innen 200 m", category: "location", source: "nvdb-trafikkulykker", importance: "normal",
+    table: "trafikkulykker", find: { kind: "around", radiusM: 200 },
+    read: (rows) => {
+      if (!rows.length) return { value: 0, display: "Ingen ulykker med personskade registrert siden 2016", effect: "neutral" };
+      const soft = rows.filter((r) => Number(r.pedestrians) > 0 || Number(r.cyclists) > 0).length;
+      const n = rows.length;
+      return {
+        value: n, unit: "ulykker",
+        display: `${n} ${n === 1 ? "ulykke" : "ulykker"} med personskade siden 2016${soft ? `, ${soft} med fotgjenger eller syklist` : ""}`, effect: "neutral",
+      };
+    },
+  },
+  {
     id: "school", label: "Nærmeste grunnskole", category: "location", source: "udir-skoler", importance: "normal",
     table: "schools", find: { kind: "nearest", maxM: 5000, where: "isPrimary" },
     read: nearestScore([[500, 100], [1000, 80], [2000, 50], [5000, 20]]),
+  },
+  {
+    // data/scripts/skole_mobbing.ts (Even): skole_mobbing, one row per grunnskole in `schools` (same nearest school as `school`).
+    // bulliedPct = share bullied (Elevundersøkelsen), highest grade asked, latest year; nationalPct for the same grade.
+    // Null when Udir hides the number (few pupils). Info only: never scored.
+    id: "schoolBullying", label: "Mobbing på nærmeste grunnskole", category: "location", source: "udir-elevundersokelsen", importance: "normal",
+    table: "skole_mobbing", find: { kind: "nearest", maxM: 5000 },
+    read: (rows) => {
+      const r = rows[0];
+      if (r?.bulliedPct == null) return null;
+      const pct = (v: unknown) => `${Number(v).toLocaleString("nb-NO", { maximumFractionDigits: 1 })} %`;
+      const national = r.nationalPct != null ? `, landet ${pct(r.nationalPct)}` : "";
+      return { value: Number(r.bulliedPct), unit: "%", display: `${pct(r.bulliedPct)} mobbet, ${r.grade}. trinn ved ${r.name} (${r.schoolYear})${national}`, effect: "neutral" };
+    },
   },
   {
     id: "kindergarten", label: "Nærmeste barnehage", category: "location", source: "udir-barnehager", importance: "normal",
@@ -677,6 +751,52 @@ export const DATA_POINTS: DataPoint[] = [
       const nok = (v: unknown) => `${Number(v).toLocaleString("nb-NO")} kr`;
       const compare = r.level !== "kommune" && kommune ? `, kommunen ${nok(kommune.medianAfterTax)}` : "";
       return { value: Number(r.medianAfterTax), unit: "kr", display: `${nok(r.medianAfterTax)} i ${r.name} (${r.year})${compare}`, effect: "neutral" };
+    },
+  },
+  {
+    // data/scripts/ssb_boligpriser.ts (Even): boligpriser, SSB 06035, average price per m² per kommune for
+    // enebolig, småhus and blokk (NULL when SSB hides it). value = the first type with a price. Info only: never scored.
+    id: "housePrice", label: "Kvadratmeterpris i kommunen (selveier)", category: "area", source: "ssb-boligpriser", importance: "normal",
+    table: "boligpriser", find: { kind: "within" },
+    read: (rows) => {
+      const r = rows[0];
+      if (!r) return null;
+      const types: [string, unknown][] = [["enebolig", r.eneboligPricePerM2], ["småhus", r.smahusPricePerM2], ["blokk", r.blokkPricePerM2]];
+      const known = types.filter(([, v]) => v != null);
+      if (!known.length) return null;
+      const parts = known.map(([t, v]) => `${t} ${Number(v).toLocaleString("nb-NO")} kr`);
+      return { value: Number(known[0][1]), unit: "kr/m²", display: `${parts.join(", ")} per m² (${r.year})`, effect: "neutral" };
+    },
+  },
+  {
+    // data/scripts/ssb_kommunale_avgifter.ts (Even): kommunale_avgifter, SSB KOSTRA 12842. Yearly fees for water, sewage
+    // and waste, excluding VAT, latest year. feesTotal is NULL unless all three are known. Info only: never scored.
+    id: "municipalFees", label: "Kommunale gebyrer (vann, avløp, renovasjon)", category: "area", source: "ssb-gebyrer", importance: "normal",
+    table: "kommunale_avgifter", find: { kind: "within" },
+    read: (rows) => {
+      const r = rows[0];
+      if (r?.feesTotal == null) return null;
+      const kr = (v: unknown) => `${Number(v).toLocaleString("nb-NO")} kr`;
+      return {
+        value: Number(r.feesTotal), unit: "kr/år",
+        display: `${kr(r.feesTotal)} i året i ${r.name} (${r.feesYear}, uten mva.): vann ${kr(r.waterFee)}, avløp ${kr(r.sewageFee)}, renovasjon ${kr(r.wasteFee)}`,
+        effect: "neutral",
+      };
+    },
+  },
+  {
+    // data/scripts/ssb_kommunale_avgifter.ts (Even): kommunale_avgifter, SSB KOSTRA 14674. homesTaxed = property tax on homes
+    // (whole municipality or built-up areas); rate per mille (the home rate if differentiated), deduction, average per home.
+    id: "propertyTax", label: "Eiendomsskatt på bolig", category: "area", source: "ssb-eiendomsskatt", importance: "normal",
+    table: "kommunale_avgifter", find: { kind: "within" },
+    read: (rows) => {
+      const r = rows[0];
+      if (r?.homesTaxed == null) return null;
+      if (!r.homesTaxed) return { value: false, display: `Ingen eiendomsskatt på bolig i ${r.name} (${r.taxYear})`, effect: "neutral" };
+      const rate = r.taxRatePerMille != null ? `${Number(r.taxRatePerMille).toLocaleString("nb-NO")} promille` : "sats ukjent";
+      const deduction = r.taxDeduction != null ? `, bunnfradrag ${Number(r.taxDeduction).toLocaleString("nb-NO")} kr` : "";
+      const average = r.taxAverage != null ? `. Snitt ${Number(r.taxAverage).toLocaleString("nb-NO")} kr per bolig (${r.taxAverageYear})` : "";
+      return { value: true, display: `Ja i ${r.name}: ${rate}${deduction} (${r.taxYear})${average}`, effect: "neutral" };
     },
   },
   {
