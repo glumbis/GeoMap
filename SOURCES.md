@@ -77,7 +77,15 @@ Terms for all Kartverket free data: CC BY 4.0, credit "© Kartverket". Details i
   - Data point: inside a with-forest zone = medium warning; only inside the without-forest zone = low warning ("only if the forest is cut").
   - Checked: no test address is in a zone; 4 random sample points match NVE. Real hits: General Ruges vei 150, Oslo (`0301-12212-150`, both zones) and Sætre terrasse 34, Asker (`3203-1434-34`, without-forest only), confirmed against NVE.
   - Licence NLOD, credit "NVE".
-- Shared helpers in `data/scripts/lib.ts`: `studyBbox()` and `arcgisFeatures()` (pages any ArcGIS REST layer, e.g. NVE, as GeoJSON). All NVE scripts use them.
+- **NGU Berggrunn N50 + N250** → table `berggrunn`, script `data/scripts/berggrunn.ts`, API `/api/berggrunn` (2026-11-07).
+  - Source: NGU county downloads (Atom feeds), file geodatabases in zips, EUREF89 lng/lat, read straight from the zip. N50: https://kartkatalog.geonorge.no/metadata/a5c76d05-33bd-4a1d-b28b-81575092e468, N250: https://kartkatalog.geonorge.no/metadata/7c39be66-77b6-4b74-b58d-53b6bee90067
+  - N50 (1:50 000) covers only ~60% of Oslo + Akershus (gaps in Ullensaker, Nes, Lillestrøm, Aurskog-Høland, Ås, Enebakk, Nordre Follo, Vestby). N250 (1:250 000) fills exactly those gaps, cut so the two never overlap. 3466 polygons, 100% of the area.
+  - Rock names for N50 come from NGU's style file in the zip (122 codes); N250 has them in `hovedbergart_navn`.
+  - Columns: `id`, `name` (rock type), `rockCode`, `legend` (NGU's full description), `alumShale`, `color` (NGU map colour), `scale` (50000 | 250000), `source`, `geom`.
+  - `alumShale` (96 polygons): NGU's legend says "alunskifer", or carbon-rich shale with stinkkalk (the classic alum shale beds). About 1.4% of transit stops lie on it.
+  - Checked: #1 Kalkstein, #2 Glimmersgneis, #3 and #4 Leirskifer, #5 Syenitt (Grefsensyenitt). Real alum shale hit: Edelvoldveien 16, Asker (`3203-1386-16`). Real N250 hit: Storgata 18, Jessheim (`3209-12100-18`).
+  - Licence NLOD, credit "NGU".
+- Shared helpers in `data/scripts/lib.ts`: `studyBbox()`, `arcgisFeatures()` (pages any ArcGIS REST layer, e.g. NVE, as GeoJSON) and `readZipEntry()` (reads one file out of a downloaded zip).
 
 - **Name:** Eiendom REST-API (property lookup)
   - Owner: Kartverket

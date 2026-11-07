@@ -99,7 +99,7 @@ Each role lists: what you own, your tasks in order, and when a task is done.
 2. **NVE hazard zones first** (quick clay, flood, landslide/rockfall/avalanche). These make the demo. Test addresses #1 and #2 must fall inside the right zones.
    ~~Quick clay~~ done (`nve_kvikkleire`, `/api/nve_kvikkleire`, #1 checked). ~~Flood~~ done (`flomsoner`, `/api/flomsoner`, #2 checked). ~~Rockfall~~ done (`steinsprang`). ~~Debris slides~~ done (`jordflomskred`). ~~Avalanche~~ done (`snoskred`). All NVE hazards in.
 3. **NGU ground data:** soil type (løsmasser), radon risk, bedrock.
-   ~~Radon~~ done (`radon`). ~~Soil type~~ done (`losmasser`, NGU "lokalt"). Bedrock not started.
+   ~~Radon~~ done (`radon`). ~~Soil type~~ done (`losmasser`, NGU "lokalt"). ~~Bedrock~~ done (`berggrunn`, N50 + N250, flags alum shale).
 4. **Addresses and buildings** (Kartverket), if the profile needs them beyond the Geonorge address API.
 5. For each dataset: one ingest script (copy `data/scripts/kommuner.ts`), one route (copy `api/src/routes/kommuner.ts`), one entry in Lukas' data-point list, and a line in `SOURCES.md`.
    *Done when (per dataset):* `npm run ingest <name>` works from a clean clone, the layer shows on the map at `/api/<name>`, and the profile of a test address shows the data point.

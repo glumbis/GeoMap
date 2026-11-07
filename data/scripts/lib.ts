@@ -1,8 +1,9 @@
 // Small shared helpers for ingest scripts.
 import { existsSync, mkdirSync } from "node:fs";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { inflateRawSync } from "node:zlib";
 
 const RAW_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "../raw");
 mkdirSync(RAW_DIR, { recursive: true });
@@ -62,6 +63,34 @@ export async function arcgisFeatures(
     features.push(...page.features);
     if (page.features.length < PAGE) return features;
   }
+}
+
+/**
+ * Read one file out of a .zip (stored or deflated, no zip64) without unpacking the rest.
+ * DuckDB reads spatial files straight from a zip ('/vsizip/...'); use this for the other files (code lists, styles).
+ */
+export async function readZipEntry(zipPath: string, entry: string): Promise<Buffer> {
+  const zip = await readFile(zipPath);
+  let eocd = zip.length - 22; // end of central directory record
+  while (eocd >= 0 && zip.readUInt32LE(eocd) !== 0x06054b50) eocd--;
+  if (eocd < 0) throw new Error(`${zipPath}: not a zip file`);
+  let p = zip.readUInt32LE(eocd + 16);
+  for (let i = zip.readUInt16LE(eocd + 10); i > 0; i--) {
+    const nameLen = zip.readUInt16LE(p + 28);
+    const name = zip.toString("utf8", p + 46, p + 46 + nameLen);
+    if (name === entry) {
+      const method = zip.readUInt16LE(p + 10);
+      const size = zip.readUInt32LE(p + 20);
+      const local = zip.readUInt32LE(p + 42);
+      const start = local + 30 + zip.readUInt16LE(local + 26) + zip.readUInt16LE(local + 28);
+      const data = zip.subarray(start, start + size);
+      if (method === 0) return Buffer.from(data);
+      if (method === 8) return inflateRawSync(data);
+      throw new Error(`${zipPath}/${entry}: unsupported compression ${method}`);
+    }
+    p += 46 + nameLen + zip.readUInt16LE(p + 30) + zip.readUInt16LE(p + 32);
+  }
+  throw new Error(`${zipPath}: no entry ${entry}`);
 }
 
 /** Download a file to data/raw/<name> (skipped if it exists, unless force). Returns its path. */

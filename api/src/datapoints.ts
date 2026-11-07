@@ -85,6 +85,7 @@ export const SOURCES: Source[] = [
   { id: "nve-snoskred", name: "Aktsomhetskart snøskred (NAKSIN)", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/aktsomhetskart-for-snoeskred/54ada9d8-e6fc-48d6-82b0-5477166a4aaa", licence: "NLOD 2.0" },
   { id: "ngu-losmasser", name: "Løsmasser", owner: "NGU", url: "https://kartkatalog.geonorge.no/metadata/loesmasser-regionalt/e5847c27-0c30-44b6-9198-a797c177fa20", licence: "NLOD 2.0" },
   { id: "ngu-radon", name: "Radon aktsomhet", owner: "NGU", url: "https://kartkatalog.geonorge.no/metadata/radon-aktsomhet/dc0605f3-2301-4abe-a91f-6da42464c281", licence: "NLOD 2.0" },
+  { id: "ngu-berggrunn", name: "Berggrunn N50 / N250", owner: "NGU", url: "https://kartkatalog.geonorge.no/metadata/berggrunn-n50/a5c76d05-33bd-4a1d-b28b-81575092e468", licence: "NLOD 2.0" },
   { id: "svv-stoy", name: "Støykartlegging veg", owner: "Statens vegvesen", url: "https://kartkatalog.geonorge.no/metadata/stoeykartlegging-veg-etter-t-1442/d6db9f39-9725-4630-909e-5e62f09a0766", licence: "NLOD 2.0" },
   { id: "svv-stoy-strategisk", name: "Strategisk støykartlegging veg", owner: "Statens vegvesen", url: "https://kartkatalog.geonorge.no/metadata/stoeykart-strategisk-stykartlegging-stydirektivet/93a154a7-47d5-47b8-bdda-f156d92386cc", licence: "NLOD 2.0" },
   { id: "mdir-grunnforurensning", name: "Forurenset grunn", owner: "Miljødirektoratet", url: "https://kartkatalog.geonorge.no/metadata/forurenset-grunn/e48e71ac-16fc-4e47-9e7f-c0a4a4bbfad0", licence: "NLOD 2.0" },
@@ -145,6 +146,24 @@ export const DATA_POINTS: DataPoint[] = [
       if (a === "middels") return { value: a, display: "Middels aktsomhet", effect: "neutral", score: 65 };
       if (a === "lav") return { value: a, display: "Lav aktsomhet", effect: "good", score: 90 };
       return null; // 'usikker' = the source can't say
+    },
+  },
+  {
+    id: "bedrock", label: "Berggrunn", category: "ground", source: "ngu-berggrunn", importance: "normal",
+    table: "berggrunn", find: { kind: "within" }, // data/scripts/berggrunn.ts (Sverre): name (rock type), legend, alumShale, scale (50000 | 250000)
+    read: (rows) => {
+      if (!rows.length) return null;
+      const r = rows[0];
+      const display = `${r.name}${Number(r.scale) === 250000 ? " (oversiktskart)" : ""}`;
+      if (r.alumShale === true) {
+        return {
+          value: r.name, display: `${display}, med alunskifer`, effect: "bad", score: 40,
+          warning: { severity: "low", text: "Alunskifer i berggrunnen" },
+          explanation: "Alunskifer kan svelle og skade grunnmur, gir surt avrenningsvann når den graves opp, og gir ofte mye radon.",
+        };
+      }
+      // The rock type itself is information, not a judgement: neutral, not scored.
+      return { value: r.name, display, effect: "neutral" };
     },
   },
 
