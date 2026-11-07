@@ -107,6 +107,9 @@ export const CATEGORIES: Category[] = [
   { id: "location", name: "Beliggenhet", weight: 15, required: false },
   { id: "nature", name: "Natur og friluft", weight: 10, required: false },
   { id: "area", name: "Område", weight: 15, required: false },
+  // Weight 0: prices, fees and tax are scored for the "Bokostnader" perspective, but say nothing about the place itself,
+  // so they never move the overall score.
+  { id: "costs", name: "Bokostnader", weight: 0, required: false },
 ];
 
 export const SOURCES: Source[] = [
@@ -150,6 +153,7 @@ export const SOURCES: Source[] = [
   { id: "oslo-bysykkel", name: "Oslo Bysykkel, stasjoner (GBFS)", owner: "Oslo Bysykkel (UIP Oslo Bysykkel AS)", url: "https://oslobysykkel.no/apne-data", licence: "NLOD 2.0" },
   { id: "ssb-gebyrer", name: "Kommunale gebyrer knyttet til bolig (KOSTRA, tabell 12842)", owner: "SSB", url: "https://www.ssb.no/statbank/table/12842", licence: "CC BY 4.0" },
   { id: "ssb-eiendomsskatt", name: "Eiendomsskatt (KOSTRA, tabell 14674)", owner: "SSB", url: "https://www.ssb.no/statbank/table/14674", licence: "CC BY 4.0" },
+  { id: "kartverket-n50-arealdekke", name: "N50 Kartdata, arealdekke", owner: "Kartverket", url: "https://kartkatalog.geonorge.no/metadata/n50-kartdata/ea192681-d039-42ec-b1bc-f3ce04c189ac", licence: "CC BY 4.0" },
   { id: "udir-elevundersokelsen", name: "Elevundersøkelsen, mobbing på skolen", owner: "Utdanningsdirektoratet", url: "https://www.udir.no/tall-og-forskning/statistikk/statistikk-grunnskole/elevundersokelsen/", licence: "NLOD 2.0" },
 ];
 
@@ -209,6 +213,15 @@ function nearestScore(steps: [number, number][]) {
     return { value: Math.round(d), unit: "m", display: `${metres(d)}${name}`, effect: score >= 50 ? "good" : "bad", score };
   };
 }
+
+/** Score from ascending steps [[max, score], ...]; above the last step: `rest`. good from 50 up. */
+function stepped(v: number, steps: [number, number][], rest: number): Pick<Reading, "score" | "effect"> {
+  const score = steps.find(([max]) => v <= max)?.[1] ?? rest;
+  return { score, effect: score >= 50 ? "good" : "bad" };
+}
+
+/** Grid points (100 m apart) in a 500 m circle: π · 500² / 100². The share of them in nature is the nature share. */
+const GRID_POINTS_500M = (Math.PI * 500 ** 2) / 100 ** 2;
 
 // ---- The list ------------------------------------------------------------------------------
 
@@ -542,28 +555,32 @@ export const DATA_POINTS: DataPoint[] = [
   },
   {
     // data/scripts/nve_kraftlinjer.ts (Even): kraftlinjer, NVE overhead lines, level 'transmisjonsnett' | 'regionalnett', voltageKv.
-    // The local distribution grid (up to 22 kV) is not in the source. Info only: never scored.
+    // The local distribution grid (up to 22 kV) is not in the source.
+    // Scored: under 50 m 25, 100 m 45, 250 m 70, further 90, none within 1 km 100.
     id: "powerLine", label: "Nærmeste høyspentlinje", category: "environment", source: "nve-nettanlegg", importance: "normal",
     table: "kraftlinjer", find: { kind: "nearest", maxM: 1000 },
     read: (rows) => {
       const r = rows[0];
-      if (!r) return { value: null, display: "Ingen innen 1 km (regional- og transmisjonsnett)", effect: "neutral" };
+      if (!r) return { value: null, display: "Ingen innen 1 km (regional- og transmisjonsnett)", effect: "good", score: 100 };
       const kv = r.voltageKv != null ? `${Number(r.voltageKv).toLocaleString("nb-NO")} kV ` : "";
-      return { value: Math.round(Number(r.distanceM)), unit: "m", display: `${metres(Number(r.distanceM))} unna (${kv}${r.level})`, effect: "neutral" };
+      const d = Number(r.distanceM);
+      return { value: Math.round(d), unit: "m", display: `${metres(d)} unna (${kv}${r.level})`, ...stepped(d, [[50, 25], [100, 45], [250, 70]], 90) };
     },
   },
   {
     // data/scripts/nvdb_trafikkmengde.ts (Even): trafikkmengde, NVDB road links with ÅDT (vehicles per day, both ways).
-    // Busiest counted road within 100 m. Most small residential streets have no count. Info only: never scored.
+    // Busiest counted road within 100 m. NVDB counts most roads (a quarter of the counts are under 500 a day), so no
+    // counted road within 100 m is a quiet place: 100. Then under 1 000 a day 90, 3 000 75, 8 000 55, 15 000 35, more 20.
     id: "trafficVolume", label: "Mest trafikkerte vei innen 100 m", category: "environment", source: "nvdb-trafikkmengde", importance: "normal",
     table: "trafikkmengde", find: { kind: "around", radiusM: 100 },
     read: (rows) => {
-      if (!rows.length) return { value: null, display: "Ingen vei med trafikktelling innen 100 m", effect: "neutral" };
+      if (!rows.length) return { value: null, display: "Ingen vei med trafikktelling innen 100 m", effect: "good", score: 100 };
       const r = rows.reduce((a, b) => (Number(b.aadt) > Number(a.aadt) ? b : a));
       const heavy = r.heavyPct != null ? `, ${r.heavyPct} % tunge kjøretøy` : "";
       return {
         value: Number(r.aadt), unit: "kjøretøy/døgn",
-        display: `${Number(r.aadt).toLocaleString("nb-NO")} kjøretøy i døgnet, ${metres(Number(r.distanceM))} unna (${r.year}${heavy})`, effect: "neutral",
+        display: `${Number(r.aadt).toLocaleString("nb-NO")} kjøretøy i døgnet, ${metres(Number(r.distanceM))} unna (${r.year}${heavy})`,
+        ...stepped(Number(r.aadt), [[1000, 90], [3000, 75], [8000, 55], [15000, 35]], 20),
       };
     },
   },
@@ -599,22 +616,25 @@ export const DATA_POINTS: DataPoint[] = [
     table: "bysykkel", find: { kind: "nearest", maxM: 1000 },
     read: (rows, address) => {
       const r = rows[0];
-      if (!r) return address.municipalityNumber === "0301" ? { value: null, display: "Ingen innen 1 km", effect: "neutral" } : null;
-      return { value: Math.round(Number(r.distanceM)), unit: "m", display: `${metres(Number(r.distanceM))} unna (${r.name})`, effect: "neutral" };
+      // Scored: up to 300 m 100, 600 m 75, 1 km 50, none within 1 km (in Oslo) 0.
+      if (!r) return address.municipalityNumber === "0301" ? { value: null, display: "Ingen innen 1 km", effect: "bad", score: 0 } : null;
+      const d = Number(r.distanceM);
+      return { value: Math.round(d), unit: "m", display: `${metres(d)} unna (${r.name})`, ...stepped(d, [[300, 100], [600, 75]], 50) };
     },
   },
   {
     // data/scripts/nvdb_trafikkulykker.ts (Even): trafikkulykker, police-recorded injury accidents since 2016 (NVDB).
-    // Count within 200 m, and how many involved a pedestrian or cyclist. Info only: never scored.
+    // Count within 200 m, and how many involved a pedestrian or cyclist. Scored: none 100, up to 2 85, 5 65, 10 45, more 25.
     id: "trafficAccidents", label: "Trafikkulykker innen 200 m", category: "location", source: "nvdb-trafikkulykker", importance: "normal",
     table: "trafikkulykker", find: { kind: "around", radiusM: 200 },
     read: (rows) => {
-      if (!rows.length) return { value: 0, display: "Ingen ulykker med personskade registrert siden 2016", effect: "neutral" };
+      if (!rows.length) return { value: 0, display: "Ingen ulykker med personskade registrert siden 2016", effect: "good", score: 100 };
       const soft = rows.filter((r) => Number(r.pedestrians) > 0 || Number(r.cyclists) > 0).length;
       const n = rows.length;
       return {
         value: n, unit: "ulykker",
-        display: `${n} ${n === 1 ? "ulykke" : "ulykker"} med personskade siden 2016${soft ? `, ${soft} med fotgjenger eller syklist` : ""}`, effect: "neutral",
+        display: `${n} ${n === 1 ? "ulykke" : "ulykker"} med personskade siden 2016${soft ? `, ${soft} med fotgjenger eller syklist` : ""}`,
+        ...stepped(n, [[2, 85], [5, 65], [10, 45]], 25),
       };
     },
   },
@@ -626,7 +646,8 @@ export const DATA_POINTS: DataPoint[] = [
   {
     // data/scripts/skole_mobbing.ts (Even): skole_mobbing, one row per grunnskole in `schools` (same nearest school as `school`).
     // bulliedPct = share bullied (Elevundersøkelsen), highest grade asked, latest year; nationalPct for the same grade.
-    // Null when Udir hides the number (few pupils). Info only: never scored.
+    // Null when Udir hides the number (few pupils). Scored against the national share for the same grade (ratio):
+    // up to 0.75× 100, 1.0× 80, 1.3× 60, 1.7× 40, more 20. Without a national share: shown, not scored.
     id: "schoolBullying", label: "Mobbing på nærmeste grunnskole", category: "location", source: "udir-elevundersokelsen", importance: "normal",
     table: "skole_mobbing", find: { kind: "nearest", maxM: 5000 },
     read: (rows) => {
@@ -634,7 +655,9 @@ export const DATA_POINTS: DataPoint[] = [
       if (r?.bulliedPct == null) return null;
       const pct = (v: unknown) => `${Number(v).toLocaleString("nb-NO", { maximumFractionDigits: 1 })} %`;
       const national = r.nationalPct != null ? `, landet ${pct(r.nationalPct)}` : "";
-      return { value: Number(r.bulliedPct), unit: "%", display: `${pct(r.bulliedPct)} mobbet, ${r.grade}. trinn ved ${r.name} (${r.schoolYear})${national}`, effect: "neutral" };
+      const reading: Reading = { value: Number(r.bulliedPct), unit: "%", display: `${pct(r.bulliedPct)} mobbet, ${r.grade}. trinn ved ${r.name} (${r.schoolYear})${national}`, effect: "neutral" };
+      if (!(Number(r.nationalPct) > 0)) return reading;
+      return { ...reading, ...stepped(Number(r.bulliedPct) / Number(r.nationalPct), [[0.75, 100], [1, 80], [1.3, 60], [1.7, 40]], 20) };
     },
   },
   {
@@ -661,34 +684,55 @@ export const DATA_POINTS: DataPoint[] = [
 
   // Nature & leisure.
   {
+    // data/scripts/arealdekke.ts (Lukas): arealdekke, a 100 m grid of points that fall in forest, marsh, open land,
+    // park or fresh water (Kartverket N50). Share of the grid within 500 m that is nature. This is what makes the
+    // nature score: rare protected or state-secured areas only add to it, they never pull it down.
+    // Scored: 60 % or more 100, 40 % 85, 25 % 70, 15 % 50, 5 % 30, less 15.
+    id: "greenArea", label: "Natur innen 500 m", category: "nature", source: "kartverket-n50-arealdekke", importance: "normal",
+    table: "arealdekke", find: { kind: "around", radiusM: 500 },
+    read: (rows) => {
+      const pct = Math.min(100, Math.round((rows.length / GRID_POINTS_500M) * 100));
+      const counts = new Map<string, number>();
+      for (const r of rows) counts.set(String(r.kind), (counts.get(String(r.kind)) ?? 0) + 1);
+      const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
+      const score = pct >= 60 ? 100 : pct >= 40 ? 85 : pct >= 25 ? 70 : pct >= 15 ? 50 : pct >= 5 ? 30 : 15;
+      return {
+        value: pct, unit: "%", display: `${pct} % skog, mark, park eller vann${top ? ` (mest ${top})` : ""}`,
+        effect: score >= 50 ? "good" : "bad", score,
+      };
+    },
+  },
+  {
     id: "trails", label: "Nærmeste tursti eller skiløype", category: "nature", source: "kartverket-turruter", importance: "normal",
     table: "turruter", find: { kind: "nearest", maxM: 3000 },
     read: nearestScore([[300, 100], [1000, 75], [2000, 40], [3000, 20]]),
   },
   {
     // data/scripts/verneomrader.ts (Even): Naturbase, name (official, e.g. "Kolsås-Dælivann landskapsvernområde"), protectionType.
-    // Info only: being near (or inside) protected nature is neither good nor bad for the score.
+    // Only a plus: inside or within 1 km scores 100. Further away is not scored, so a forest without a protected area
+    // never scores lower for it (greenArea says how much nature there is).
     id: "protectedNature", label: "Nærmeste verneområde", category: "nature", source: "mdir-naturvern", importance: "normal",
     table: "verneomrader", find: { kind: "nearest", maxM: 3000 },
     read: (rows) => {
       if (!rows.length) return { value: null, display: "Ingen innen 3 km", effect: "neutral" };
       const d = Number(rows[0].distanceM);
-      if (d === 0) return { value: 0, unit: "m", display: `Inne i ${rows[0].name}`, effect: "neutral" };
-      return { value: Math.round(d), unit: "m", display: `${rows[0].name}, ${metres(d)}`, effect: "neutral" };
+      const near: Pick<Reading, "score" | "effect"> = d <= 1000 ? { effect: "good", score: 100 } : { effect: "neutral" };
+      if (d === 0) return { value: 0, unit: "m", display: `Inne i ${rows[0].name}`, ...near };
+      return { value: Math.round(d), unit: "m", display: `${rows[0].name}, ${metres(d)}`, ...near };
     },
   },
   {
     // data/scripts/friluftsomrader.ts (Even): state-secured outdoor recreation areas (beaches, parks, forest).
-    // Close = good. None within 3 km is neutral, not bad: only 182 areas, so many parks and forests are not in this set.
+    // Only a plus: within 500 m 100, 1 km 85. Further away (or none within 3 km) is not scored: only 182 areas, so
+    // many parks and forests are not in this set, and a missing one must not pull the nature score down.
     id: "recreationArea", label: "Nærmeste sikra friluftsområde", category: "nature", source: "mdir-friluft", importance: "normal",
     table: "friluftsomrader", find: { kind: "nearest", maxM: 3000 },
     read: (rows) => {
       if (!rows.length) return { value: null, display: "Ingen innen 3 km", effect: "neutral" };
       const d = Number(rows[0].distanceM);
-      const score = d <= 500 ? 100 : d <= 1000 ? 80 : d <= 2000 ? 50 : 30;
-      const effect: Effect = score >= 50 ? "good" : "bad";
-      if (d === 0) return { value: 0, unit: "m", display: `Inne i ${rows[0].name}`, effect, score };
-      return { value: Math.round(d), unit: "m", display: `${rows[0].name}, ${metres(d)}`, effect, score };
+      const near: Pick<Reading, "score" | "effect"> = d <= 500 ? { effect: "good", score: 100 } : d <= 1000 ? { effect: "good", score: 85 } : { effect: "neutral" };
+      if (d === 0) return { value: 0, unit: "m", display: `Inne i ${rows[0].name}`, ...near };
+      return { value: Math.round(d), unit: "m", display: `${rows[0].name}, ${metres(d)}`, ...near };
     },
   },
 
@@ -755,8 +799,10 @@ export const DATA_POINTS: DataPoint[] = [
   },
   {
     // data/scripts/ssb_boligpriser.ts (Even): boligpriser, SSB 06035, average price per m² per kommune for
-    // enebolig, småhus and blokk (NULL when SSB hides it). value = the first type with a price. Info only: never scored.
-    id: "housePrice", label: "Kvadratmeterpris i kommunen (selveier)", category: "area", source: "ssb-boligpriser", importance: "normal",
+    // enebolig, småhus and blokk (NULL when SSB hides it). value = the first type with a price.
+    // Scored for affordability (cheaper = higher), in the costs category (weight 0, never in the overall):
+    // up to 30 000 kr/m² 100, 40 000 85, 50 000 70, 60 000 55, 70 000 40, more 25.
+    id: "housePrice", label: "Kvadratmeterpris i kommunen (selveier)", category: "costs", source: "ssb-boligpriser", importance: "normal",
     table: "boligpriser", find: { kind: "within" },
     read: (rows) => {
       const r = rows[0];
@@ -765,13 +811,15 @@ export const DATA_POINTS: DataPoint[] = [
       const known = types.filter(([, v]) => v != null);
       if (!known.length) return null;
       const parts = known.map(([t, v]) => `${t} ${Number(v).toLocaleString("nb-NO")} kr`);
-      return { value: Number(known[0][1]), unit: "kr/m²", display: `${parts.join(", ")} per m² (${r.year})`, effect: "neutral" };
+      const v = Number(known[0][1]);
+      return { value: v, unit: "kr/m²", display: `${parts.join(", ")} per m² (${r.year})`, ...stepped(v, [[30000, 100], [40000, 85], [50000, 70], [60000, 55], [70000, 40]], 25) };
     },
   },
   {
     // data/scripts/ssb_kommunale_avgifter.ts (Even): kommunale_avgifter, SSB KOSTRA 12842. Yearly fees for water, sewage
-    // and waste, excluding VAT, latest year. feesTotal is NULL unless all three are known. Info only: never scored.
-    id: "municipalFees", label: "Kommunale gebyrer (vann, avløp, renovasjon)", category: "area", source: "ssb-gebyrer", importance: "normal",
+    // and waste, excluding VAT, latest year. feesTotal is NULL unless all three are known.
+    // Scored (costs category): up to 15 000 kr 100, 17 500 85, 20 000 70, 22 500 55, more 35 (range now: 13 730 to 27 672).
+    id: "municipalFees", label: "Kommunale gebyrer (vann, avløp, renovasjon)", category: "costs", source: "ssb-gebyrer", importance: "normal",
     table: "kommunale_avgifter", find: { kind: "within" },
     read: (rows) => {
       const r = rows[0];
@@ -780,23 +828,25 @@ export const DATA_POINTS: DataPoint[] = [
       return {
         value: Number(r.feesTotal), unit: "kr/år",
         display: `${kr(r.feesTotal)} i året i ${r.name} (${r.feesYear}, uten mva.): vann ${kr(r.waterFee)}, avløp ${kr(r.sewageFee)}, renovasjon ${kr(r.wasteFee)}`,
-        effect: "neutral",
+        ...stepped(Number(r.feesTotal), [[15000, 100], [17500, 85], [20000, 70], [22500, 55]], 35),
       };
     },
   },
   {
     // data/scripts/ssb_kommunale_avgifter.ts (Even): kommunale_avgifter, SSB KOSTRA 14674. homesTaxed = property tax on homes
     // (whole municipality or built-up areas); rate per mille (the home rate if differentiated), deduction, average per home.
-    id: "propertyTax", label: "Eiendomsskatt på bolig", category: "area", source: "ssb-eiendomsskatt", importance: "normal",
+    // Scored (costs category): no tax 100; with tax, by the average per home: up to 2 000 kr 75, 4 000 60, more 45, unknown 60.
+    id: "propertyTax", label: "Eiendomsskatt på bolig", category: "costs", source: "ssb-eiendomsskatt", importance: "normal",
     table: "kommunale_avgifter", find: { kind: "within" },
     read: (rows) => {
       const r = rows[0];
       if (r?.homesTaxed == null) return null;
-      if (!r.homesTaxed) return { value: false, display: `Ingen eiendomsskatt på bolig i ${r.name} (${r.taxYear})`, effect: "neutral" };
+      if (!r.homesTaxed) return { value: false, display: `Ingen eiendomsskatt på bolig i ${r.name} (${r.taxYear})`, effect: "good", score: 100 };
       const rate = r.taxRatePerMille != null ? `${Number(r.taxRatePerMille).toLocaleString("nb-NO")} promille` : "sats ukjent";
       const deduction = r.taxDeduction != null ? `, bunnfradrag ${Number(r.taxDeduction).toLocaleString("nb-NO")} kr` : "";
       const average = r.taxAverage != null ? `. Snitt ${Number(r.taxAverage).toLocaleString("nb-NO")} kr per bolig (${r.taxAverageYear})` : "";
-      return { value: true, display: `Ja i ${r.name}: ${rate}${deduction} (${r.taxYear})${average}`, effect: "neutral" };
+      const s = r.taxAverage != null ? stepped(Number(r.taxAverage), [[2000, 75], [4000, 60]], 45) : ({ score: 60, effect: "good" } as const);
+      return { value: true, display: `Ja i ${r.name}: ${rate}${deduction} (${r.taxYear})${average}`, ...s };
     },
   },
   {

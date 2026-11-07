@@ -175,7 +175,8 @@ export function rateOverall(categories: { category: Category; rating: Rating; pr
   );
 
   const ok = categories.filter((c) => c.rating.status === "ok");
-  const weakest = [...ok].sort((a, b) => a.rating.score! - b.rating.score!)[0];
+  // A weight-0 category (costs) never moves the overall, so it is never named as what holds it down.
+  const weakest = ok.filter((c) => c.category.weight > 0).sort((a, b) => a.rating.score! - b.rating.score!)[0];
   const weakestCategory = weakest && { id: weakest.category.id, name: weakest.category.name, score: weakest.rating.score! };
 
   if (!coverage.present) return { status: "unavailable", reason: "Vi har ingen data for denne adressen ennå.", coverage };

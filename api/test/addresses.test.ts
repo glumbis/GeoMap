@@ -7,7 +7,7 @@ import { before, describe, test } from "node:test";
 
 const API = process.env.API_URL ?? "http://localhost:3000/api";
 
-interface DataPoint { id: string; value: unknown; effect: string; warning?: { severity: string } }
+interface DataPoint { id: string; value: unknown; effect: string; score?: number; warning?: { severity: string } }
 interface Profile {
   rating: { status: string; score?: number; cappedBy?: { dataPointId: string }[]; penalties?: { dataPointId: string; points: number }[] };
   checks: { dataPointId: string; areaShare?: { percent: number } }[];
@@ -118,11 +118,20 @@ describe("scores", () => {
 describe("perspectives", () => {
   const persp = (k: Key, id: string) => profiles[k].perspectives.find((p) => p.id === id)!.rating;
 
-  test("every test address gets all four perspective scores", () => {
+  test("every test address gets a score for every perspective", () => {
+    const ids = ["living", "building", "family", "commuter", "calm", "nature", "everyday", "safety", "costs"];
     for (const k of Object.keys(ADDRESSES) as Key[]) {
-      assert.deepEqual(profiles[k].perspectives.map((p) => p.id), ["living", "building", "family", "commuter"], k);
+      assert.deepEqual(profiles[k].perspectives.map((p) => p.id), ids, k);
       for (const p of profiles[k].perspectives) assert.equal(p.rating.status, "ok", `${k} ${p.id}`);
     }
+  });
+
+  test("#5 (in Nordmarka) gets top nature scores although no protected area is within 3 km", () => {
+    assert.ok(persp("ski", "nature").score! >= 95, `nature perspective ${persp("ski", "nature").score}`);
+    const green = points(profiles.ski).find((d) => d.id === "greenArea")!;
+    assert.ok(Number(green.value) >= 80, `greenArea ${green.value}`);
+    const far = points(profiles.ski).find((d) => d.id === "protectedNature")!;
+    assert.equal(far.score, undefined, "a far protected area is not scored");
   });
 
   test("#1 (quick clay) is the worst place to build, and quick clay is its biggest factor", () => {

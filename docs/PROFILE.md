@@ -30,7 +30,7 @@ Every address has one id, used in the URL (`/a/<id>` in the web app, `/api/addre
 - **Version:** a version number for this standard, raised on breaking changes.
 - **Address:** the id used in the URL, the address text, postcode, place, municipality and its number, and the coordinates (lng, lat in EPSG:4326).
 - **Overall rating:** see Rating below.
-- **Perspectives:** the same data scored for one kind of use (living, building, family, commuting). See Perspectives below.
+- **Perspectives:** the same data scored for one kind of use (living, building, family, commuting, calm, nature, everyday services, safety, costs). See Perspectives below.
 - **Warnings:** the most serious findings, most important first. Each has a severity (high, medium, low), a short text, and points to the data point it comes from.
 - **Checks:** common findings worth checking that are not hazard findings: radon likelihood (høy, meget høy) and NVE awareness areas for quick clay and flood. Each has a short text, points to its data point, and says how much of the municipality's area has the same finding (`areaShare`, percent), so the UI can say "gjelder 50 % av arealet i Oslo". Checks never cap a score; they cost a fixed number of points instead (see "Penalties").
 - **Categories:** a list of any length, shown in the order given.
@@ -142,7 +142,15 @@ One overall number can't say whether a place is good to live in *and* good to bu
 | `living` | Bo her | Hvordan er det å bo her til daglig? | radon, quick clay, flood, noise (road, rail, aircraft), transit, grocery store, trails |
 | `building` | Bygge her | Hvor krevende er grunnen å bygge på? | quick clay, soil, flood, polluted ground, marine clay |
 | `family` | Familie | Hvor godt passer stedet for barnefamilier? | school, kindergarten, violent crime, trails, noise, radon, doctor |
-| `commuter` | Pendler | Hvor lett er det å reise kollektivt herfra? | departures within 500 m, nearest stop |
+| `commuter` | Pendler | Hvor lett er det å reise kollektivt herfra? | departures within 500 m, nearest stop, city bike |
+| `calm` | Stille og rolig | Hvor lite støy og trafikk er det her? | noise (road, rail, aircraft), traffic volume |
+| `nature` | Natur og friluft | Hvor mye skog, mark og turstier er det rundt? | nature within 500 m (land cover), trails |
+| `everyday` | Hverdagstilbud | Hvor nær er butikk, lege, apotek og holdeplass? | grocery store, doctor, pharmacy, stop |
+| `safety` | Trygghet | Hvor trygt er det i området og på veiene rundt? | violent crime, traffic accidents |
+| `costs` | Bokostnader | Hva koster det å eie bolig her, sammenlignet med resten av Oslo og Akershus? | price per m², municipal fees, property tax |
+
+- **Nature** is scored from how much of the land within 500 m is forest, marsh, open land, park or fresh water (`greenArea`, Kartverket N50). Protected and state-secured areas are rare, so they only add to the score when close (within 1 km) and are never scored when far: a house in the forest must not score low for lacking one.
+- **Costs** (price per m², fees, property tax) have their own category `costs` with weight 0: they are scored for the `costs` perspective, but never move the overall score and are never its weakest category.
 
 - Each has `id`, `name`, `question` and a `rating` with the same fields as any rating (status, score or reason, coverage, `cappedBy`), plus `factors`.
 - Score: weighted average of the listed data points that have a score, then soft caps from *their own* high/medium warnings (same cap numbers as the overall). A data point not listed doesn't count, so a quick clay zone caps "Bygge her" but not "Pendler".

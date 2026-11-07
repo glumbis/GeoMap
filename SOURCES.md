@@ -31,6 +31,10 @@ Info on all soil and ground. In different datasets easy to install, incorporate 
 https://kartkatalog.nve.no/#metadata
 Good data on slides, avalanches, and more. These should be important but probably dont impact most places. 
 
+**Kartverket N50 Kartdata, arealdekke**, in use: `data/scripts/arealdekke.ts` -> table `arealdekke`, data point `greenArea`.
+`https://nedlasting.geonorge.no/geonorge/Basisdata/N50Kartdata/FGDB/Basisdata_03_Oslo_25833_N50Kartdata_FGDB.zip` (and `32_Akershus`), layer `N50_Arealdekke_omrade`. CC BY 4.0, credit "Kartverket", no key, 6 + 52 MB.
+Stored as a 100 m grid of points that fall in skog, myr, åpent område, park or fresh water, so "share of nature within 500 m" is a cheap count. OSM land use via Overpass was tried first: too big, the public servers time out.
+
 **NVE mapped areas (coverage)**, in use: `data/scripts/nve_kartlagt.ts` -> tables `kvikkleire_kartlagt`, `flom_kartlagt`.
 `https://kart.nve.no/enterprise/rest/services/SkredKvikkleire2/MapServer/2` (KvikkleireKartlagtOmrade) and
 `https://kart.nve.no/enterprise/rest/services/Flomsoner2/MapServer/0` (FlomsoneAnalyseomraade). NLOD 2.0, credit "NVE", no key.

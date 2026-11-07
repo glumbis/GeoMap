@@ -172,6 +172,9 @@ How to use this file:
 ### `trails` — Nærmeste tursti eller skiløype
 **Forklaring:** Avstanden er målt i luftlinje til nærmeste registrerte tursti, sykkelrute eller skiløype. Ikke alle stier og løyper er registrert, og skiløyper er bare preparert når det er snø.
 
+### `greenArea` — Natur innen 500 m
+**Forklaring:** Andelen av området innen 500 m som er skog, myr, åpen mark, park, innsjø eller elv i Kartverkets kart N50. Sjø, jordbruksareal og bebyggelse er ikke med. Kartet er grovt, så små parker og hager inne i byen telles ikke.
+
 ### `protectedNature` — Nærmeste verneområde
 **Forklaring:** Verneområder er natur som er vernet etter naturmangfoldloven, for eksempel naturreservater, landskapsvernområder og nasjonalparker. Avstanden er i luftlinje til nærmeste kant av området.
 - **Når inne i verneområdet:** Adressen ligger inne i et verneområde. Der gjelder en egen verneforskrift, som kan begrense bygging og andre tiltak.
