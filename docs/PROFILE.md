@@ -32,6 +32,7 @@ Every address has one id, used in the URL (`/a/<id>` in the web app, `/api/addre
 - **Overall rating:** see Rating below.
 - **Perspectives:** the same data scored for one kind of use (living, building, family, commuting). See Perspectives below.
 - **Warnings:** the most serious findings, most important first. Each has a severity (high, medium, low), a short text, and points to the data point it comes from.
+- **Checks:** common findings worth checking that are not hazard findings: radon likelihood (høy, meget høy) and NVE awareness areas for quick clay and flood. Each has a short text, points to its data point, and says how much of the municipality's area has the same finding (`areaShare`, percent), so the UI can say "gjelder 50 % av arealet i Oslo". Checks never cap a score; they cost a fixed number of points instead (see "Penalties").
 - **Categories:** a list of any length, shown in the order given.
 - **Sources:** one entry per source used: name, owner, link, licence.
 
@@ -49,6 +50,8 @@ Every address has one id, used in the URL (`/a/<id>` in the web app, `/api/addre
 **What the overall score means.** It is a summary of what the public data we have says about the address. It is not a safety rating, a price signal or a promise that a risk is absent.
 - The number comes from two steps. First, a weighted average of the rated categories gives everyday quality. Then serious warnings cap it, so one serious hazard can never be averaged away. Caps are soft: the score is the everyday quality scaled into the cap (`score × cap / 100`), so the cap is the best a capped address can get, and two capped addresses of different quality still get different numbers.
 - Severity says how serious a finding is. The cap is the scoring penalty that follows from it. A warning's severity never changes; only the cap rules below turn it into points.
+- **Penalties:** a check costs fixed points on the overall and on each perspective that lists its data point: radon meget høy 12, høy 8, each awareness area 3. They come off the average *before* caps, so an already capped address is not pushed to the floor. On a capped score, `penalties[].points` is what each one really cost the shown number (scaled by the cap, at least 1). An awareness area is not counted again (no check, no penalty) when the detailed hazard zone for the same hazard already gives a warning (`supersededBy` in `api/src/datapoints.ts`). Its own data point score (radon 15/30, awareness areas 50) still counts in its category as usual. `penalties` lists them.
+  Why: high radon likelihood covers much of Oslo and Akershus and is cheap to measure. As a cap (it was a medium warning) it put a ceiling on most addresses; with no effect at all, scores would bunch high. A fixed penalty keeps the spread.
 - When `cappedBy` is present, the hazard decides the number, not the everyday quality. The UI must then show the cap reason next to the number. It must not show a word like "God" (good) for a capped score.
 - A hazard map only counts as good where the source has mapped the area (see "Mapped area" under Data points). "Not mapped" is shown, but not scored.
 
@@ -120,8 +123,8 @@ The code is the source of truth (`api/src/profile.ts`, `api/src/rating.ts`, `api
 ```
 
 - `rating.status`: `ok` | `insufficientData` | `unavailable` | `informational`. `score` only when `ok`, `reason` only when not.
-- `cappedBy`: warnings that pulled the score down. `weakestCategory`: overall only, whenever at least one category is rated.
-- A data point's `source` is a source `id` from `sources`. `unit`, `score`, `warning` and `explanation` are optional.
+- `cappedBy`: warnings that pulled the score down. `penalties`: checks that cost points (`dataPointId`, `points`, `text`). `weakestCategory`: overall only, whenever at least one category is rated.
+- A data point's `source` is a source `id` from `sources`. `unit`, `score`, `warning`, `penalty` and `explanation` are optional. A `warning` with `check: true` is a check: it is listed in `checks`, not `warnings`, and never caps.
 - `missing[].reason`: `noCoverage` | `sourceUnavailable` | `notLoaded` | `outsideArea` (address is outside Oslo + Akershus, see core rule 6).
 - Severity caps, category: a `high` warning caps its category at 30, `medium` at 60; `low` gives no cap. All caps are soft: score = uncapped score × cap / 100. The overall averages the categories' uncapped scores, so a warning is not scaled down twice.
 - Severity caps, overall: the worst warning sets the cap (`high` 40, `medium` 75). Every further `high` or `medium` warning lowers it by 10, down to 10. `low` gives no cap. `cappedBy` lists every `high` and `medium` warning, each with the final cap, whenever there is one.
