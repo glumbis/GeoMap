@@ -94,7 +94,7 @@ Rules for every sentence:
 | value "gul" | Adressen ligger i gul støysone fra vei, med 55–65 dB ({src}). | 3 |
 | no warning | Adressen ligger ikke i en støysone fra riks- eller fylkesvei ({src}). | 5 |
 
-Note: the noise map has no data on municipal roads, and none in central Oslo. Until the profile marks Oslo as "no coverage" (asked Lukas), the "no warning" sentence must keep "riks- eller fylkesvei" so it stays true.
+Note: the noise map has no data on municipal roads. Oslo is marked "no coverage" in the profile (then the point is listed under "Missing data"). Elsewhere, the "no warning" sentence must keep "riks- eller fylkesvei" so it stays true.
 
 **`pollutedGround` (Forurenset grunn)**
 
