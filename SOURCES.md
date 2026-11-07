@@ -349,6 +349,8 @@ NGU datasets: https://www.ngu.no/geologiske-kart/datasett (download per county, 
   - Category: location
   - Priority: high
   - Notes: updated yearly. Source: Nasjonalt skoleregister API https://data-nsr.udir.no/swagger/index.html. "Videregående skoler" also exists. No school catchment zones (skolekrets).
+  - **Loaded** (2026-11-07) as table `schools` by `data/scripts/schools.ts`, API `/api/schools`: 516 active schools (425 grunnskole, 106 videregående) from the NSR API (`/v3/enheter/fylke/{03,32}` + `/v3/enhet/{orgnr}` for coordinates). Columns: name, address, isPrimary, isUpperSecondary, isPrivate, pupils, gradeFrom/gradeTo, kommunenummer.
+  - Watch out: the nearest school is not the assigned school (could be private or special). 32 active schools have no position and are left out. `pupils` is missing for 105 (mostly videregående).
 
 - **Name:** Barnehager
   - Owner: Utdanningsdirektoratet
@@ -361,6 +363,7 @@ NGU datasets: https://www.ngu.no/geologiske-kart/datasett (download per county, 
   - Category: location
   - Priority: high
   - Notes: updated monthly, from barnehagefakta.no. Some positions only by postcode (approximate).
+  - **Loaded** (2026-11-07) as table `kindergartens` by `data/scripts/kindergartens.ts`, API `/api/kindergartens`: 1215 active kindergartens from the Nasjonalt barnehageregister API (`https://data-nbr.udir.no/v3`, same shape as NSR). Columns: name, address, isPrivate, children, ageFrom/ageTo, categories, kommunenummer. 90 active ones have no position and are left out.
 
 - **Name:** Entur stops and timetables
   - Owner: Entur
