@@ -91,6 +91,8 @@ export const SOURCES: Source[] = [
   { id: "kartverket-kommuner", name: "Kommuner", owner: "Kartverket", url: "https://ws.geonorge.no/kommuneinfo/v1/", licence: "CC BY 4.0" },
   { id: "nve-kvikkleire", name: "Faresoner kvikkleire", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/kvikkleire/a29b905c-6aaa-4283-ae2c-d167624c08a8", licence: "NLOD 2.0" },
   { id: "nve-flomsoner", name: "Flomsoner", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/flomsoner/e95008fc-0945-4d66-8bc9-e50ab3f50401", licence: "NLOD 2.0" },
+  { id: "nve-kvikkleire-aktsomhet", name: "Aktsomhetskart for kvikkleireskred", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/aktsomhetskart-for-kvikkleireskred/dabd2a2c-36d5-4ed7-a4c9-d49808a2b848", licence: "NLOD 2.0" },
+  { id: "ssb-grunnkretser", name: "Befolkning på grunnkretsnivå", owner: "Kartverket / SSB", url: "https://kartkatalog.geonorge.no/metadata/befolkning-paa-grunnkretsniv/7eb907de-fdaa-4442-a8eb-e4bd06da9ca8", licence: "Åpne data, ingen vilkår" },
   { id: "nve-flomaktsomhet", name: "Aktsomhetsområder flom", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/flom-aktsomhetsomraader/60c5024f-bf93-4d7a-888a-5fe001427195", licence: "NLOD 2.0" },
   { id: "ngu-marin-leire", name: "Mulighet for marin leire", owner: "NGU", url: "https://kartkatalog.geonorge.no/metadata/mulighet-for-marin-leire/641a81c2-9354-473b-b8f0-2b1e2ab3930a", licence: "NLOD 2.0" },
   { id: "nve-steinsprang", name: "Aktsomhetsområder steinsprang", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/steinsprang-aktsomhetsomraader/02c6d51c-4e8c-4948-a620-dc046c8cb747", licence: "NLOD 2.0" },
@@ -295,6 +297,17 @@ export const DATA_POINTS: DataPoint[] = [
         ...(lowPoint && { explanation: "Lavpunkt: området ligger lavere enn flomvannstanden, men har ikke direkte forbindelse til elva. Det kan likevel bli oversvømt gjennom kummer, rør eller grunnvann." }),
         warning: { severity: high ? "high" : "medium", text: `Ligger i ${years}-årsflomsone` },
       };
+    },
+  },
+  {
+    // data/scripts/kvikkleire_aktsomhet.ts (Sverre): NVE quick-clay slide awareness areas, with NVE's assessed map sheets
+    // as coverage. Coarser than quickClay (hazard zones), so a low warning: "possible, check before building".
+    id: "quickClayAwareness", label: "Aktsomhetsområde for kvikkleireskred", category: "hazards", source: "nve-kvikkleire-aktsomhet", importance: "normal",
+    table: "kvikkleire_aktsomhet", find: { kind: "within" },
+    coverage: "kvikkleire_aktsomhet_dekning",
+    read: (rows, _address, mapped) => {
+      if (!rows.length) return mapped ? { value: false, display: "Ikke i aktsomhetsområde for kvikkleireskred", effect: "good" } : NOT_MAPPED;
+      return { value: true, display: "I aktsomhetsområde for kvikkleireskred", effect: "bad", score: 50, warning: { severity: "low", text: "Aktsomhetsområde for kvikkleireskred" } };
     },
   },
   {
@@ -541,6 +554,28 @@ export const DATA_POINTS: DataPoint[] = [
     id: "municipality", label: "Kommune", category: "area", source: "kartverket-kommuner", importance: "normal",
     table: "kommuner", find: { kind: "within" },
     read: (rows) => (rows.length ? { value: rows[0].kommunenummer, display: `${rows[0].name} (${rows[0].fylkesnavn})`, effect: "neutral" } : null),
+  },
+  {
+    // data/scripts/grunnkretser.ts (Sverre): SSB grunnkrets (small statistical area) with population, perKm2,
+    // pctUnder20, pctOver70. Info only: no right or wrong number of neighbours, so never scored.
+    id: "neighbourhood", label: "Nabolaget (grunnkrets)", category: "area", source: "ssb-grunnkretser", importance: "normal",
+    table: "grunnkretser", find: { kind: "within" },
+    read: (rows) => {
+      const g = rows[0];
+      if (!g || g.population == null) return null;
+      const people = Number(g.population).toLocaleString("nb-NO");
+      const density = g.perKm2 != null ? `, ${Number(g.perKm2).toLocaleString("nb-NO")} per km²` : "";
+      return { value: Number(g.population), unit: "innbyggere", display: `${g.name}: ${people} innbyggere${density} (${g.year})`, effect: "neutral" };
+    },
+  },
+  {
+    id: "neighbourhoodAge", label: "Aldersfordeling i nabolaget", category: "area", source: "ssb-grunnkretser", importance: "normal",
+    table: "grunnkretser", find: { kind: "within" },
+    read: (rows) => {
+      const g = rows[0];
+      if (!g || g.pctUnder20 == null || Number(g.population) < 20) return null; // too few people for a meaningful share
+      return { value: Number(g.pctUnder20), unit: "%", display: `${g.pctUnder20} % under 20 år, ${g.pctOver70} % over 70 år`, effect: "neutral" };
+    },
   },
   {
     id: "population", label: "Folketall i kommunen", category: "area", source: "ssb-kommune", importance: "normal",

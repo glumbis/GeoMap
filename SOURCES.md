@@ -123,6 +123,15 @@ Terms for all Kartverket free data: CC BY 4.0, credit "© Kartverket". Details i
   - Scored by straight-line distance like schools and kindergartens: grocery 400/800/1500/3000 m, pharmacy and doctor 800/1500/3000/5000 m.
   - Checked: #1 Extra Bjølsen 92 m, Apotek 1 Sagene 167 m; #4 Kiwi Hosle 519 m, Apotek 1 Hosle 494 m; #5 Holmenkollveien is the far one (grocery 2.2 km, pharmacy 3.1 km). OSM is volunteer data, thinnest for doctors.
   - Licence ODbL 1.0, credit "© OpenStreetMap contributors".
+- **NVE Aktsomhetskart for kvikkleireskred** (entry below) → tables `kvikkleire_aktsomhet` + `kvikkleire_aktsomhet_dekning`, script `data/scripts/kvikkleire_aktsomhet.ts`, API `/api/kvikkleire_aktsomhet`, data point `quickClayAwareness` (2026-11-07).
+  - Source: NVE ArcGIS REST `KvikkleireskredAktsomhet`, layer 0 (areas, 6,443 in Oslo + Akershus, simplified to ~2 m) and layer 1 (assessed map sheets: all 27 in the area are `grundigKartlagtMedFunn`), GeoJSON in EPSG:4326.
+  - Coarse areas where a quick-clay slide is possible. Low warning ("check the ground before building"), score 50. Outside the assessed sheets: "Ikke kartlagt her".
+  - Checked: #1 Arendalsgata, #2 Rælingen and #4 Grevlingåsen are inside (matches NVE's own map service); #3 and #5 are not.
+- **Kartverket/SSB Befolkning på grunnkretsnivå** (entry below) → table `grunnkretser`, script `data/scripts/grunnkretser.ts`, API `/api/grunnkretser`, data points `neighbourhood` and `neighbourhoodAge` (2026-11-07).
+  - Source: Geonorge county downloads for Oslo and Akershus (FGDB in a zip, EPSG:25833, layer `befolkningpagrunnkrets`), numbers from 1 January 2025. 2,119 grunnkretser, 1,461,820 people.
+  - Columns: `id` (grunnkretsnummer), `name`, `kommunenummer`, `year`, `population`, `under20`, `over70`, `areaKm2`, `perKm2`, `pctUnder20`, `pctOver70`, `source`, `geom`. SSB hides age groups of 1–2 people, so age sums can be slightly low.
+  - Info only (never scored). The age share is left out under 20 inhabitants. These are also the grunnkrets polygons Even's grunnkrets stats can join to (`id` = grunnkretsnummer).
+  - Checked: #1 Sagene rode 6 (851 people, 15,569 per km²), #4 Hosle nord 06 (220), #5 Tryvann (29).
 - Shared helpers in `data/scripts/lib.ts`: `studyBbox()`, `arcgisFeatures()` (pages any ArcGIS REST layer, e.g. NVE, as GeoJSON) and `readZipEntry()` (reads one file out of a downloaded zip).
 
 - **Name:** Eiendom REST-API (property lookup)

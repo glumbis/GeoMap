@@ -47,6 +47,9 @@ How to use this file:
 - **Når ikke i faresone (kartlagt område):** NVE har kartlagt området og ikke registrert noen faresone der adressen ligger.
 - **Når ikke kartlagt:** NVE har ikke kartlagt kvikkleire i dette området, så kartet sier ingenting om grunnen her. Der det er marin leire i grunnen, kan det likevel finnes kvikkleire.
 
+### `quickClayAwareness` — Aktsomhetsområde for kvikkleireskred
+**Forklaring:** NVE har vurdert hvor det kan gå kvikkleireskred, ut fra terreng og hvor det kan være marin leire. Kartet er mye grovere enn faresonene for kvikkleire, men dekker langt større områder. Ligger eiendommen i et aktsomhetsområde, betyr det ikke at det er kvikkleire der, men at grunnen må undersøkes før det bygges nytt.
+
 ### `flood200` — Flomsone (200-årsflom)
 **Forklaring:** En 200-årsflom er en flom som i gjennomsnitt kommer én gang hvert 200. år. Det betyr omtrent 0,5 % sjanse hvert år, eller rundt 1 av 5 i løpet av 50 år.
 - **Når i flomsone:** Området kan bli oversvømt ved en slik flom. Nye boliger skal som hovedregel være sikret mot 200-årsflom.
@@ -145,6 +148,12 @@ How to use this file:
 
 ### `municipality` — Kommune
 **Forklaring:** Kommunen bestemmer blant annet byggesaker, skolekretser, barnehageplasser, kommunale avgifter og eventuell eiendomsskatt.
+
+### `neighbourhood` — Nabolaget (grunnkrets)
+**Forklaring:** En grunnkrets er SSBs minste område for statistikk, ofte et boligfelt eller noen kvartaler med noen hundre innbyggere. Tallet viser hvor mange som bor i grunnkretsen eiendommen ligger i, og hvor tett det bor folk.
+
+### `neighbourhoodAge` — Aldersfordeling i nabolaget
+**Forklaring:** Andelen barn og unge under 20 år og eldre over 70 år i grunnkretsen. Mange barn og unge tyder på et familieområde. SSB skjuler aldersgrupper med bare 1–2 personer, så tallene kan være litt for lave.
 
 ### `population` — Folketall i kommunen
 **Forklaring:** Antall innbyggere i hele kommunen per 1. januar. Tallet sier ikke hvor tett det bor folk akkurat rundt adressen.
