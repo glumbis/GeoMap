@@ -7,12 +7,15 @@ import "./style.css";
 import "./theme.css";
 import { renderStart } from "./app/start";
 import { renderAddress } from "./app/address";
+import { renderCompare } from "./app/compare";
 
 const app = document.getElementById("app")!;
 
 function route() {
   const m = /^\/a\/([^/]+)$/.exec(location.pathname);
+  const c = /^\/compare\/([^/]+)\/([^/]+)$/.exec(location.pathname);
   if (m) renderAddress(app, decodeURIComponent(m[1]));
+  else if (c) renderCompare(app, decodeURIComponent(c[1]), decodeURIComponent(c[2]));
   else renderStart(app);
 }
 
