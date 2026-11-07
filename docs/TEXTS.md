@@ -30,6 +30,9 @@ How to use this file:
 - **Når middels aktsomhet:** Noen hus i området kan ha for mye radon. Bare en måling i huset kan si hvor mye det faktisk er.
 - **Når lav aktsomhet:** Det er mindre sjanse for høye radonverdier, men enkelthus kan likevel ha mye radon.
 
+### `marineClay` — Mulighet for marin leire
+**Forklaring:** Marin leire er leire som ble avsatt i havet etter istiden, og kvikkleire dannes i marin leire. NGU viser hvor ofte det kan finnes marin leire i grunnen. Det er ikke en faresone, men viser hvor kvikkleire er mulig, også der NVE ikke har kartlagt faresoner. Over marin grense (det høyeste havet sto etter istiden) finnes det ikke marin leire.
+
 ### `energyWell` — Nærmeste energibrønn
 **Forklaring:** En energibrønn er et borehull i fjellet som henter varme til en bergvarmepumpe. Avstanden er i luftlinje til nærmeste brønn i NGUs brønndatabase, og dybden til fjell er det brønnboreren målte der.
 - **Når ingen brønn i nærheten:** Det er ikke registrert noen energibrønn innen 500 meter. Det betyr ikke at det ikke går an å bore her, for ikke alle brønner er registrert.
@@ -49,6 +52,9 @@ How to use this file:
 - **Når i flomsone:** Området kan bli oversvømt ved en slik flom. Nye boliger skal som hovedregel være sikret mot 200-årsflom.
 - **Når ikke i flomsone (kartlagt område):** NVE har laget flomsonekart her, og adressen ligger utenfor sonene. Adressen kan likevel få vann fra bekker, overvann eller kraftig regn.
 - **Når ikke kartlagt:** NVE har bare laget flomsonekart langs noen elver og vassdrag, og ikke her. Kartet sier derfor ingenting om flomfare på denne adressen.
+
+### `floodAwareness` — Aktsomhetsområde for flom
+**Forklaring:** NVE har beregnet hvilke områder langs alle elver og bekker som kan bli oversvømt, ut fra terrenget. Kartet er grovere enn flomsonekartene, men dekker hele landet. Ligger eiendommen i et aktsomhetsområde, må flomfaren vurderes nærmere før det bygges nytt.
 
 ### `rockfall` — Steinsprang
 **Forklaring:** Steinsprang er når stein løsner fra bratte fjellsider og faller eller ruller ned. Aktsomhetsområder viser hvor stein i verste fall kan nå, beregnet ut fra terrenget.

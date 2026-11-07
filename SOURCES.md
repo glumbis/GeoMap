@@ -104,6 +104,14 @@ Terms for all Kartverket free data: CC BY 4.0, credit "© Kartverket". Details i
   - Avinor maps every airport it runs, so no zone = "Ikke i flystøysone" (not "unknown").
   - Street addresses inside (Kartverket address file, 2026-11-07): 357 red, 1,637 yellow, in Ullensaker, Nannestad, Gjerdrum and Eidsvoll. Checked: Brigadevegen 35, Ullensaker (`3209-2340-35`) red; Korsmogutua 7, Gjerdrum (`3230-1104-7`) yellow; no test address is in a zone.
   - Licence: open data, no conditions.
+- **NVE Flom aktsomhetsområder** (entry below) → table `flomaktsomhet`, script `data/scripts/flomaktsomhet.ts`, API `/api/flomaktsomhet`, data point `floodAwareness` (2026-11-07).
+  - Source: NVE ArcGIS REST `FlomAktsomhet`, layer 1 `Flom_aktsomhetsomrade`, GeoJSON in EPSG:4326. 25,986 polygons in Oslo + Akershus, simplified to ~1 m.
+  - National coverage along all rivers, so it answers where `flomsoner` is "Ikke kartlagt her". Low warning ("check before building"), score 50.
+  - Checked: #2 Rælingen is inside (matches its 200-year flood zone); #1, #3, #4, #5 are not.
+- **NGU Mulighet for marin leire** (entry below) → table `marin_leire`, script `data/scripts/marin_leire.ts`, API `/api/marin_leire`, data point `marineClay` (2026-11-07).
+  - Source: NGU county downloads for Oslo and Akershus (FGDB in a zip, EPSG:25833, layer `MuligMarinLeireFlate`), via `nedlasting.ngu.no/api/fileproxy/...` (Atom feed of dataset 641a81c2). NGU's OGC API ignores `bbox`, so the download is used. Data from 2024-06, file 2026-10-26.
+  - Classes and `level`: sværtStor 5, sværtStorMenUsammenhengendeEllerTynt 4, stor 3, middels 2, liten 1, stortSettFraværende 0 (`ikkeAngitt` dropped). Scored, no warning (quickClay warns). No polygon = above the marine limit or not classified: neutral.
+  - Checked: #1 Arendalsgata "svært ofte" (inside the quick-clay zone), #2 and #4 "ofte", #3 and #5 "stort sett aldri".
 - Shared helpers in `data/scripts/lib.ts`: `studyBbox()`, `arcgisFeatures()` (pages any ArcGIS REST layer, e.g. NVE, as GeoJSON) and `readZipEntry()` (reads one file out of a downloaded zip).
 
 - **Name:** Eiendom REST-API (property lookup)

@@ -91,6 +91,8 @@ export const SOURCES: Source[] = [
   { id: "kartverket-kommuner", name: "Kommuner", owner: "Kartverket", url: "https://ws.geonorge.no/kommuneinfo/v1/", licence: "CC BY 4.0" },
   { id: "nve-kvikkleire", name: "Faresoner kvikkleire", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/kvikkleire/a29b905c-6aaa-4283-ae2c-d167624c08a8", licence: "NLOD 2.0" },
   { id: "nve-flomsoner", name: "Flomsoner", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/flomsoner/e95008fc-0945-4d66-8bc9-e50ab3f50401", licence: "NLOD 2.0" },
+  { id: "nve-flomaktsomhet", name: "Aktsomhetsområder flom", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/flom-aktsomhetsomraader/60c5024f-bf93-4d7a-888a-5fe001427195", licence: "NLOD 2.0" },
+  { id: "ngu-marin-leire", name: "Mulighet for marin leire", owner: "NGU", url: "https://kartkatalog.geonorge.no/metadata/mulighet-for-marin-leire/641a81c2-9354-473b-b8f0-2b1e2ab3930a", licence: "NLOD 2.0" },
   { id: "nve-steinsprang", name: "Aktsomhetsområder steinsprang", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/steinsprang-aktsomhetsomraader/02c6d51c-4e8c-4948-a620-dc046c8cb747", licence: "NLOD 2.0" },
   { id: "nve-jordflomskred", name: "Aktsomhetsområder jord- og flomskred", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/aktsomhetskart-for-jord-og-flomskred/30e1883e-70e9-4510-9e97-00edbdcddc02", licence: "NLOD 2.0" },
   { id: "nve-snoskred", name: "Aktsomhetskart snøskred (NAKSIN)", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/aktsomhetskart-for-snoeskred/54ada9d8-e6fc-48d6-82b0-5477166a4aaa", licence: "NLOD 2.0" },
@@ -213,6 +215,25 @@ export const DATA_POINTS: DataPoint[] = [
     },
   },
   {
+    // data/scripts/marin_leire.ts (Sverre): NGU "mulighet for marin leire", level 5 (svært ofte) .. 0 (stort sett aldri).
+    // Quick clay forms in marine clay, so this shows where quick clay is possible, also where NVE has no hazard map.
+    // Scored but no warning: the quick-clay hazard zone (quickClay) is what warns.
+    // No polygon = above the marine limit or not classified by NGU: neutral, not "good".
+    id: "marineClay", label: "Mulighet for marin leire", category: "ground", source: "ngu-marin-leire", importance: "normal",
+    table: "marin_leire", find: { kind: "within" },
+    read: (rows) => {
+      if (!rows.length) return { value: null, display: "Over marin grense eller ikke kartlagt", effect: "neutral" };
+      const best = rows.reduce((a, b) => (Number(b.level) > Number(a.level) ? b : a));
+      const level = Number(best.level);
+      const display: Record<number, string> = {
+        5: "Svært ofte marin leire", 4: "Svært ofte marin leire, men usammenhengende eller tynt", 3: "Ofte marin leire",
+        2: "Noen ganger marin leire", 1: "Sjelden marin leire", 0: "Stort sett aldri marin leire",
+      };
+      const score = [100, 85, 65, 45, 35, 20][level];
+      return { value: String(best.class), display: display[level], effect: level >= 2 ? "bad" : "good", score };
+    },
+  },
+  {
     // data/scripts/energibronner.ts (Even): NGU Granada energy wells, depthToBedrockM, drilledM. Info only: never scored.
     id: "energyWell", label: "Nærmeste energibrønn", category: "ground", source: "ngu-granada", importance: "normal",
     table: "energibronner", find: { kind: "nearest", maxM: 500 },
@@ -273,6 +294,16 @@ export const DATA_POINTS: DataPoint[] = [
         warning: { severity: high ? "high" : "medium", text: `Ligger i ${years}-årsflomsone` },
       };
     },
+  },
+  {
+    // data/scripts/flomaktsomhet.ts (Sverre): NVE flood awareness areas along all rivers, national coverage.
+    // Coarser than flood200 (which is only mapped in some places), so a low warning: "check before building".
+    id: "floodAwareness", label: "Aktsomhetsområde for flom", category: "hazards", source: "nve-flomaktsomhet", importance: "normal",
+    table: "flomaktsomhet", find: { kind: "within" },
+    read: (rows) =>
+      rows.length
+        ? { value: true, display: "I aktsomhetsområde for flom", effect: "bad", score: 50, warning: { severity: "low", text: "Aktsomhetsområde for flom" } }
+        : { value: false, display: "Ikke i aktsomhetsområde for flom", effect: "good" },
   },
   {
     id: "rockfall", label: "Steinsprang", category: "hazards", source: "nve-steinsprang", importance: "normal",
