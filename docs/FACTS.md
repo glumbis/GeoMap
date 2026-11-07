@@ -1,0 +1,190 @@
+# Fact-sentence rules
+
+Owner: Even. Rules that turn an address profile into short, true Norwegian sentences: the "template step" of the AI summary (`PLAN.md` → "AI summary", code in `api/src/summary.ts`, Lukas).
+The AI only rewrites these sentences, so **everything the summary may say must come from here.** If the AI is down, these sentences are shown as they are, so each one must read well on its own.
+
+## How it works
+
+1. For every data point in the profile, find its section below and pick the row whose **When** matches. Fill in the placeholders and keep the **Rank**.
+2. Add one sentence per group of missing data points (see "Missing data").
+3. Sort all sentences by **Rank** (lowest first). Inside the same rank, keep the category order of the profile.
+4. Add the rating sentence last (see "Rating").
+
+Placeholders (all from the profile, nothing else):
+- `{display}`: the data point's `display` text, as it is.
+- `{value}`: the data point's `value`.
+- `{label}`: the data point's `label`, in lower case.
+- `{src}`: the `owner` of the data point's source (e.g. NVE, SSB).
+
+**When** uses the data point's `value` and `warning`, exactly as `read()` in `api/src/datapoints.ts` sets them today.
+
+## Ranks
+
+| Rank | What | Example |
+|---|---|---|
+| 1 | Warning with severity high | Quick clay, faregrad høy |
+| 2 | Warning with severity medium | 200-year flood zone, red noise zone |
+| 3 | Warning with severity low | Yellow noise zone, polluted ground nearby |
+| 4 | Bad, no warning | No school within 5 km |
+| 5 | Good: a hazard we checked and did not find | Not in a mapped flood zone |
+| 6 | Neutral facts and good location facts | Municipality, income, nearest stop |
+| 7 | Missing data | "Vi har ikke data om radon ennå." |
+| 8 | Rating | Always last |
+
+Rank 5 matters: the summary must say that we checked a hazard and found nothing, so it does not look like we forgot it. But always with "kartlagt" (mapped) or the map's limits, never "trygt" (safe).
+
+## Sentence rules
+
+Rules for every sentence:
+- Bokmål, one sentence, ends with the source in brackets: `(NVE)`.
+- Say "eiendommen" or "adressen", never "du" or "huset ditt".
+- No advice, no judgement words like "farlig", "trygt", "bra" or "dårlig". Say what the data says.
+- Never round a risk up or down. Use the exact level from the data (faregrad, støysone, years).
+- Never add a number, place or hazard that is not in the profile.
+
+### Ground & geology
+
+**`soilType` (Løsmasser)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| warning (marin leire) | Grunnen består av {display}, som er marin leire ({src}). | 3 |
+| no warning | Grunnen består av {display} ({src}). | 6 |
+
+**`radon` (Radon)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| warning (høy) | Adressen ligger i et område med høy aktsomhet for radon ({src}). | 2 |
+| value starts with "moderat" | Adressen ligger i et område med moderat til lav aktsomhet for radon ({src}). | 5 |
+
+### Natural hazards
+
+**`quickClay` (Kvikkleire faresone)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| warning, value "høy" | Eiendommen ligger i en faresone for kvikkleireskred med høy faregrad ({src}). | 1 |
+| warning, value "middels" | Eiendommen ligger i en faresone for kvikkleireskred med middels faregrad ({src}). | 2 |
+| warning, value "lav" | Eiendommen ligger i en faresone for kvikkleireskred med lav faregrad ({src}). | 3 |
+| no warning | Eiendommen ligger ikke i en kartlagt faresone for kvikkleireskred ({src}). | 5 |
+
+**`flood200` (Flomsone)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| warning, value ≤ 10 | Eiendommen ligger i en flomsone som kan bli oversvømt ved en {value}-årsflom ({src}). | 1 |
+| warning, other value | Eiendommen ligger i en flomsone som kan bli oversvømt ved en {value}-årsflom ({src}). | 2 |
+| no warning | Eiendommen ligger ikke i en kartlagt flomsone ({src}). | 5 |
+
+**`rockfall` (Steinsprang)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| warning | Eiendommen ligger i et aktsomhetsområde for steinsprang ({src}). | 2 |
+| no warning | Eiendommen ligger ikke i et aktsomhetsområde for steinsprang ({src}). | 5 |
+
+### Environment
+
+**`roadNoise` (Veistøy)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value "rød" | Adressen ligger i rød støysone fra vei, med over 65 dB ({src}). | 2 |
+| value "gul" | Adressen ligger i gul støysone fra vei, med 55–65 dB ({src}). | 3 |
+| no warning | Adressen ligger ikke i en støysone fra riks- eller fylkesvei ({src}). | 5 |
+
+Note: the noise map has no data on municipal roads, and none in central Oslo. Until the profile marks Oslo as "no coverage" (asked Lukas), the "no warning" sentence must keep "riks- eller fylkesvei" so it stays true.
+
+**`pollutedGround` (Forurenset grunn)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| warning | Det er registrert forurenset grunn {value} meter fra adressen ({src}). | 3 |
+| no warning | Det er ikke registrert forurenset grunn innen 100 meter fra adressen ({src}). | 5 |
+
+### Location
+
+Distances are in a straight line. Say so once ("i luftlinje"), so the summary does not suggest walking distance.
+Rank for "value is a number": 6 when the data point's `effect` is good, 4 when it is bad (far away).
+`{display}` here is "31 m (Arendalsgata)": `{name}` is the text in brackets, `{distance}` the part before it.
+Example (Holmenkollveien 196): "Nærmeste holdeplass er Frognerseteren, 155 m unna i luftlinje (Entur)."
+
+**`transitStop` (Nærmeste holdeplass)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value is a number | Nærmeste holdeplass er {name}, {distance} unna i luftlinje ({src}). | 6 |
+| value is empty | Det er ingen holdeplass innen 2 km i luftlinje ({src}). | 4 |
+
+**`school` (Nærmeste grunnskole)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value is a number | Nærmeste grunnskole er {name}, {distance} unna i luftlinje ({src}). | 6 |
+| value is empty | Det er ingen grunnskole innen 5 km i luftlinje ({src}). | 4 |
+
+Never call it "skolen adressen hører til": we do not know the school catchment.
+
+**`kindergarten` (Nærmeste barnehage)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value is a number | Nærmeste barnehage er {name}, {distance} unna i luftlinje ({src}). | 6 |
+| value is empty | Det er ingen barnehage innen 3 km i luftlinje ({src}). | 4 |
+
+### Nature & leisure
+
+**`trails` (Nærmeste tursti eller skiløype)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value is a number | Nærmeste registrerte tursti eller skiløype er {name}, {distance} unna i luftlinje ({src}). | 6 |
+| value is empty | Det er ingen registrert tursti eller skiløype innen 3 km i luftlinje ({src}). | 4 |
+
+### Area
+
+Area numbers are for the whole municipality. Always say "i kommunen", never "i nabolaget".
+
+| Data point | Sentence | Rank |
+|---|---|---|
+| `municipality` | Adressen ligger i {display} ({src}). | 6 |
+| `population` | Kommunen hadde {value} innbyggere i {year} ({src}). | 6 |
+| `medianIncome` | Medianinntekten etter skatt for husholdninger i kommunen var {value} kr i {year} ({src}). | 6 |
+
+- `{year}` is the year in brackets at the end of `{display}` ("728 714 (2026)" → 2026). Write `{value}` with spaces between thousands, as in `{display}`.
+- `municipality`: `{display}` is "Bærum (Akershus)". When the two names are the same, write the name once: "Adressen ligger i Oslo (Kartverket)."
+
+Example (Arendalsgata 22): "Kommunen hadde 728 714 innbyggere i 2026 (SSB)." and "Medianinntekten etter skatt for husholdninger i kommunen var 635 200 kr i 2024 (SSB)."
+
+## Missing data (rank 7)
+
+Group the missing data points by reason and write one sentence per reason. List labels in lower case, joined with commas and "og" before the last.
+
+| Reason | Sentence |
+|---|---|
+| `notLoaded` | Vi har ikke data om {labels} ennå. |
+| `noCoverage` | Kildene har ingen data om {labels} for dette stedet. |
+| `sourceUnavailable` | Data om {labels} var ikke tilgjengelig da sammendraget ble laget. |
+
+The summary must never fill a gap: if radon is missing, it says we don't know, not "no radon".
+
+## Rating (rank 8, always last)
+
+| When | Sentence |
+|---|---|
+| status ok, with weakest category | Samlet karakter er {score} av 100. Svakest er {weakest category name in lower case} med {weakest score}. |
+| status ok, no weakest category | Samlet karakter er {score} av 100. |
+| status insufficientData or unavailable | {reason} (the profile's reason, as it is) |
+
+## Check against the test addresses
+
+From `docs/TEST_ADDRESSES.md`. After a change here or in `summary.ts`, the facts must give:
+
+| # | Address | Must be in the facts | Must not be in the facts |
+|---|---|---|---|
+| 1 | Arendalsgata 22 | Kvikkleire, høy faregrad (rank 1), once NVE data is loaded | Any noise zone |
+| 2 | Nedre Rælingsveg 148 | 200-årsflom (rank 2), once loaded. Rød støysone (rank 2) | — |
+| 3 | Gamle Drammensvei 207 | Rød støysone (rank 2) | Kvikkleire, flom |
+| 4 | Grevlingåsen 17 | "ikke i en kartlagt" for quick clay and flood, no noise zone (rank 5) | Any warning |
+| 5 | Holmenkollveien 196 | No warnings. Frognerseteren as nearest stop | Kvikkleire, flom, støy |
