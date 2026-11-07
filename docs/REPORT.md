@@ -35,7 +35,7 @@ redirects to `report.html?print`, so the button on the website works unchanged.
 2. **Oversikt:** AI summary (labelled with the model, only when `aiGenerated`), otherwise the fact sentences. Category bars with weights. The four perspectives with what pulls each down.
 3. **Funn og faresoner:** a 1.6 km map with every NVE hazard zone near the address, and all findings, worst first.
 4. **Detaljer per kategori:** every data point with value, score bar, warning, info text and source; missing data points as "Ikke tilgjengelig" with the reason.
-5. **Spørsmål å stille:** a checklist for the viewing, from the findings. The questions are written by hand in `QUESTIONS` in `api/src/report.ts`, never by the AI. A data point with a warning and no written question gets a plain "Spør selger eller megler om dette: ...".
+5. **Spørsmål å stille:** a checklist for the viewing, from the findings. The questions are the profile's `questions` (written by hand in `api/src/questions.ts`, never by the AI; the address page shows the same list as "Spør megleren"). A data point with a warning and no written question gets a plain "Spør selger eller megler om dette: ...".
 6. **Om rapporten:** how the score is computed, data coverage chart, missing data, every source with owner, licence and link, date and profile version.
 
 Same rules as the rest of Omnium: no faked data, every number has a source, missing data is shown as missing (`docs/PROFILE.md`).

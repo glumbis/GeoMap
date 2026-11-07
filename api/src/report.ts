@@ -147,48 +147,6 @@ function scoreBadge(r: Rating): string {
   return `<span class="badge muted">${esc(ratingWord(r))}</span>`;
 }
 
-// ---------- Questions to ask (docs/REPORT.md -> "Spørsmål"). Written by hand, never by the AI. ----------
-
-const QUESTIONS: Record<string, { warn?: string[]; notMapped?: string[] }> = {
-  quickClay: {
-    warn: ["Er det gjort en geoteknisk vurdering av tomten, og hva sier den om områdestabilitet?", "Har kommunen stilt krav om sikringstiltak for byggesaker i området?"],
-    notMapped: ["NVE har ikke kartlagt kvikkleire her. Finnes det grunnundersøkelser for tomten eller nabotomtene?"],
-  },
-  flood200: {
-    warn: ["Har det vært vann i kjeller eller på tomten ved flom eller kraftig regn?", "Er boligen flomsikret, og hva dekker forsikringen ved flomskade?"],
-    notMapped: ["NVE har ikke kartlagt flomfare her. Har det vært vann i kjelleren ved kraftig regn eller snøsmelting?"],
-  },
-  rockfall: { warn: ["Er det gjort en vurdering av skredfare for tomten (TEK17 § 7-3)?", "Finnes det sikring mot steinsprang, for eksempel nett eller voll?"] },
-  debrisFlow: { warn: ["Er det gjort en vurdering av skredfare for tomten (TEK17 § 7-3)?", "Hvordan ledes overvann og bekker forbi huset ved store nedbørsmengder?"] },
-  avalanche: { warn: ["Er det gjort en vurdering av snøskredfare for tomten (TEK17 § 7-3)?"] },
-  stormSurge: { warn: ["Hvor høyt over havet ligger laveste etasje, og har det vært vann inn ved stormflo?"] },
-  radon: { warn: ["Er det målt radon i boligen? Når, og hva var resultatet i Bq/m³?", "Har boligen radonsperre, radonbrønn eller annet tiltak mot radon?"] },
-  soilType: { warn: ["Har bygningen setningsskader, sprekker i mur eller skjeve dører og vinduer?", "Hvordan er huset fundamentert, for eksempel på peler til fjell?"] },
-  pollutedGround: { warn: ["Hva slags forurensning er registrert i nærheten, og er grunnen på tomten undersøkt?"] },
-  roadNoise: { warn: ["Hvilke rom vender mot veien, og har vinduene støydempende glass?", "Finnes det støyskjerm, og er det planer om mer trafikk på veien?"] },
-  roadNoiseStrategic: { warn: ["Hvilke rom vender mot veien, og har vinduene støydempende glass?", "Finnes det støyskjerm, og er det planer om mer trafikk på veien?"] },
-  aircraftNoise: { warn: ["Hvor ofte går flytrafikken over boligen, og har vinduene støydempende glass?"] },
-};
-
-function questions(p: Profile): { topic: string; finding: string; items: string[] }[] {
-  const out: { topic: string; finding: string; items: string[] }[] = [];
-  const seen = new Set<string>();
-  for (const c of p.categories) {
-    for (const d of c.dataPoints) {
-      const q = QUESTIONS[d.id];
-      const items = d.value === "ikkeKartlagt" ? q?.notMapped : d.warning ? (q?.warn ?? [`Spør selger eller megler om dette: ${d.warning.text.toLowerCase()}.`]) : undefined;
-      const fresh = items?.filter((i) => !seen.has(i));
-      if (!fresh?.length) continue;
-      fresh.forEach((i) => seen.add(i));
-      out.push({ topic: d.label, finding: d.warning?.text ?? d.display, items: fresh });
-    }
-    for (const m of c.missing.filter((m) => m.importance === "critical")) {
-      out.push({ topic: m.label, finding: "Vi fant ikke data", items: [`Vi kunne ikke sjekke ${m.label.toLowerCase()}. Spør selger eller kommunen hva som er kjent.`] });
-    }
-  }
-  return out;
-}
-
 // ---------- The document ----------
 
 const KM = new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 1 });
@@ -212,7 +170,8 @@ function render(p: Profile, s: Summary, zones: Zone[]): string {
   const present = p.categories.reduce((n, c) => n + c.dataPoints.length, 0);
   const expected = present + p.categories.reduce((n, c) => n + c.missing.length, 0);
   const totalWeight = p.categories.reduce((n, c) => n + c.weight, 0);
-  const qs = questions(p);
+  const qs = p.questions.filter((q) => q.dataPointId);
+  const always = p.questions.filter((q) => !q.dataPointId);
   const allMissing = p.categories.flatMap((c) => c.missing.map((m) => ({ ...m, category: c.name })));
 
   const warningRow = (w: Profile["warnings"][number]) => {
@@ -350,10 +309,7 @@ function render(p: Profile, s: Summary, zones: Zone[]): string {
   <p class="lead">Før visning eller bud: spørsmål til selger, megler eller kommunen, ut fra funnene i rapporten.</p>
   ${qs.length ? qs.map((q) => `<div class="qgroup"><p class="qtopic"><b>${esc(q.topic)}</b> · ${esc(q.finding)}</p><ul class="checks">${q.items.map((i) => `<li><span class="box"></span>${esc(i)}</li>`).join("")}</ul></div>`).join("")
     : `<p class="note">Ingen funn i dataene som gir egne spørsmål.</p>`}
-  <div class="qgroup"><p class="qtopic"><b>Alltid lurt</b></p><ul class="checks">
-    <li><span class="box"></span>Be om tilstandsrapport og les hva den sier om fukt, drenering og grunnmur.</li>
-    <li><span class="box"></span>Spør kommunen om reguleringsplaner og byggesaker for nabolaget.</li>
-  </ul></div>
+  ${always.map((q) => `<div class="qgroup"><p class="qtopic"><b>${esc(q.topic)}</b></p><ul class="checks">${q.items.map((i) => `<li><span class="box"></span>${esc(i)}</li>`).join("")}</ul></div>`).join("")}
 </section>
 
 <!-- ============ 6. About ============ -->
