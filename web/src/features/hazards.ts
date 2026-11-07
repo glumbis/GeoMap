@@ -27,6 +27,10 @@ type MapLayer = {
   hatch?: { filter: ExpressionSpecification; color: string };
   filter?: ExpressionSpecification;
   sortKey?: ExpressionSpecification;
+  /** Draw as circles (point data) instead of polygons. */
+  circle?: boolean;
+  /** Fetch and show only from this zoom in (default MIN_ZOOM). */
+  minZoom?: number;
   /** Legend in three columns instead of two (long lists of very short labels). */
   legendCols3?: boolean;
   /** Thinner, fainter outlines for layers made of many small polygons. */
@@ -60,6 +64,14 @@ function layerGroups(): Group[] {
   const gold = cssVar("--gold");
   const water = cssVar("--map-water");
   const unknown = cssVar("--unknown");
+  const green = cssVar("--green");
+  const good = cssVar("--good");
+
+  // ---- Heritage and nature ----
+  const heritage = { fredet: mix(navy, surface, 0.1), other: mix(navy, surface, 0.6) };
+  const protectedArea = mix(green, good, 0.5);
+  const recreation = mix(teal, green, 0.4);
+  const well = mix(gold, navy, 0.5);
 
   // ---- Quick clay ----
   const clay = { hoy: bad, middels: warn, lav: mix(warn, surface, 0.45) };
@@ -313,6 +325,113 @@ function layerGroups(): Group[] {
             );
           },
         },
+        {
+          id: "flystoy",
+          label: "Støysoner, fly",
+          endpoint: "/api/flystoy",
+          on: false,
+          classes: [
+            { label: "Rød sone", color: bad },
+            { label: "Gul sone", color: gold },
+          ],
+          fillColor: ["case", isRed, bad, gold],
+          sortKey: ["case", isRed, 2, 1], // yellow first, red on top
+          facts: (f) => {
+            const red = String(f.properties.stoysone ?? "").toLowerCase().startsWith("r");
+            return item(
+              red ? "Rød støysone fra fly" : "Gul støysone fra fly",
+              red
+                ? "Mye flystøy. Her skal det som hovedregel ikke bygges nye boliger."
+                : "Merkbar flystøy. Nye boliger her må ha støytiltak.",
+              f.properties.airport ? `Flyplass: ${String(f.properties.airport)}` : null,
+              f.properties.year ? `Beregnet for ${String(f.properties.year)}.` : null,
+              sourceLine(f),
+            );
+          },
+        },
+      ],
+    },
+    {
+      title: "Kulturminner og natur",
+      layers: [
+        {
+          id: "kulturminner",
+          label: "Kulturminner",
+          endpoint: "/api/kulturminner",
+          on: false,
+          classes: [
+            { label: "Fredet", color: heritage.fredet },
+            { label: "Andre kulturminner", color: heritage.other },
+          ],
+          fillColor: ["case", isTrue("fredet"), heritage.fredet, heritage.other],
+          sortKey: ["case", isTrue("fredet"), 2, 1], // protected on top
+          facts: (f) => {
+            const p = f.properties;
+            const link =
+              typeof p.link === "string" && /^https?:\/\//.test(p.link)
+                ? h("a", { href: p.link, target: "_blank", rel: "noopener" }, "Se i Kulturminnesøk")
+                : null;
+            return item(
+              p.name ? String(p.name) : "Kulturminne",
+              p.kind ? `Type: ${String(p.kind)}` : null,
+              p.status ? `Status: ${String(p.status)}` : null,
+              `Fredet: ${p.fredet === true ? "ja" : "nei"}`,
+              link,
+              sourceLine(f),
+            );
+          },
+        },
+        {
+          id: "verneomrader",
+          label: "Verneområder",
+          endpoint: "/api/verneomrader",
+          on: false,
+          classes: [{ label: "Verneområde", color: protectedArea }],
+          fillColor: protectedArea,
+          facts: (f) =>
+            item(
+              f.properties.name ? String(f.properties.name) : "Verneområde",
+              f.properties.protectionType ? `Vernetype: ${String(f.properties.protectionType)}` : null,
+              sourceLine(f),
+            ),
+        },
+        {
+          id: "friluftsomrader",
+          label: "Friluftsområder",
+          endpoint: "/api/friluftsomrader",
+          on: false,
+          classes: [{ label: "Statlig sikret friluftsområde", color: recreation }],
+          fillColor: recreation,
+          facts: (f) =>
+            item(
+              f.properties.name ? String(f.properties.name) : "Friluftsområde",
+              "Statlig sikret friluftsområde.",
+              // Descriptions are whole paragraphs: keep the popup short.
+              f.properties.description ? shorten(String(f.properties.description), 160) : null,
+              sourceLine(f),
+            ),
+        },
+        {
+          id: "energibronner",
+          label: "Energibrønner",
+          endpoint: "/api/energibronner",
+          on: false,
+          circle: true,
+          minZoom: 15,
+          classes: [{ label: "Energibrønn (fra zoom 15)", color: well }],
+          fillColor: well,
+          facts: (f) => {
+            const p = f.properties;
+            return item(
+              "Energibrønn",
+              p.drilledM != null ? `Boret ${Number(p.drilledM)} m dypt` : null,
+              p.depthToBedrockM != null ? `Dybde til fjell: ${Number(p.depthToBedrockM)} m` : null,
+              p.drillYear ? `Boret ${String(p.drillYear)}` : null,
+              p.use ? `Bruk: ${String(p.use)}` : null,
+              sourceLine(f),
+            );
+          },
+        },
       ],
     },
   ];
@@ -340,7 +459,7 @@ export default function (map: Map) {
     const source = map.getSource<GeoJSONSource>(`hz-${L.id}`);
     if (!source) return;
     setStatus(L, "");
-    if (!visible[L.id] || map.getZoom() < MIN_ZOOM) {
+    if (!visible[L.id] || map.getZoom() < (L.minZoom ?? MIN_ZOOM)) {
       source.setData(emptyData);
       return;
     }
@@ -519,6 +638,23 @@ function addMapLayers(map: Map, L: MapLayer, on: boolean) {
   const visibility = on ? "visible" : "none";
   const filter = L.filter ? { filter: L.filter } : {};
   map.addSource(`hz-${L.id}`, { type: "geojson", data: emptyData });
+  if (L.circle) {
+    // Point data: one circle layer, named like the fill layer so clicks and the panel treat it the same.
+    map.addLayer({
+      id: `hz-${L.id}-fill`,
+      type: "circle",
+      source: `hz-${L.id}`,
+      layout: { visibility },
+      paint: {
+        "circle-color": L.fillColor,
+        "circle-opacity": 0.6,
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 15, 3, 18, 6],
+        "circle-stroke-color": L.fillColor,
+        "circle-stroke-width": 1,
+      },
+    });
+    return;
+  }
   map.addLayer({
     id: `hz-${L.id}-fill`,
     type: "fill",
@@ -590,6 +726,13 @@ function item(title: string, ...lines: (string | HTMLElement | null)[]): HTMLEle
 
 function sourceLine(f: MapGeoJSONFeature): HTMLElement | null {
   return f.properties.source ? h("span", { class: "hz-popup__source" }, `Kilde: ${String(f.properties.source)}`) : null;
+}
+
+/** Cut at the last word before `max` characters and add an ellipsis. */
+function shorten(text: string, max: number): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max);
+  return `${cut.slice(0, cut.lastIndexOf(" ") > 0 ? cut.lastIndexOf(" ") : max)} …`;
 }
 
 function radonLabel(a: string): string {
