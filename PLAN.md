@@ -95,12 +95,12 @@ Each role lists: what you own, your tasks in order, and when a task is done.
 1. **Read `docs/DESIGN.md`** and adjust it if you disagree. It is yours. The brand colours are already in `web/src/style.css`.
 2. **Start page:** blank paper page, logo, one big address search field with autocomplete (Geonorge `adresser/v1/sok`, keep only `objtype` `Vegadresse`). Picking an address goes to `/a/<id>`.
    Build the id from the search hit: `` `${kommunenummer}-${adressekode}-${nummer}${bokstav.toUpperCase()}` ``, e.g. `0301-10223-22` (Arendalsgata 22) or `0301-13729-64A` (Kirkeveien 64A). Details: "Address id" in `docs/PROFILE.md`.
-   *Done when:* you can find each of the 5 test addresses by typing part of it, with mouse or keyboard, on desktop and on a phone-sized screen.
+   *Done when:* you can find each of the 5 test addresses by typing part of it, with mouse or keyboard, on a laptop screen.
 3. **Address page skeleton:** fetch `/api/address/<id>/profile` and show the summary block and category cards. Render whatever categories the profile contains; never hard-code the list.
    The endpoint works now: try `http://localhost:5173/api/address/0301-10223-22/profile`. Field names and an example: "Field names" in `docs/PROFILE.md`. Until hazard data is ingested, the overall `rating.status` is `insufficientData` with a `reason`: show the reason, never a number. Summary: `GET /api/address/<id>/summary`; label it "AI-generert" only when `aiGenerated` is true.
 4. **Map:** make the Kartverket basemap match the logo (see "The map" in `docs/DESIGN.md`), the orange pin, layer toggles grouped by category. Restyle the controls.
 5. **Details:** expandable data points with explanation and source, "Ikke tilgjengelig" for missing data, "AI-generert" label on the summary, loading and error states.
-6. **Polish for the demo:** the 5 test addresses look great on a laptop and a phone.
+6. **Polish for the demo:** the 5 test addresses look great on a laptop (laptop only for the MVP, see `docs/DESIGN.md`).
 
 ### Even — sources, municipal stats, texts, demo
 
