@@ -131,3 +131,8 @@ export function destroyMap() {
   pin = undefined;
   host = undefined;
 }
+
+/** The shared map, for pages that draw their own layers on it (the /finn page). Undefined before the first showMap*. */
+export function getMap(): Map | undefined {
+  return map;
+}

@@ -1,4 +1,4 @@
-// Minimal start page: the Omnium logo, address search and a link to the map.
+// Minimal start page: the Omnium logo, address search, a link to the map and one to /finn.
 import { h } from "./dom";
 import { navigate } from "./router";
 import { createSearch } from "./search";
@@ -25,13 +25,20 @@ export function renderStart(app: HTMLElement) {
     navigate("/kart");
   });
 
+  const finnLink = h("a", { class: "start-btn", href: "/finn" }, "Finn område for meg ", h("span", { "aria-hidden": "true" }, "→"));
+  finnLink.addEventListener("click", (e) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    navigate("/finn");
+  });
+
   const logo = h(
     "h1",
     { class: "start-logo" },
     logoMark("start-mark"),
     h("span", { class: "start-word" }, "Omnium"),
   );
-  const actions = h("div", { class: "start-actions" }, mapLink);
+  const actions = h("div", { class: "start-actions" }, mapLink, finnLink);
   const uses = usesLine(search);
 
   const disclaimer = h(
