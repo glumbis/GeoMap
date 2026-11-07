@@ -3,6 +3,7 @@
 //   /a/<id>    address page (summary, category cards, map)
 //   /compare/<a>/<b>  compare two addresses
 //   /kart      map only (Kartlag + click to check a place)
+//   /finn      find areas: describe what you want, the map highlights the 500 m squares that fit
 // Code for the pages lives in src/app/. Map layers go in src/features/ (loaded by src/app/map.ts).
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./style.css";
@@ -12,15 +13,18 @@ import { renderKart } from "./app/kart";
 import { renderStart } from "./app/start";
 import { renderAddress } from "./app/address";
 import { renderCompare } from "./app/compare";
+import { renderFinn, leaveFinn } from "./app/finn";
 
 const app = document.getElementById("app")!;
 
 function route() {
+  leaveFinn(); // /finn draws on the shared map: take its layers off before any page renders
   const m = /^\/a\/([^/]+)$/.exec(location.pathname);
   const c = /^\/compare\/([^/]+)(?:\/([^/]*))?$/.exec(location.pathname); // /compare/<a>/ : B empty
   if (m) renderAddress(app, decodeURIComponent(m[1]));
   else if (c) renderCompare(app, decodeURIComponent(c[1]), decodeURIComponent(c[2] ?? ""));
   else if (/^\/kart\/?$/.test(location.pathname)) renderKart(app);
+  else if (/^\/finn\/?$/.test(location.pathname)) renderFinn(app);
   else renderStart(app);
 }
 

@@ -31,6 +31,8 @@ type MapLayer = {
   circle?: boolean;
   /** Fetch and show only from this zoom in (default MIN_ZOOM). */
   minZoom?: number;
+  /** Max features per fetch (default LIMIT). */
+  limit?: number;
   /** Legend in three columns instead of two (long lists of very short labels). */
   legendCols3?: boolean;
   /** Thinner, fainter outlines for layers made of many small polygons. */
@@ -114,7 +116,42 @@ function layerGroups(): Group[] {
     [75, mix(bad, navy, 0.4)],
   ];
 
+  // ---- Area score: red under 30, yellow at 60, green from 90 (data/scripts/zz_omradescore.ts) ----
+  const score: ExpressionSpecification = ["to-number", ["get", "score"], 0];
+  const scoreColor: ExpressionSpecification = ["interpolate", ["linear"], score, 30, bad, 60, warn, 90, good];
+
   return [
+    {
+      title: "Områdescore",
+      layers: [
+        {
+          id: "omradescore",
+          label: "Score for området",
+          endpoint: "/api/omradescore",
+          on: false,
+          minZoom: 8,
+          limit: 10000,
+          classes: [
+            { label: "90+ svært godt", color: good },
+            { label: "60 middels", color: warn },
+            { label: "Under 30 svakt", color: bad },
+            { label: "Ingen farge: få bor der", color: surface },
+          ],
+          fillColor: scoreColor,
+          lineColor: "rgba(0,0,0,0)", // a grid of outlines would hide the map
+          fillOpacity: ["interpolate", ["linear"], ["zoom"], 8, 0.55, 14, 0.35], // stronger zoomed out, lighter over streets
+          facts: (f) => {
+            const p = f.properties;
+            return item(
+              `Score for området: ${Number(p.score)}/100`,
+              p.capText ? `Begrenset av: ${String(p.capText).charAt(0).toLowerCase()}${String(p.capText).slice(1)}` : null,
+              `Beregnet for midten av ruten (500 × 500 m), basert på ${Number(p.present)} av ${Number(p.expected)} datapunkter. Søk opp adressen for nøyaktig score.`,
+              sourceLine(f),
+            );
+          },
+        },
+      ],
+    },
     {
       title: "Naturfare",
       layers: [
@@ -469,7 +506,8 @@ export default function (map: Map) {
     aborts[L.id] = ctrl;
     busy(1);
     try {
-      const res = await fetch(`${L.endpoint}?bbox=${bbox}&limit=${LIMIT}`, { signal: ctrl.signal });
+      const limit = L.limit ?? LIMIT;
+      const res = await fetch(`${L.endpoint}?bbox=${bbox}&limit=${limit}`, { signal: ctrl.signal });
       if (res.status === 503) {
         // Table not loaded yet on this machine (npm run ingest <name>).
         setStatus(L, "Ikke tilgjengelig");
@@ -483,7 +521,7 @@ export default function (map: Map) {
       const data = await res.json();
       if (ctrl.signal.aborted) return;
       source.setData(data);
-      if (Array.isArray(data.features) && data.features.length >= LIMIT) setStatus(L, "Zoom inn for alle");
+      if (Array.isArray(data.features) && data.features.length >= limit) setStatus(L, "Zoom inn for alle");
     } catch (err) {
       if ((err as Error).name !== "AbortError") console.warn(`${L.id}: fetch failed`, err);
     } finally {

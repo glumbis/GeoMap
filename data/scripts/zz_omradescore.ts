@@ -1,0 +1,233 @@
+// Area score map: Oslo + Akershus in 500 m squares, each with the same 0–100 overall score an address gets
+// (same DATA_POINTS, same rating rules as api/src/profile.ts), worked out at the square's centre point.
+// Owner: Erik. Needs every other table, so the file name starts with "zz" to run last in `npm run ingest`.
+// Only squares where people live (centre in a grunnkrets with at least MIN_PER_KM2 people per km²) are scored.
+// Each square also stores the four perspective scores and raw values (hazard, road noise, distances, departures)
+// that GET /api/finn (reverse search) filters on. All nullable: NULL = we don't have the data, never a fake 0.
+// A square whose overall status isn't "ok" keeps a NULL score (never guessed) but stays, so it can match other criteria.
+// Fast because each data point runs as ONE query for all squares (a spatial join), not one query per square.
+import { writeFile } from "node:fs/promises";
+import { conn, query } from "../../api/src/db.ts";
+import { CATEGORIES, DATA_POINTS, type Find, type Reading, type Row } from "../../api/src/datapoints.ts";
+import { PERSPECTIVES } from "../../api/src/perspectives.ts";
+import { rateCategory, rateOverall, ratePerspective, type MissingPoint, type Scored } from "../../api/src/rating.ts";
+import type { Address } from "../../api/src/address.ts";
+import { rawPath } from "./lib.ts";
+
+const SIZE = 500; // metres
+const MIN_PER_KM2 = 25;
+const UTM = (g: string) => `ST_Transform(${g}, 'EPSG:4326', 'EPSG:25833', always_xy := true)`;
+const WGS = (g: string) => `ST_Transform(${g}, 'EPSG:25833', 'EPSG:4326', always_xy := true)`;
+
+const loaded = new Set((await query<{ t: string }>("SELECT table_name AS t FROM duckdb_tables()")).map((r) => r.t));
+for (const t of ["kommuner", "grunnkretser"]) if (!loaded.has(t)) throw new Error(`${t} table is missing. Run: npm run ingest ${t}`);
+
+// ---------- Squares ----------
+const [b] = await query<{ minx: number; miny: number; maxx: number; maxy: number }>(`
+  SELECT min(ST_XMin(u)) AS minx, min(ST_YMin(u)) AS miny, max(ST_XMax(u)) AS maxx, max(ST_YMax(u)) AS maxy
+  FROM (SELECT ${UTM("geom")} AS u FROM kommuner)`);
+const [x0, y0] = [Math.floor(b.minx / SIZE) * SIZE, Math.floor(b.miny / SIZE) * SIZE];
+const [x1, y1] = [Math.ceil(b.maxx / SIZE) * SIZE, Math.ceil(b.maxy / SIZE) * SIZE];
+
+await conn.run(`
+  CREATE OR REPLACE TEMP TABLE sq AS
+  WITH c AS (
+    SELECT x, y, ${WGS(`ST_Point(x + ${SIZE / 2}, y + ${SIZE / 2})`)} AS geom
+    FROM range(${x0}, ${x1}, ${SIZE}) tx(x), range(${y0}, ${y1}, ${SIZE}) ty(y)
+  )
+  SELECT row_number() OVER (ORDER BY c.x, c.y)::INTEGER AS cid, c.x, c.y, ST_X(c.geom) AS lng, ST_Y(c.geom) AS lat, c.geom,
+    any_value(k.kommunenummer) AS kommunenummer, any_value(k.name) AS kommune
+  FROM c
+  JOIN kommuner k ON ST_Intersects(k.geom, c.geom)
+  JOIN grunnkretser g ON ST_Intersects(g.geom, c.geom) AND g.population > 0 AND g.perKm2 >= ${MIN_PER_KM2}
+  GROUP BY c.x, c.y, c.geom`);
+const squares = await query<{ cid: number; lng: number; lat: number; kommunenummer: string; kommune: string }>(
+  "SELECT cid, lng, lat, kommunenummer, kommune FROM sq ORDER BY cid",
+);
+console.log(`omradescore: ${squares.length} squares of ${SIZE} m where people live`);
+
+// ---------- One query per data point, for all squares ----------
+async function rows(sql: string): Promise<Row[]> {
+  return (await conn.runAndReadAll(sql)).getRowObjectsJson() as Row[];
+}
+
+/** Rows per square, like findRows() in api/src/profile.ts but for every square at once. */
+async function findAll(table: string, find: Find): Promise<Map<number, Row[]>> {
+  const extra = find.where ? ` AND (${find.where})` : "";
+  let sql: string;
+  if (find.kind === "within") {
+    sql = `SELECT s.cid AS __cid, t.* EXCLUDE (geom) FROM sq s JOIN ${table} t ON ST_Intersects(t.geom, s.geom)${extra}`;
+  } else {
+    const r = find.kind === "nearest" ? find.maxM : find.radiusM;
+    const keep = find.kind === "nearest" ? 1 : 500;
+    sql = `
+      SELECT * EXCLUDE (__rn) FROM (
+        SELECT s.cid AS __cid, t.* EXCLUDE (geom), ST_Distance(${UTM("t.geom")}, ${UTM("s.geom")}) AS distanceM,
+          row_number() OVER (PARTITION BY s.cid ORDER BY ST_Distance(${UTM("t.geom")}, ${UTM("s.geom")})) AS __rn
+        FROM sq s JOIN ${table} t ON ST_Intersects(t.geom, ST_MakeEnvelope(
+          s.lng - ${r} / (111320 * cos(radians(s.lat))), s.lat - ${r} / 111320,
+          s.lng + ${r} / (111320 * cos(radians(s.lat))), s.lat + ${r} / 111320))${extra}
+      ) WHERE distanceM <= ${r} AND __rn <= ${keep}
+      ORDER BY __cid, distanceM`;
+  }
+  const out = new Map<number, Row[]>();
+  for (const row of await rows(sql)) {
+    const cid = Number(row.__cid);
+    delete row.__cid;
+    const list = out.get(cid) ?? out.set(cid, []).get(cid)!;
+    if (find.kind !== "within" || list.length < 50) list.push(row);
+  }
+  return out;
+}
+
+async function mappedAll(table: string): Promise<Set<number> | undefined> {
+  if (!loaded.has(table)) return undefined;
+  const r = await rows(`SELECT DISTINCT s.cid AS __cid FROM sq s JOIN ${table} t ON ST_Intersects(t.geom, s.geom)`);
+  return new Set(r.map((x) => Number(x.__cid)));
+}
+
+type Result = { reading?: Reading };
+const results = new Map<string, Map<number, Result>>(); // dp id -> square -> reading (missing when absent)
+for (const dp of DATA_POINTS) {
+  if (!/^[a-z0-9_]+$/.test(dp.table)) throw new Error(`bad table name in data point ${dp.id}: ${dp.table}`);
+  const perSquare = new Map<number, Result>();
+  results.set(dp.id, perSquare);
+  if (!loaded.has(dp.table)) continue; // missing for every square
+  const t0 = Date.now();
+  try {
+    const found = await findAll(dp.table, dp.find);
+    const mapped = dp.coverage ? await mappedAll(dp.coverage) : undefined;
+    for (const s of squares) {
+      const address: Address = {
+        id: `grid-${s.cid}`, text: "", postcode: "", place: "", municipality: s.kommune,
+        municipalityNumber: s.kommunenummer, lng: s.lng, lat: s.lat,
+      };
+      const isMapped = mapped ? mapped.has(s.cid) : undefined;
+      const reading = dp.read(found.get(s.cid) ?? [], address, isMapped);
+      if (reading) perSquare.set(s.cid, { reading });
+    }
+  } catch (err) {
+    // Like the profile: a broken data point counts as missing, it doesn't stop the map.
+    console.error(`  ${dp.id} (${dp.table}) failed, counted as missing:`, (err as Error).message);
+    perSquare.clear();
+  }
+  console.log(`  ${dp.id}: ${perSquare.size} squares (${Date.now() - t0} ms)`);
+}
+
+// ---------- Score each square exactly like the profile: overall, perspectives, plus raw values for /api/finn ----------
+// Every column is NULL when we don't have the data (never a fake 0). Distances: NULL also when nothing was found
+// within the data point's search radius (school 5 km, kindergarten 3 km, grocery 3 km, stop 2 km, trails 3 km, doctor 5 km).
+const HAZARD_POINTS = DATA_POINTS.filter((dp) => dp.category === "hazards").map((dp) => dp.id);
+const DISTANCES = {
+  schoolM: "school", kindergartenM: "kindergarten", groceryM: "groceryStore", transitStopM: "transitStop", trailsM: "trails", doctorM: "doctor",
+} as const;
+
+type Out = {
+  cid: number; score: number | null; capText: string | null; present: number; expected: number;
+  living: number | null; building: number | null; family: number | null; commuter: number | null;
+  hazard: boolean | null; quiet: boolean | null; noiseDb: number | null; transitDepartures: number | null;
+} & Record<keyof typeof DISTANCES, number | null>;
+
+const num = (v: unknown): number | null => (v == null || v === "" || !Number.isFinite(Number(v)) ? null : Math.round(Number(v)));
+
+/** true = a high/medium natural-hazard warning; false = hazard points read (where mapped) without one; null = none could be read. */
+function hazardOf(get: (id: string) => Reading | undefined): boolean | null {
+  const read = HAZARD_POINTS.map(get).filter((r): r is Reading => !!r && r.value !== "ikkeKartlagt");
+  if (!read.length) return null;
+  return read.some((r) => r.warning?.severity === "high" || r.warning?.severity === "medium");
+}
+
+/** Road noise. noiseDb = highest known Lden lower bound; quiet = below 55 dB / outside the zones (null when unknown). */
+function noiseOf(get: (id: string) => Reading | undefined): { noiseDb: number | null; quiet: boolean | null } {
+  const dbs: number[] = [];
+  let quietSeen = false;
+  const t1442 = get("roadNoise"); // value null = outside red/yellow zone (only read outside Oslo), "gul" = 55–65 dB, "rød" = 65+
+  if (t1442) {
+    if (t1442.value === "rød") dbs.push(65);
+    else if (t1442.value === "gul") dbs.push(55);
+    else quietSeen = true;
+  }
+  const strategic = get("roadNoiseStrategic"); // value = Lden lower bound of a 5 dB band (50..75); no zone = no reading
+  const lden = strategic ? num(strategic.value) : null;
+  if (lden != null) dbs.push(lden);
+  const noiseDb = dbs.length ? Math.max(...dbs) : null;
+  const quiet = noiseDb != null && noiseDb >= 55 ? false : noiseDb != null || quietSeen ? true : null;
+  return { noiseDb, quiet };
+}
+
+const out: Out[] = [];
+const stat = { overallNotOk: 0, dropped: 0 };
+for (const s of squares) {
+  const get = (id: string) => results.get(id)!.get(s.cid)?.reading;
+  const categories = CATEGORIES.map((category) => {
+    const mine = DATA_POINTS.filter((dp) => dp.category === category.id);
+    const present: Scored[] = [];
+    const missing: MissingPoint[] = [];
+    for (const dp of mine) {
+      const reading = get(dp.id);
+      if (reading) present.push({ id: dp.id, label: dp.label, importance: dp.importance, reading });
+      else missing.push({ id: dp.id, label: dp.label, importance: dp.importance });
+    }
+    return { category, present, rating: rateCategory(present, missing) };
+  });
+  const r = rateOverall(categories);
+  const ok = r.status === "ok" && r.score != null;
+  if (!ok) stat.overallNotOk++;
+
+  // Perspectives exactly like buildProfile(): listed points that have a reading; a missing required point -> no number.
+  const persp: Record<string, number | null> = {};
+  for (const p of PERSPECTIVES) {
+    const mine = DATA_POINTS.filter((dp) => p.weights[dp.id]);
+    const points = mine.filter((dp) => get(dp.id)).map((dp) => ({
+      point: { id: dp.id, label: dp.label, importance: dp.importance, reading: get(dp.id)! }, weight: p.weights[dp.id],
+    }));
+    const missing = mine.filter((dp) => !get(dp.id))
+      .map((dp) => ({ id: dp.id, label: dp.label, importance: dp.importance, required: p.required.includes(dp.id) }));
+    const pr = ratePerspective(points, missing);
+    persp[p.id] = pr.status === "ok" && pr.score != null ? pr.score : null;
+  }
+
+  const distances = Object.fromEntries(Object.entries(DISTANCES).map(([col, id]) => [col, num(get(id)?.value)])) as Record<keyof typeof DISTANCES, number | null>;
+  const row: Out = {
+    cid: s.cid, score: ok ? r.score! : null, capText: ok ? (r.cappedBy?.[0]?.text ?? null) : null,
+    present: r.coverage.present, expected: r.coverage.expected,
+    living: persp.living ?? null, building: persp.building ?? null, family: persp.family ?? null, commuter: persp.commuter ?? null,
+    hazard: hazardOf(get), ...noiseOf(get), transitDepartures: num(get("transitDepartures")?.value), ...distances,
+  };
+  const { cid: _c, capText: _t, present: _p, expected: _e, ...values } = row;
+  if (Object.values(values).every((v) => v == null)) {
+    stat.dropped++;
+    continue;
+  }
+  out.push(row);
+}
+
+const file = rawPath("omradescore.json");
+await writeFile(file, JSON.stringify(out));
+const COLS: Record<string, string> = {
+  cid: "INTEGER", score: "INTEGER", capText: "VARCHAR", present: "INTEGER", expected: "INTEGER",
+  living: "INTEGER", building: "INTEGER", family: "INTEGER", commuter: "INTEGER",
+  hazard: "BOOLEAN", quiet: "BOOLEAN", noiseDb: "INTEGER", transitDepartures: "INTEGER",
+  schoolM: "INTEGER", kindergartenM: "INTEGER", groceryM: "INTEGER", transitStopM: "INTEGER", trailsM: "INTEGER", doctorM: "INTEGER",
+};
+await conn.run(`
+  CREATE OR REPLACE TABLE omradescore AS
+  SELECT r.cid, r.score, r.capText, r.present, r.expected,
+    r.living, r.building, r.family, r.commuter, r.hazard, r.quiet, r.noiseDb,
+    r.schoolM, r.kindergartenM, r.groceryM, r.transitStopM, r.trailsM, r.doctorM, r.transitDepartures,
+    s.kommune || coalesce(': ' || r.score, '') AS name, s.kommune, s.kommunenummer, 'Omnium (beregnet)' AS source,
+    ${WGS(`ST_MakeEnvelope(s.x, s.y, s.x + ${SIZE}, s.y + ${SIZE})`)} AS geom
+  FROM read_json('${file.replace(/\\/g, "/")}', format = 'array',
+    columns = {${Object.entries(COLS).map(([k, v]) => `${k}: '${v}'`).join(", ")}}) r
+  JOIN sq s USING (cid)`);
+const [st] = await query<Record<string, number>>(`
+  SELECT count(*)::INTEGER AS n, count(score)::INTEGER AS scored, min(score) AS lo, max(score) AS hi, round(avg(score))::INTEGER AS avg,
+    count(living)::INTEGER AS living, count(building)::INTEGER AS building, count(family)::INTEGER AS family, count(commuter)::INTEGER AS commuter,
+    count(hazard)::INTEGER AS hazardKnown, (count(*) FILTER (hazard))::INTEGER AS hazardTrue,
+    count(quiet)::INTEGER AS quietKnown, (count(*) FILTER (quiet))::INTEGER AS quietTrue, count(noiseDb)::INTEGER AS noiseDb,
+    count(schoolM)::INTEGER AS schoolM, count(transitDepartures)::INTEGER AS transitDepartures
+  FROM omradescore`);
+console.log(`omradescore: ${st.n} squares kept, ${stat.dropped} dropped (no data at all), ${stat.overallNotOk} without an overall score`);
+console.log(`  score ${st.lo}–${st.hi} (average ${st.avg}) on ${st.scored} squares`);
+console.log(`  perspectives: living ${st.living}, building ${st.building}, family ${st.family}, commuter ${st.commuter}`);
+console.log(`  hazard known ${st.hazardKnown} (true ${st.hazardTrue}), quiet known ${st.quietKnown} (true ${st.quietTrue}), noiseDb ${st.noiseDb}, schoolM ${st.schoolM}, transitDepartures ${st.transitDepartures}`);
