@@ -19,6 +19,11 @@ How to use this file:
 - **Når marin leire:** Marin leire ble avsatt i havet etter siste istid. Den kan gi setninger i bygninger og kan noen steder inneholde kvikkleire.
 - Kartet er grovt og viser ikke nøyaktig hva som ligger under akkurat denne tomten.
 
+### `bedrock` — Berggrunn
+**Forklaring:** Berggrunnen er fjellet under løsmassene. Bergarten påvirker blant annet hvor mye radon som kan komme fra grunnen og hvor godt det er å bygge på.
+- **Når alunskifer:** Alunskifer kan svelle og skade grunnmurer, gir surt vann når den graves opp, og gir ofte mye radon. Det har mest å si ved graving og bygging.
+- **Når oversiktskart:** Bergarten er hentet fra et grovt kart (1:250 000), så den kan være en annen akkurat på denne tomten.
+
 ### `radon` — Radon
 **Forklaring:** Radon er en radioaktiv gass fra berggrunnen som kan sive inn i hus. Det er den viktigste årsaken til lungekreft etter røyking.
 - **Når høy eller meget høy aktsomhet:** Det er større sjanse enn ellers for at hus i området har for mye radon. Bare en måling i huset kan si hvor mye radon det faktisk er.

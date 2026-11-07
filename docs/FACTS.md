@@ -54,6 +54,15 @@ Rules for every sentence:
 
 Write `{display}` with a lower-case first letter inside the sentence: "Grunnen består av hav- og fjordavsetning, …", not "… av Hav- og fjordavsetning".
 
+**`bedrock` (Berggrunn)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| warning (alunskifer) | Berggrunnen på stedet inneholder alunskifer ({src}). | 3 |
+| no warning | Berggrunnen på stedet er {rock} ({src}). | 6 |
+
+`{display}` is the rock type, maybe followed by " (oversiktskart)" and ", med alunskifer". `{rock}` is the rock type alone, in lower case. If it says "(oversiktskart)", add "ifølge et oversiktskart" before the source: the coarse 1:250 000 map can be wrong for a single plot. Never call alunskifer dangerous; the info text explains what it can do.
+
 **`radon` (Radon)**
 
 | When | Sentence | Rank |
