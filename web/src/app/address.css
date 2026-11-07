@@ -1,0 +1,72 @@
+/* Address page left column: section rhythm. Each block below the rating starts with a small uppercase label on a heavy rule.
+   Loaded after style.css and theme.css (imported by address.ts). Only CSS variables. */
+.panel > * + * { margin-top: 1.5rem; }
+.panel > .summary { margin-bottom: 0; }
+
+.section-label {
+  margin: 0 0 0.5rem;
+  padding-top: 0.625rem;
+  border-top: 3px solid var(--rule, var(--ink));
+  font-family: var(--font);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+}
+
+/* Warnings: "Vis N advarsler til" as a quiet text button under the list. */
+.warnings-block { display: flex; flex-direction: column; align-items: flex-start; }
+.warnings-block .warnings { align-self: stretch; }
+.warnings-more {
+  margin-top: 0.375rem; padding: 0.25rem 0; border: 0; background: none; border-radius: 0;
+  font: inherit; font-size: 0.8125rem; color: var(--teal); cursor: pointer;
+  text-decoration: underline; text-underline-offset: 0.2em;
+}
+.warnings-more:hover { color: var(--ink); }
+.warnings-more:focus-visible, .warning:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+/* Summary: the AI text is its own section now, labelled like the others. */
+.panel > .ai { margin: 1.5rem 0 0; padding: 0.625rem 0 0; border-left: 0; border-top: 3px solid var(--rule, var(--ink)); }
+.panel > .ai .ai-title { font-size: 0.75rem; }
+
+/* PDF report: one button and a short note, no rule. */
+.panel > .report { margin-top: 1.25rem; }
+
+/* Every data point: the category rows sit right under the label. */
+.all-points .card:first-of-type { border-top: 0; }
+.all-points .card:last-of-type { border-bottom: 1px solid var(--line); }
+.all-points .card { border-top-color: var(--line); }
+
+/* Sources: collapsed to one line. */
+.panel > .sources { border-top: 0; padding-top: 0; }
+.sources summary { cursor: pointer; font-size: 0.875rem; color: var(--teal); text-decoration: underline; text-underline-offset: 0.2em; }
+.sources ul { margin-top: 0.5rem; }
+.ai-more {
+  align-self: flex-start; padding: 0; border: 0; background: none; border-radius: 0;
+  font: inherit; font-size: 0.875rem; color: var(--teal); cursor: pointer;
+  text-decoration: underline; text-underline-offset: 0.2em;
+}
+.ai-more:hover { color: var(--ink); }
+.ai-more:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+
+/* Data point rows: the row itself opens to show the explanation and source. */
+.dp-item { list-style: none; }
+.dp.dp--toggle { display: block; padding: 0; }
+.dp-sum { display: flex; align-items: baseline; gap: 0.75rem; padding: 0.625rem 0; cursor: pointer; list-style: none; }
+.dp-sum::-webkit-details-marker { display: none; }
+.dp-sum .dp-line { flex: 1; min-width: 0; }
+.dp-sum::after { content: "›"; flex: none; width: 0.5rem; color: var(--ink-muted); transition: transform 150ms; }
+.dp--toggle[open] > .dp-sum::after { transform: rotate(90deg); }
+.dp-sum:hover .dp-label { text-decoration: underline; text-underline-offset: 0.2em; }
+.dp-sum:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.dp-detail { padding: 0 1.25rem 0.625rem 1.25rem; }
+.dp-detail p:first-child { margin-top: 0; }
+.overall-cap { color: var(--ink) !important; font-weight: 500; }
+/* A data point's own score: small serif number with a colour underline, like the category scores. */
+.dp-score { flex: none; min-width: 1.75rem; text-align: right; font-family: var(--serif); font-size: 0.9375rem; font-variant-numeric: tabular-nums; border-bottom: 2px solid var(--unknown); line-height: 1.2; }
+.dp-score--good { border-bottom-color: var(--good); }
+.dp-score--warn { border-bottom-color: var(--warn); }
+.dp-score--bad { border-bottom-color: var(--bad); }
+.dp-score--none { border-bottom: 0; }
+.warning-cap { display: block; font-size: 0.75rem; font-style: italic; color: var(--ink-muted); }

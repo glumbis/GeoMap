@@ -1,5 +1,5 @@
 // Top-bar logo (address, compare and map pages): the logo mark with a thin gradient ring around it that spins
-// on hover and while something loads (an address profile, an address search). Same look as the start page ring.
+// on hover and while something loads (an address profile, an address search). On the start page it always turns, slowly.
 import { h } from "./dom";
 import { navigate } from "./router";
 import "./logo.css";
@@ -30,7 +30,7 @@ export function logoMark(extraClass = ""): HTMLElement {
     rim,
     h("img", { class: "logo-core", src: "/logo-mark.png", alt: "" }),
   );
-  spinners.add({ ring, rim, angle: 0, speed: 0 });
+  spinners.add({ ring, rim, angle: 0, speed: 0, shown: false });
   kick();
   return ring;
 }
@@ -38,10 +38,11 @@ export function logoMark(extraClass = ""): HTMLElement {
 // ---- Rim spin: speeds up and slows down smoothly (ease in / ease out) instead of starting and stopping dead ----
 const HOVER_TURN_MS = 2400; // one turn on hover
 const LOADING_TURN_MS = 1600; // one turn while loading (a bit faster)
+const IDLE_TURN_MS = 9000; // the start page logo never stops: one slow turn
 const EASE_MS = 600; // roughly how long it takes to reach full speed, or to stop
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-type Spinner = { ring: HTMLElement; rim: HTMLElement; angle: number; speed: number };
+type Spinner = { ring: HTMLElement; rim: HTMLElement; angle: number; speed: number; shown: boolean };
 const spinners = new Set<Spinner>();
 let raf = 0;
 let last = 0;
@@ -52,6 +53,7 @@ function target(s: Spinner): number {
   if (!host || reduceMotion.matches) return 0;
   if (host.matches(".is-loading, .is-searching")) return 360 / LOADING_TURN_MS;
   if (host.matches(":hover, :focus-visible")) return 360 / HOVER_TURN_MS;
+  if (host.matches(".start-logo")) return 360 / IDLE_TURN_MS;
   return 0;
 }
 
@@ -67,10 +69,13 @@ function tick(now: number) {
   last = now;
   let busy = false;
   for (const s of spinners) {
+    // A new logo may not be in the page yet (pages render inside a view transition): wait for it, and drop it only once it has left.
     if (!s.ring.isConnected) {
-      spinners.delete(s);
+      if (s.shown) spinners.delete(s);
+      else busy = true;
       continue;
     }
+    s.shown = true;
     const goal = target(s);
     // Ease toward the goal speed: exponential smoothing gives a soft start and a soft stop.
     s.speed += (goal - s.speed) * (1 - Math.exp(-dt / (EASE_MS / 3)));

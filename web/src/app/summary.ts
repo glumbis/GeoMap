@@ -58,11 +58,23 @@ async function load(card: HTMLElement, id: string, stillHere: () => boolean) {
   );
 
   if (s.aiGenerated) {
+    // The first two sentences only; the rest behind "Les mer", so the summary doesn't push the report and data points out of view.
+    const [first, ...rest] = lead(s.text);
+    const restEls = rest.map((p) => h("p", { class: "ai-text", hidden: true }, p));
+    const more = rest.length ? h("button", { class: "ai-more", type: "button", "aria-expanded": "false" }, "Les mer") : null;
+    more?.addEventListener("click", () => {
+      const on = more.getAttribute("aria-expanded") !== "true";
+      restEls.forEach((el) => (el.hidden = !on));
+      more.setAttribute("aria-expanded", String(on));
+      more.textContent = on ? "Vis mindre" : "Les mer";
+    });
     card.replaceChildren(
       head,
-      ...paragraphs(s.text).map((p) => h("p", { class: "ai-text" }, p)),
-      h("p", { class: "ai-note" }, "Skrevet av AI ut fra faktaene under. Sjekk kildene før du tar viktige valg."),
-      ...(s.facts.length ? [factsList(s.facts)] : []),
+      h("p", { class: "ai-text" }, first ?? s.text),
+      ...restEls,
+      ...(more ? [more] : []),
+      // The facts behind it are the data points further down ("Alle datapunkter"), so no second list here.
+      h("p", { class: "ai-note" }, "Skrevet av AI ut fra datapunktene under. Sjekk kildene før du tar viktige valg."),
     );
     return;
   }
@@ -84,19 +96,18 @@ async function load(card: HTMLElement, id: string, stillHere: () => boolean) {
 
 const factItem = (f: Fact) => h("li", { class: f.severity ? `fact fact--${f.severity}` : "fact" }, f.text);
 
+/** First two sentences, then the rest of the text as paragraphs. */
+function lead(text: string): string[] {
+  const [p1 = text, ...more] = paragraphs(text);
+  const sentences = p1.match(/[^.!?]+[.!?]+(\s+|$)/g) ?? [p1];
+  const head = sentences.slice(0, 2).join("").trim();
+  const tail = sentences.slice(2).join("").trim();
+  return [head, ...(tail ? [tail] : []), ...more];
+}
+
 /** Split on blank lines; the model sometimes writes one block, sometimes several. */
 const paragraphs = (text: string) =>
   text
     .split(/\n\s*\n/)
     .map((p) => p.trim())
     .filter(Boolean);
-
-function factsList(facts: Fact[]) {
-  return h(
-    "details",
-    { class: "ai-facts" },
-    // Count data points, not sentences, so it matches "basert på N av M datapunkter" (missing-data and score sentences have no dataPointId).
-    h("summary", {}, `Faktaene bak (${facts.filter((f) => f.dataPointId).length} datapunkter)`),
-    h("ul", { class: "fact-list" }, ...facts.map(factItem)),
-  );
-}

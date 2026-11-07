@@ -1,4 +1,4 @@
-// "Hva betyr dette for deg?": the profile's perspectives (Bo her, Bygge her, ...) as tabs, with the top factors and tailored advice.
+// "Vurdering for deg": the profile's perspectives (Bo her, Bygge her, ...) as rows that open to show why the score is high or low, plus advice.
 // Renders whatever perspectives the API sends (docs/PROFILE.md -> "Perspectives"). Advice only for data points that are present and low.
 import "./audience.css";
 import { h } from "./dom";
@@ -79,111 +79,125 @@ const ADVICE: Record<string, Record<string, string>> = {
 const adviceFor = (dpId: string, perspectiveId: string) => ADVICE[dpId]?.[perspectiveId] ?? ADVICE[dpId]?.["*"];
 const scoreClass = (s: number) => (s >= 60 ? "good" : s >= 40 ? "warn" : "bad");
 
-export function audienceSection(p: Profile): HTMLElement | null {
-  if (!p.perspectives?.length) return null;
-  const list: Perspective[] = p.perspectives;
+const UP = 80; // a factor at or above this explains why a score is high
+const DOWN = 70; // a factor below this explains why a score is low
 
-  let selected = list[0].id; // always starts on the first tab for each address
+type Factor = Perspective["rating"]["factors"][number];
 
-  const uid = `aud-${Math.random().toString(36).slice(2, 7)}`;
-  const tabs = h("div", { class: "aud-tabs", role: "tablist", "aria-label": "Hva betyr dette for deg?" });
-  const panel = h("div", { class: "aud-panel", role: "tabpanel", tabindex: 0 });
-
-  const buttons = list.map((x) => {
-    const b = h("button", { class: "aud-tab", type: "button", role: "tab", id: `${uid}-${x.id}` }, x.name);
-    b.addEventListener("click", () => select(x.id, false));
-    b.addEventListener("keydown", (e) => {
-      const i = list.findIndex((y) => y.id === selected);
-      let n = -1;
-      if (e.key === "ArrowRight" || e.key === "ArrowDown") n = (i + 1) % list.length;
-      else if (e.key === "ArrowLeft" || e.key === "ArrowUp") n = (i - 1 + list.length) % list.length;
-      else if (e.key === "Home") n = 0;
-      else if (e.key === "End") n = list.length - 1;
-      if (n < 0) return;
-      e.preventDefault();
-      select(list[n].id, true);
-    });
-    tabs.append(b);
-    return b;
-  });
-
-  function select(id: string, focus: boolean) {
-    selected = id;
-    list.forEach((x, i) => {
-      const on = x.id === id;
-      buttons[i].setAttribute("aria-selected", String(on));
-      buttons[i].tabIndex = on ? 0 : -1;
-      if (on && focus) buttons[i].focus();
-    });
-    panel.setAttribute("aria-labelledby", `${uid}-${id}`);
-    panel.replaceChildren(...body(list.find((x) => x.id === id)!, p));
-  }
-  select(selected, false);
-
-  return h("section", { class: "audience" }, h("h2", { class: "aud-title" }, "Hva betyr dette for deg?"), tabs, panel);
+/** What the panel needs to know about each data point behind a factor. */
+interface Info {
+  display: string; // already carries the unit ("320 m", "65–70 dB")
+  absent: boolean; // "no hazard here": true, but it doesn't explain why a place is good
+  unmapped: boolean; // "ikke kartlagt": not data, never a plus
 }
 
-function body(x: Perspective, p: Profile): HTMLElement[] {
+/** One row per perspective. Closed: name, what it measures, score. Open: why high, why low, advice. */
+export function audienceSection(p: Profile): HTMLElement | null {
+  if (!p.perspectives?.length) return null;
+  const info = dataPointInfo(p);
+  return h(
+    "section",
+    { class: "audience", "aria-labelledby": "aud-title" },
+    h("h2", { class: "section-label", id: "aud-title" }, "Vurdering for deg"),
+    h("div", { class: "aud-list" }, ...p.perspectives.map((x) => row(x, info))),
+  );
+}
+
+function row(x: Perspective, info: Map<string, Info>) {
   const r = x.rating;
   const ok = r.status === "ok" && r.score != null;
-  const capped = ok && !!r.cappedBy?.length;
-  const out: HTMLElement[] = [h("p", { class: "aud-question" }, x.question)];
-
-  out.push(
+  // Colour follows the number. What holds it down is told inside the row ("begrenser skåren"), not on every closed row.
+  const el = h(
+    "details",
+    { class: "aud-row" },
     h(
-      "div",
-      { class: "aud-score" },
-      ok ? h("span", { class: `aud-number aud-number--${capped ? "cap" : scoreClass(r.score!)}` }, r.score!, h("span", { class: "aud-of" }, "/100")) : null,
+      "summary",
+      { class: "aud-head" },
       h(
-        "div",
-        { class: "aud-score-text" },
-        // A capped score never gets a word like "God": the worst cap reason takes its place (docs/PROFILE.md).
-        !ok ? h("div", { class: "aud-word aud-word--none" }, "Kan ikke vurderes") : capped ? h("div", { class: "aud-word" }, r.cappedBy![0].text) : null,
-        !ok && r.reason ? h("p", { class: "aud-note" }, r.reason) : null,
-        capped ? h("p", { class: "aud-note" }, `Begrenset til ${r.score} på grunn av dette`) : null,
-        ok && r.coverage.present < 3 ? h("div", { class: "aud-word aud-word--none" }, `usikker (bare ${r.coverage.present} datapunkter)`) : null,
-        h("p", { class: "aud-note" }, `basert på ${r.coverage.present} av ${r.coverage.expected} datapunkter`),
+        "span",
+        { class: "aud-text" },
+        h("span", { class: "aud-name" }, x.name),
+        h("span", { class: "aud-question" }, x.question),
+        // Thin data is said on the closed row too, so a 100 from 2 points doesn't look as solid as one from 20.
+        ok && r.coverage.present < 3 ? h("span", { class: "aud-thin" }, `Bygger på bare ${r.coverage.present} datapunkter`) : null,
       ),
+      ok
+        ? // A score from fewer than 3 data points is shown muted: it is not as solid as the others.
+          h("span", { class: `aud-score aud-score--${r.coverage.present < 3 ? "thin" : scoreClass(r.score!)}` }, r.score!, h("span", { class: "sr-only" }, " av 100"))
+        : h("span", { class: "aud-score aud-score--none" }, "Kan ikke vurderes"),
     ),
+    h("div", { class: "aud-body" }, ...body(x, info)),
   );
-  if (ok && p.warnings?.some((w) => w.severity === "high")) {
-    out.push(h("p", { class: "aud-note aud-merk" }, h("strong", {}, "Merk: "), `gjelder bare ${x.name.toLowerCase()}. Adressen har alvorlige advarsler.`));
-  }
+  // One row open at a time, so the section never grows past a screen. Done on click, not on "toggle",
+  // so printing (which opens every <details>) still shows them all.
+  el.querySelector("summary")!.addEventListener("click", () => {
+    if (el.open) return;
+    el.parentElement?.querySelectorAll<HTMLDetailsElement>("details.aud-row[open]").forEach((d) => (d.open = false));
+  });
+  // An opened row low in the column scrolls just enough to show its contents.
+  el.addEventListener("toggle", () => {
+    if (el.open) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  });
+  return el;
+}
 
-  if (!ok) return out;
+function body(x: Perspective, info: Map<string, Info>): HTMLElement[] {
+  const r = x.rating;
+  if (r.status !== "ok" || r.score == null) return [h("p", { class: "aud-note" }, r.reason || "For lite data til å gi en skår.")];
 
-  // roadNoise and roadNoiseStrategic are one thing to the reader: keep the lower score, label "Veistøy".
-  const noise = r.factors.filter((f) => f.score != null && (f.dataPointId === "roadNoise" || f.dataPointId === "roadNoiseStrategic"));
-  const factors = r.factors.filter((f) => !noise.includes(f));
-  if (noise.length) {
-    const low = noise.reduce((m, f) => (f.score < m.score ? f : m));
-    factors.push({ ...low, label: "Veistøy" });
-  }
-  const weak = factors.filter((f) => f.score != null).sort((a, b) => a.score - b.score).slice(0, 3);
-  const pulling = weak.filter((f) => f.score < 80);
-  if (pulling.length) {
-    out.push(
-      h("h3", { class: "aud-sub" }, "Hva trekker ned"),
-      h(
-        "ul",
-        { class: "aud-factors" },
-        ...pulling.map((f) =>
-          h("li", { class: "aud-factor" }, h("span", { class: "aud-factor-label" }, f.label), h("span", { class: `aud-factor-score aud-factor-score--${scoreClass(f.score)}` }, f.score)),
-        ),
-      ),
+  const capping = new Set(r.cappedBy?.map((c) => c.dataPointId));
+  const factors = mergeNoise(r.factors.filter((f) => f.score != null && !info.get(f.dataPointId)?.unmapped));
+  const down = factors.filter((f) => f.score < DOWN).sort((a, b) => a.score - b.score || b.weight - a.weight).slice(0, 3);
+  const high = factors.filter((f) => f.score >= UP).sort((a, b) => b.weight - a.weight || b.score - a.score);
+  const up = high.filter((f) => !info.get(f.dataPointId)?.absent).slice(0, 3);
+  const absent = high.filter((f) => info.get(f.dataPointId)?.absent);
+
+  const factorRow = (f: Factor) =>
+    h(
+      "li",
+      { class: "aud-factor" },
+      h("span", { class: "aud-factor-label" }, f.label, capping.has(f.dataPointId) ? h("span", { class: "aud-tag" }, "begrenser skåren") : null),
+      h("span", { class: "aud-factor-value" }, info.get(f.dataPointId)?.display ?? ""),
     );
-  }
+  const head = (title: string, kind: "up" | "down") =>
+    h("h3", { class: "aud-sub" }, h("span", { class: "aud-arrow", "aria-hidden": "true" }, kind === "up" ? "+" : "−"), title);
+
+  // Always the same order: what pulls down, what pulls up, then hazards that are not here.
+  const out: HTMLElement[] = [];
+  if (down.length) out.push(h("div", { class: "aud-why aud-why--down" }, head("Trekker ned", "down"), h("ul", { class: "aud-factors" }, ...down.map(factorRow))));
+  if (up.length) out.push(h("div", { class: "aud-why aud-why--up" }, head("Trekker opp", "up"), h("ul", { class: "aud-factors" }, ...up.map(factorRow))));
+  // Hazards that are not here count, but they don't explain the place: one quiet line instead of a list.
+  if (absent.length) out.push(h("p", { class: "aud-absent" }, "Ingen treff i: ", absent.map((f) => f.label).join(", ")));
 
   // Advice only for data points that are present in this perspective and score low.
   const lines: string[] = [];
-  for (const f of weak) {
-    if (f.score >= LOW) break;
-    const t = adviceFor(f.dataPointId, x.id);
+  for (const f of down) {
+    const t = f.score < LOW ? adviceFor(f.dataPointId, x.id) : undefined;
     if (t && !lines.includes(t)) lines.push(t);
-    if (lines.length === 3) break;
+    if (lines.length === 2) break; // the two most important; the PDF report has the full checklist
   }
-  if (lines.length) {
-    out.push(h("h3", { class: "aud-sub" }, "Sjekk før du …"), h("ul", { class: "aud-advice" }, ...lines.map((t) => h("li", {}, t))));
-  }
+  if (lines.length) out.push(h("h3", { class: "aud-sub" }, "Sjekk før du bestemmer deg"), h("ul", { class: "aud-advice" }, ...lines.map((t) => h("li", {}, t))));
+
+  if (r.coverage.present >= 3) out.push(h("p", { class: "aud-note" }, `Basert på ${r.coverage.present} av ${r.coverage.expected} datapunkter.`)); // thin data is said on the closed row
   return out;
+}
+
+/** roadNoise and roadNoiseStrategic are one thing to the reader: keep the lower score, label "Veistøy". */
+function mergeNoise(factors: Factor[]): Factor[] {
+  const noise = factors.filter((f) => f.dataPointId === "roadNoise" || f.dataPointId === "roadNoiseStrategic");
+  if (!noise.length) return factors;
+  const low = noise.reduce((m, f) => (f.score < m.score ? f : m));
+  return [...factors.filter((f) => !noise.includes(f)), { ...low, label: "Veistøy" }];
+}
+
+function dataPointInfo(p: Profile) {
+  const m = new Map<string, Info>();
+  for (const c of p.categories)
+    for (const d of c.dataPoints)
+      m.set(d.id, {
+        display: d.display,
+        absent: c.id === "hazards" || /^(ikke|ingen) /i.test(d.display),
+        unmapped: d.value === "ikkeKartlagt",
+      });
+  return m;
 }

@@ -15,14 +15,18 @@
   width: 100%;
   height: 100%;
 }
+/* The inner map is not quite round (its edge sits at 57-62% of the radius) and the rim's inner edge is off-centre,
+   so a spinning rim opened a sliver of gap. The map is scaled up 10% and cut at 56.5% (about 62% on screen),
+   and the rim starts right under that edge, so they always overlap. */
 .logo-ring .logo-core {
   position: absolute;
   inset: 0;
-  -webkit-mask-image: radial-gradient(circle closest-side, #000 60%, transparent 61%);
-  mask-image: radial-gradient(circle closest-side, #000 60%, transparent 61%);
+  transform: scale(1.1);
+  -webkit-mask-image: radial-gradient(circle closest-side, #000 56.5%, transparent 57.5%);
+  mask-image: radial-gradient(circle closest-side, #000 56.5%, transparent 57.5%);
 }
 .logo-ring .logo-rim {
-  -webkit-mask-image: radial-gradient(circle closest-side, transparent 58%, #000 59%);
-  mask-image: radial-gradient(circle closest-side, transparent 58%, #000 59%);
+  -webkit-mask-image: radial-gradient(circle closest-side, transparent 60%, #000 61%);
+  mask-image: radial-gradient(circle closest-side, transparent 60%, #000 61%);
   will-change: transform; /* rotated by logo.ts, which eases the spin in and out */
 }

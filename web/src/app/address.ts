@@ -1,4 +1,6 @@
-// Address page: top bar, left column (summary + category cards), map on the right. Layout: docs/DESIGN.md.
+// Address page: top bar, left column, map on the right. Layout: docs/DESIGN.md.
+// Left column, top to bottom: address, overall rating, warnings, the perspectives ("Vurdering for deg"), summary,
+// PDF report, every data point by category, sources.
 // Renders whatever the profile contains (docs/PROFILE.md). Never a hard-coded category list, never a fake number.
 import { h, titleCase } from "./dom";
 import { navigate } from "./router";
@@ -9,6 +11,7 @@ import { summaryCard } from "./summary";
 import { audienceSection } from "./audience";
 import { shareActions } from "./share";
 import { reportLink } from "./report";
+import "./address.css";
 import type { Category, DataPoint, Missing, Profile, Rating, Severity } from "./profile";
 
 let current = 0; // ignore responses for an address we already left
@@ -54,7 +57,13 @@ export async function renderAddress(app: HTMLElement, id: string) {
     summary(profile),
     audienceSection(profile) ?? "",
     summaryCard(id, () => req === current),
-    ...profile.categories.map((c) => categoryCard(c, profile)),
+    reportLink(a.id),
+    h(
+      "section",
+      { class: "all-points", "aria-labelledby": "all-points-title" },
+      h("h2", { class: "section-label", id: "all-points-title" }, "Alle datapunkter"),
+      ...profile.categories.map((c) => categoryCard(c, profile)),
+    ),
     sourcesBlock(profile),
   );
   // Fade the column in, one block after the other (transitions.css).
@@ -77,7 +86,6 @@ function summary(p: Profile) {
     h("p", { class: "address-sub" }, `${a.postcode} ${a.place} · ${a.municipality} kommune`),
     shareActions(a.id),
     overall(r),
-    reportLink(a.id),
     p.warnings.length ? warnings(p) : null,
   );
 }
@@ -108,7 +116,7 @@ function ring(score?: number) {
 function overall(r: Rating) {
   const ok = r.status === "ok" && r.score != null;
   const capped = ok && !!r.cappedBy?.length;
-  const cov =`basert på ${r.coverage.present} av ${r.coverage.expected} datapunkter`;
+  const cov = `${ok ? "B" : "b"}asert på ${r.coverage.present} av ${r.coverage.expected} datapunkter`;
   const weakest = r.weakestCategory && (!ok || r.weakestCategory.score < r.score!) ? r.weakestCategory : undefined;
   return h(
     "div",
@@ -117,47 +125,67 @@ function overall(r: Rating) {
     h(
       "div",
       { class: "overall-text" },
-      // A capped score never gets a word like "God" (docs/PROFILE.md): the worst cap reason takes its place.
-      h("div", { class: "overall-word" }, !ok ? "Kan ikke vurderes" : capped ? r.cappedBy![0].text : scoreWord(r.score!)),
+      // A capped score never gets "God" or better (docs/PROFILE.md). The cap reasons are the warnings right below,
+      // so the line under the word points at them instead of repeating one.
+      h("div", { class: "overall-word" }, !ok ? "Kan ikke vurderes" : scoreWord(capped ? Math.min(r.score!, 59) : r.score!)),
       !ok && r.reason ? h("p", { class: "overall-reason" }, r.reason) : null,
-      weakest ? h("p", { class: "overall-weakest" }, "Svakest: ", h("strong", {}, `${weakest.name} ${weakest.score}`)) : null,
       capped
-        ? h(
-            "p",
-            { class: "overall-cap" },
-            `Begrenset til ${r.score} på grunn av dette` +
-              (r.cappedBy!.length > 1 ? `, og: ${r.cappedBy!.slice(1).map((c) => c.text).join("; ")}` : ""),
-          )
+        ? h("p", { class: "overall-cap" }, `Begrenset av ${r.cappedBy!.length === 1 ? "1 advarsel" : `${r.cappedBy!.length} advarsler`} under`)
         : null,
-      h("p", { class: "overall-coverage" }, cov),
+      h(
+        "p",
+        { class: "overall-coverage" },
+        weakest ? "Svakest: " : null,
+        weakest ? h("strong", {}, `${weakest.name} ${weakest.score}`) : null,
+        weakest ? " · " : null,
+        cov,
+      ),
     ),
   );
 }
 
 const SEVERITY_WORD: Record<Severity, string> = { high: "Alvorlig", medium: "Viktig", low: "Merk" };
 
+const WARNINGS_SHOWN = 3; // most serious first; the rest wait behind "Vis N advarsler til" (never hide just one)
+
 function warnings(p: Profile) {
-  return h(
-    "ul",
-    { class: "warnings" },
-    ...p.warnings.slice(0, 3).map((w) => {
-      const btn = h(
-        "button",
-        { class: `warning warning--${w.severity}`, type: "button" },
-        h("span", { class: "dot" }),
-        h("span", { class: "warning-sev" }, SEVERITY_WORD[w.severity]),
-        h("span", { class: "warning-text" }, w.text),
-      );
-      btn.addEventListener("click", () => openDataPoint(w.categoryId, w.dataPointId));
-      return h("li", {}, btn);
-    }),
-  );
+  const capping = new Set(p.rating.cappedBy?.map((c) => c.dataPointId));
+  const item = (w: Profile["warnings"][number]) => {
+    const btn = h(
+      "button",
+      { class: `warning warning--${w.severity}`, type: "button" },
+      h("span", { class: "dot" }),
+      h("span", { class: "warning-sev" }, SEVERITY_WORD[w.severity]),
+      h("span", { class: "warning-text" }, w.text, capping.has(w.dataPointId) ? h("span", { class: "warning-cap" }, "begrenser skåren") : null),
+    );
+    btn.addEventListener("click", () => openDataPoint(w.categoryId, w.dataPointId));
+    return h("li", {}, btn);
+  };
+  const items = p.warnings.map(item);
+  const list = h("ul", { class: "warnings", "aria-label": "Advarsler" }, ...items);
+  if (items.length <= WARNINGS_SHOWN + 1) return list;
+  const rest = items.slice(WARNINGS_SHOWN);
+  const label = `Vis ${rest.length} ${rest.length === 1 ? "advarsel" : "advarsler"} til`;
+  const more = h("button", { class: "warnings-more", type: "button", "aria-expanded": "false" }, label);
+  const show = (on: boolean) => {
+    rest.forEach((li) => (li.hidden = !on));
+    more.setAttribute("aria-expanded", String(on));
+    more.textContent = on ? "Vis færre" : label;
+  };
+  more.addEventListener("click", () => {
+    const on = more.getAttribute("aria-expanded") !== "true";
+    show(on);
+    if (on) rest[0].querySelector("button")?.focus(); // keyboard users land on the first new warning
+  });
+  show(false);
+  return h("div", { class: "warnings-block" }, list, more);
 }
 
 function openDataPoint(categoryId: string, dataPointId: string) {
   const card = document.getElementById(`cat-${categoryId}`) as HTMLDetailsElement | null;
   if (card) card.open = true;
   const row = document.getElementById(`dp-${dataPointId}`);
+  if (row instanceof HTMLDetailsElement) row.open = true;
   row?.scrollIntoView({ behavior: "smooth", block: "center" });
   row?.classList.add("is-flash");
   setTimeout(() => row?.classList.remove("is-flash"), 1200);
@@ -195,19 +223,31 @@ const sourceName = (p: Profile, id: string) => {
 };
 
 function dataPointRow(d: DataPoint, p: Profile) {
+  // The row is its own toggle: label and value by default; click it for the explanation and source.
   return h(
     "li",
-    { class: "dp", id: `dp-${d.id}` },
-    // "Ikke kartlagt her" is not data saying safe: same grey as missing data, never green.
-    d.value === "ikkeKartlagt"
-      ? h("span", { class: "dot", style: "background: var(--unknown)", title: "ikke kartlagt" })
-      : h("span", { class: `dot dot--${d.effect}`, title: d.effect }),
+    { class: "dp-item" },
     h(
-      "div",
-      { class: "dp-body" },
-      h("div", { class: "dp-line" }, h("span", { class: "dp-label" }, d.label), h("span", { class: "dp-value" }, d.unit ? `${d.display} ${d.unit}` : d.display)),
-      d.explanation ? h("p", { class: "dp-expl" }, d.explanation) : null,
-      h("p", { class: "dp-source" }, `Kilde: ${sourceName(p, d.source)}`),
+      "details",
+      { class: "dp dp--toggle", id: `dp-${d.id}` },
+      h(
+        "summary",
+        { class: "dp-sum" },
+        // "Ikke kartlagt her" is not data saying safe: same grey as missing data, never green.
+        d.value === "ikkeKartlagt" ? h("span", { class: "dot", style: "background: var(--unknown)" }) : h("span", { class: `dot dot--${d.effect}` }),
+        // display already carries the unit ("65–70 dB", "320 m").
+        h("span", { class: "dp-line" }, h("span", { class: "dp-label" }, d.label), h("span", { class: "dp-value" }, d.display)),
+        // The data point's own score, as a number (colour is never the only signal). Facts without a score show none.
+        d.score != null && d.value !== "ikkeKartlagt"
+          ? h("span", { class: `dp-score dp-score--${scoreClass(d.score)}` }, d.score, h("span", { class: "sr-only" }, " av 100"))
+          : h("span", { class: "dp-score dp-score--none", "aria-hidden": "true" }),
+      ),
+      h(
+        "div",
+        { class: "dp-detail" },
+        d.explanation ? h("p", { class: "dp-expl" }, d.explanation) : null,
+        h("p", { class: "dp-source" }, `Kilde: ${sourceName(p, d.source)}`),
+      ),
     ),
   );
 }
@@ -235,9 +275,9 @@ function missingRow(m: Missing, p: Profile) {
 
 function sourcesBlock(p: Profile) {
   return h(
-    "footer",
+    "details",
     { class: "sources" },
-    h("h2", {}, "Kilder"),
+    h("summary", {}, `Kilder (${p.sources.length})`),
     h("ul", {}, ...p.sources.map((s) => h("li", {}, h("a", { href: s.url, target: "_blank", rel: "noopener" }, `${s.owner}: ${s.name}`), ` (${s.licence})`))),
   );
 }
