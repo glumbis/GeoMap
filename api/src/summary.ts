@@ -61,10 +61,8 @@ const yearly = (sentence: (value: string, year: string) => string): Rule => (d) 
 
 const RULES: Record<string, Rule> = {
   soilType: (d) => (d.warning ? [3, `Grunnen består av ${d.display}, som er marin leire`] : [6, `Grunnen består av ${d.display}`]),
-  radon: (d) =>
-    d.warning
-      ? [rankOf(d, 2), "Adressen ligger i et område med høy aktsomhet for radon"]
-      : [5, "Adressen ligger i et område med moderat til lav aktsomhet for radon"],
+  // FACTS.md still has the old radon levels; this uses the exact level from datapoints.ts (lav, middels, høy, meget høy).
+  radon: (d) => [rankOf(d, d.value === "lav" ? 5 : 6), `Adressen ligger i et område med ${d.display.toLowerCase()} for radon`],
   quickClay: (d) => {
     if (d.warning) return [rankOf(d, 1), `Eiendommen ligger i en faresone for kvikkleireskred med ${d.value} faregrad`];
     // Not in FACTS.md yet: NVE zone with faregrad 'Ingen'.
