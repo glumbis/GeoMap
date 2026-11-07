@@ -280,12 +280,11 @@ export function renderFinn(app: HTMLElement) {
   void fetch("/api/finn/tolk/status")
     .then((r) => (r.ok ? r.json() : null))
     .then((s: { available?: boolean } | null) => {
+      // The box stays visible either way; without the AI we only say so, and a search then explains it again.
       if (!alive() || s?.available !== false) return;
-      askForm.classList.add("is-off");
-      askRow.hidden = true;
       explain.hidden = false;
       explain.className = "finn-explain is-note";
-      explain.textContent = "Tekstsøket er ikke tilgjengelig akkurat nå. Velg det som er viktig for deg i filtrene under.";
+      explain.textContent = "Tekstsøket er ikke slått på ennå. Filtrene under virker som vanlig.";
     })
     .catch(() => {
       /* unknown: keep the box, interpret() explains a failure */
