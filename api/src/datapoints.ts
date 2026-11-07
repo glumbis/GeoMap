@@ -182,9 +182,9 @@ export const DATA_POINTS: DataPoint[] = [
   // Environment.
   {
     id: "roadNoise", label: "Veistøy", category: "environment", source: "svv-stoy", importance: "normal",
-    table: "veistoy", find: { kind: "within" }, // proposed column: stoysone ('rød' | 'gul')
+    table: "veistoy", find: { kind: "within" }, // data/scripts/veistoy.ts (Even): stoysone 'rød' | 'gul'
     read: (rows) => {
-      if (!rows.length) return { value: null, display: "Ikke i støysone", effect: "good" };
+      if (!rows.length) return { value: null, display: "Ikke i støysone", effect: "good", explanation: "Kartet dekker bare riks- og fylkesveier, ikke kommunale veier." };
       const red = rows.some((r) => String(r.stoysone).toLowerCase().startsWith("r"));
       return red
         ? { value: "rød", display: "Rød støysone (over 65 dB)", effect: "bad", score: 10, warning: { severity: "medium", text: "Rød støysone fra vei" } }
