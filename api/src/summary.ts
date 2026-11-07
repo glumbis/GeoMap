@@ -14,6 +14,8 @@ export interface Fact {
   text: string;
   severity?: "high" | "medium" | "low";
   dataPointId?: string;
+  /** 1 (most serious) to 8 (rating), see docs/FACTS.md -> "Ranks". Facts come sorted by it. */
+  rank: number;
 }
 
 export interface Summary {
@@ -77,6 +79,17 @@ const RULES: Record<string, Rule> = {
     d.warning
       ? [rankOf(d, 2), "Eiendommen ligger i et aktsomhetsområde for steinsprang"]
       : [5, "Eiendommen ligger ikke i et aktsomhetsområde for steinsprang"],
+  // debrisFlow and avalanche: not in FACTS.md yet, same shape as rockfall.
+  debrisFlow: (d) =>
+    d.warning
+      ? [rankOf(d, 2), "Eiendommen ligger i et aktsomhetsområde for jord- og flomskred"]
+      : [5, "Eiendommen ligger ikke i et aktsomhetsområde for jord- og flomskred"],
+  avalanche: (d) =>
+    d.value === "medSkog"
+      ? [rankOf(d, 2), "Eiendommen ligger i et aktsomhetsområde for snøskred"]
+      : d.value === "utenSkog"
+        ? [rankOf(d, 3), "Eiendommen ligger i et område der snøskred er mulig hvis skogen over blir borte"]
+        : [5, "Eiendommen ligger ikke i et aktsomhetsområde for snøskred"],
   roadNoise: (d) =>
     d.value === "rød"
       ? [rankOf(d, 2), "Adressen ligger i rød støysone fra vei, med over 65 dB"]
@@ -127,7 +140,7 @@ const joinOg = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -
 
 export function facts(p: Profile): Fact[] {
   const owner = new Map(p.sources.map((s) => [s.id, s.owner]));
-  const out: (Fact & { rank: number })[] = [];
+  const out: Fact[] = [];
 
   for (const c of p.categories) {
     for (const d of c.dataPoints) {
@@ -153,17 +166,41 @@ export function facts(p: Profile): Fact[] {
     r.status === "ok"
       ? `Samlet karakter er ${r.score} av 100.${r.weakestCategory ? ` Svakest er ${r.weakestCategory.name.toLowerCase()} med ${r.weakestCategory.score}.` : ""}`
       : r.reason!;
-  return [...out.map(({ rank, ...f }) => f), { text: rating }];
+  return [...out, { text: rating, rank: 8 }];
+}
+
+/** Fact groups the AI sees, by rank (docs/FACTS.md -> "Ranks"). The rating (rank 8) is left out: the page shows it. */
+const GROUPS: [string, (rank: number) => boolean][] = [
+  ["advarsler", (r) => r <= 4],
+  ["sjekket_uten_funn", (r) => r === 5],
+  ["beliggenhet", (r) => r === 6],
+  ["mangler_data", (r) => r === 7],
+];
+
+function factsForAi(address: string, list: Fact[]): string {
+  const parts = GROUPS.flatMap(([tag, has]) => {
+    const xs = list.filter((f) => has(f.rank));
+    return xs.length ? [`<${tag}>\n${xs.map((f) => `- ${f.text}`).join("\n")}\n</${tag}>`] : [];
+  });
+  return `Adresse: ${address}\n\n${parts.join("\n\n")}`;
 }
 
 const SYSTEM = `Du skriver et kort sammendrag om en adresse i Norge for folk som vurderer å bo der.
-Skriv 4–6 setninger på enkel norsk bokmål. Bruk bare faktaene du får, ingen egen kunnskap.
-Faktaene står i rekkefølge etter hvor alvorlige de er. Følg den rekkefølgen, og nevn alle advarsler.
+Skriv på enkel norsk bokmål. Bruk bare faktaene du får, ingen egen kunnskap.
+
+Faktaene kommer i grupper med tagger. Taggene er bare for deg: ikke skriv tagnavn eller overskrifter i teksten.
+Skriv 4–5 setninger til sammen, hver på høyst 25 ord, i denne rekkefølgen:
+1. <advarsler>: høyst to setninger. Nevn alle, mest alvorlig først. Slå sammen de minst alvorlige.
+2. <sjekket_uten_funn>: én setning, for eksempel "Eiendommen ligger ikke i kartlagt faresone for kvikkleire, flom eller snøskred."
+3. <beliggenhet>: én setning med kollektivtilbud og nærmeste skole eller barnehage. Hopp over resten.
+4. <mangler_data>: én kort setning, bare hvis gruppen finnes. Finnes den ikke, skriv ingenting om manglende data.
+Hopp over en gruppe som ikke finnes.
+
 Ikke gi råd, og ikke bruk vurderende ord som "farlig", "trygt", "bra" eller "dårlig".
 Ikke si at det ikke finnes andre farer. Si bare hva som er sjekket og hva som ble funnet.
 Behold nøyaktig nivå (faregrad, støysone, årsflom), "kartlagt", "i luftlinje" og "i kommunen" der faktaene sier det.
-Samle manglende data i én kort setning. Ikke finn på tall, steder eller farer.
-Ikke skriv kildene i parentes: de vises under teksten.
+Det finnes to støykart. Skriv alltid hvilket: "fra riks- og fylkesvei" eller "i det strategiske støykartet".
+Ikke finn på tall, steder, farer eller manglende data. Ikke skriv kilder eller årstall i parentes.
 Svar bare med sammendraget, uten overskrift eller punktliste.`;
 
 let client: Anthropic | undefined;
@@ -176,7 +213,7 @@ async function writeWithAi(address: string, list: Fact[]): Promise<string | unde
       max_tokens: 2048,
       output_config: { effort: "low" },
       system: SYSTEM,
-      messages: [{ role: "user", content: `Adresse: ${address}\n\nFakta:\n${list.map((f) => `- ${f.text}`).join("\n")}` }],
+      messages: [{ role: "user", content: factsForAi(address, list) }],
     });
     if (res.stop_reason !== "end_turn") {
       console.error(`summary: stop_reason ${res.stop_reason}, using fact sentences`);
