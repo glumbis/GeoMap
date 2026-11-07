@@ -31,7 +31,9 @@ How to use this file:
 - **Når lav aktsomhet:** Det er mindre sjanse for høye radonverdier, men enkelthus kan likevel ha mye radon.
 
 ### `marineClay` — Mulighet for marin leire
-**Forklaring:** Marin leire er leire som ble avsatt i havet etter istiden, og kvikkleire dannes i marin leire. NGU viser hvor ofte det kan finnes marin leire i grunnen. Det er ikke en faresone, men viser hvor kvikkleire er mulig, også der NVE ikke har kartlagt faresoner. Over marin grense (det høyeste havet sto etter istiden) finnes det ikke marin leire.
+**Forklaring:** Marin leire ble avsatt i havet etter istiden, og kvikkleire kan bare dannes i marin leire. NGU viser hvor ofte det finnes marin leire i grunnen, men det er ikke en faresone.
+- **Når ofte marin leire:** Marin leire er vanlig her og kan gi setningsskader på bygninger. Om det er kvikkleire i grunnen, kan bare boring og prøver vise.
+- **Når over marin grense:** Havet sto aldri så høyt her etter istiden, så det finnes ikke marin leire, eller så har NGU ikke vurdert området.
 
 ### `energyWell` — Nærmeste energibrønn
 **Forklaring:** En energibrønn er et borehull i fjellet som henter varme til en bergvarmepumpe. Avstanden er i luftlinje til nærmeste brønn i NGUs brønndatabase, og dybden til fjell er det brønnboreren målte der.
@@ -48,7 +50,10 @@ How to use this file:
 - **Når ikke kartlagt:** NVE har ikke kartlagt kvikkleire i dette området, så kartet sier ingenting om grunnen her. Der det er marin leire i grunnen, kan det likevel finnes kvikkleire.
 
 ### `quickClayAwareness` — Aktsomhetsområde for kvikkleireskred
-**Forklaring:** NVE har vurdert hvor det kan gå kvikkleireskred, ut fra terreng og hvor det kan være marin leire. Kartet er mye grovere enn faresonene for kvikkleire, men dekker langt større områder. Ligger eiendommen i et aktsomhetsområde, betyr det ikke at det er kvikkleire der, men at grunnen må undersøkes før det bygges nytt.
+**Forklaring:** NVE har vurdert hvor det kan gå kvikkleireskred, ut fra terrenget og hvor det kan være marin leire. Kartet er mye grovere enn faresonene for kvikkleire, men dekker langt større områder.
+- **Når i aktsomhetsområde:** Det betyr ikke at det er kvikkleire her, men at grunnen må undersøkes av en geotekniker før det bygges eller graves.
+- **Når ikke i aktsomhetsområde:** NVE har vurdert området uten å sette et aktsomhetsområde her. Det sier ikke noe om grunnen akkurat på denne tomten.
+- **Når ikke kartlagt:** NVE har ikke vurdert kvikkleireskred for dette området ennå, så vi vet ikke.
 
 ### `flood200` — Flomsone (200-årsflom)
 **Forklaring:** En 200-årsflom er en flom som i gjennomsnitt kommer én gang hvert 200. år. Det betyr omtrent 0,5 % sjanse hvert år, eller rundt 1 av 5 i løpet av 50 år.
@@ -57,7 +62,9 @@ How to use this file:
 - **Når ikke kartlagt:** NVE har bare laget flomsonekart langs noen elver og vassdrag, og ikke her. Kartet sier derfor ingenting om flomfare på denne adressen.
 
 ### `floodAwareness` — Aktsomhetsområde for flom
-**Forklaring:** NVE har beregnet hvilke områder langs alle elver og bekker som kan bli oversvømt, ut fra terrenget. Kartet er grovere enn flomsonekartene, men dekker hele landet. Ligger eiendommen i et aktsomhetsområde, må flomfaren vurderes nærmere før det bygges nytt.
+**Forklaring:** NVE har beregnet hvilke områder langs alle elver og bekker som kan bli oversvømt, ut fra terrenget. Kartet er grovere enn flomsonekartene, men dekker hele landet.
+- **Når i aktsomhetsområde:** Flomfaren må vurderes nærmere før det bygges nytt. Det betyr ikke at eiendommen har vært oversvømt.
+- **Når ikke i aktsomhetsområde:** Kartet gjelder flom fra elver og bekker, ikke vann fra kraftig regn eller fra sjøen.
 
 ### `rockfall` — Steinsprang
 **Forklaring:** Steinsprang er når stein løsner fra bratte fjellsider og faller eller ruller ned. Aktsomhetsområder viser hvor stein i verste fall kan nå, beregnet ut fra terrenget.
@@ -94,7 +101,10 @@ How to use this file:
 - Uten treff vet vi ikke om det er stille eller om stedet ikke er kartlagt, så da vises det som ikke tilgjengelig.
 
 ### `railNoise` — Jernbanestøy
-**Forklaring:** Støysonene viser beregnet støy fra Bane NORs jernbane, som et snitt over døgnet der kveld og natt teller mer. Rød sone er 68 dB eller mer og regnes som lite egnet for boliger; gul sone er 58–68 dB, der kommunen vurderer støy særskilt ved nye boliger (retningslinje T-1442). T-bane og trikk er ikke med.
+**Forklaring:** Støysonene viser beregnet støy fra Bane NORs jernbane, som et snitt over døgnet der kveld og natt teller mer. T-bane og trikk er ikke med.
+- **Når rød sone (68 dB eller mer):** Støyen er så høy at området regnes som lite egnet for boliger. Etter retningslinjen T-1442 bør nye boliger som hovedregel unngås her.
+- **Når gul sone (58–68 dB):** Støyen er merkbar, og kommunen vurderer støy særskilt når det skal bygges nytt.
+- **Når ikke i støysone:** Adressen ligger utenfor Bane NORs støysoner. Tog kan likevel høres, og T-bane og trikk er ikke med i kartet.
 
 ### `aircraftNoise` — Flystøy
 **Forklaring:** Avinor har beregnet støysoner rundt Oslo lufthavn Gardermoen, som et snitt over døgnet der kveld og natt teller mer. Sonene bygger på ventet flytrafikk og sier ikke hvor ofte eller hvor lavt flyene går over akkurat denne adressen.
@@ -124,13 +134,16 @@ How to use this file:
 **Forklaring:** Avstanden er målt i luftlinje til nærmeste barnehage. Kommunen tildeler barnehageplass etter egne kriterier.
 
 ### `groceryStore` — Nærmeste dagligvarebutikk
-**Forklaring:** Avstanden er målt i luftlinje til nærmeste dagligvarebutikk (for eksempel Kiwi, Rema 1000, Extra, Meny eller Joker). Kiosker og bensinstasjoner er ikke med. Butikkene kommer fra OpenStreetMap, som er laget av frivillige og kan mangle nye butikker.
+**Forklaring:** Avstanden er i luftlinje til nærmeste dagligvarebutikk, for eksempel Kiwi, Rema 1000, Extra, Meny eller Joker, men ikke kiosker og bensinstasjoner. Butikkene kommer fra OpenStreetMap, som lages av frivillige og kan mangle nye butikker.
+- **Når ingen innen 3 km:** Det er ingen registrert dagligvarebutikk innen 3 km i luftlinje. En ny butikk kan mangle i OpenStreetMap.
 
 ### `pharmacy` — Nærmeste apotek
-**Forklaring:** Avstanden er målt i luftlinje til nærmeste apotek. Apotekene kommer fra OpenStreetMap, som er laget av frivillige.
+**Forklaring:** Avstanden er i luftlinje til nærmeste apotek. Apotekene kommer fra OpenStreetMap, som lages av frivillige og kan mangle noen.
+- **Når ingen innen 5 km:** Det er ikke registrert noe apotek innen 5 km i luftlinje. OpenStreetMap kan mangle noen apotek.
 
 ### `doctor` — Nærmeste legekontor
-**Forklaring:** Avstanden er målt i luftlinje til nærmeste legekontor eller legesenter med allmennleger. Hvilken fastlege du får, avhenger av ledige plasser, ikke av avstand. Legekontorene kommer fra OpenStreetMap, som er laget av frivillige og kan mangle noen kontorer.
+**Forklaring:** Avstanden er i luftlinje til nærmeste legekontor eller legesenter med allmennleger, hentet fra OpenStreetMap. Hvilken fastlege man får, avhenger av ledige plasser hos legene, ikke av avstand.
+- **Når ingen innen 5 km:** Det er ikke registrert noe legekontor innen 5 km i luftlinje. OpenStreetMap kan mangle noen kontorer.
 
 ## Natur og friluft
 
@@ -153,7 +166,7 @@ How to use this file:
 **Forklaring:** En grunnkrets er SSBs minste område for statistikk, ofte et boligfelt eller noen kvartaler med noen hundre innbyggere. Tallet viser hvor mange som bor i grunnkretsen eiendommen ligger i, og hvor tett det bor folk.
 
 ### `neighbourhoodAge` — Aldersfordeling i nabolaget
-**Forklaring:** Andelen barn og unge under 20 år og eldre over 70 år i grunnkretsen. Mange barn og unge tyder på et familieområde. SSB skjuler aldersgrupper med bare 1–2 personer, så tallene kan være litt for lave.
+**Forklaring:** Andelen barn og unge under 20 år og eldre over 70 år i grunnkretsen eiendommen ligger i. SSB skjuler aldersgrupper med bare 1–2 personer, så andelene kan være litt for lave.
 
 ### `population` — Folketall i kommunen
 **Forklaring:** Antall innbyggere i hele kommunen per 1. januar. Tallet sier ikke hvor tett det bor folk akkurat rundt adressen.

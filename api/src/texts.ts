@@ -91,6 +91,33 @@ export const OUTCOMES: Record<string, Record<string, (r: Reading) => boolean>> =
     "få bor der": (r) => r.display.includes("få bor der"),
     "Gardermoen er med": (r) => r.display.includes("Gardermoen"),
   },
+  marineClay: {
+    "ofte marin leire": (r) => r.effect === "bad",
+    "over marin grense": (r) => r.value === null,
+  },
+  quickClayAwareness: {
+    "i aktsomhetsområde": (r) => r.value === true,
+    "ikke i aktsomhetsområde": (r) => r.value === false,
+    "ikke kartlagt": (r) => r.value === "ikkeKartlagt",
+  },
+  floodAwareness: {
+    "i aktsomhetsområde": (r) => r.value === true,
+    "ikke i aktsomhetsområde": (r) => r.value === false,
+  },
+  railNoise: {
+    "rød sone (68 dB eller mer)": (r) => r.value === "rød",
+    "gul sone (58–68 dB)": (r) => r.value === "gul",
+    "ikke i støysone": (r) => r.value === null,
+  },
+  groceryStore: {
+    "ingen innen 3 km": (r) => r.value === null,
+  },
+  pharmacy: {
+    "ingen innen 5 km": (r) => r.value === null,
+  },
+  doctor: {
+    "ingen innen 5 km": (r) => r.value === null,
+  },
   transitDepartures: {
     "ingen avganger": (r) => r.value === 0,
   },

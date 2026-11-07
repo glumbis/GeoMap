@@ -83,6 +83,16 @@ Write `{display}` with a lower-case first letter inside the sentence: "Grunnen b
 `{display}` is "59 m unna, fjell 2 m under bakken": `{distance}` is the part before " unna", `{rock}` the number before " m under bakken". Example (Grevlingåsen 17): "Nærmeste registrerte energibrønn er 59 m unna i luftlinje, og der var det 2 m ned til fjell (NGU)."
 Info only. Never say the depth holds for this plot, and never turn it into advice about heat pumps.
 
+**`marineClay` (Mulighet for marin leire)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| effect bad ("ofte", "noen ganger") | NGU vurderer at det er {display in lower case} i grunnen her ({src}). | 4 |
+| effect good ("sjelden", "stort sett aldri") | NGU vurderer at det er {display in lower case} i grunnen her ({src}). | 6 |
+| value is empty | Adressen ligger over marin grense eller utenfor NGUs kart, så NGU har ikke vurdert marin leire her ({src}). | 6 |
+
+Example (Grevlingåsen 17): "NGU vurderer at det er ofte marin leire i grunnen her (NGU)." Never write "kvikkleire" in this sentence: marine clay is where quick clay is possible, not quick clay.
+
 ### Natural hazards
 
 **`quickClay` (Kvikkleire faresone)**
@@ -146,6 +156,18 @@ Value 2100 is a year, not a return period: never write "2100-årsstormflo".
 
 Rockfall, debris-slide and avalanche maps are *aktsomhetsområder*: coarse maps of where a slide is possible, made from a terrain model. Always write "aktsomhetsområde", never "faresone", so the summary doesn't make them sound like the mapped quick-clay or flood zones.
 
+**`quickClayAwareness` (Aktsomhetsområde for kvikkleireskred)** and **`floodAwareness` (Aktsomhetsområde for flom)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| `quickClayAwareness`, value true | Adressen ligger i et aktsomhetsområde for kvikkleireskred, der grunnen bør undersøkes før det bygges eller graves ({src}). | 3 |
+| `quickClayAwareness`, value false | Adressen ligger ikke i et aktsomhetsområde for kvikkleireskred i områdene NVE har vurdert ({src}). | 5 |
+| `quickClayAwareness`, value "ikkeKartlagt" | NVE har ikke vurdert kvikkleireskred for dette området ennå ({src}). | 7 |
+| `floodAwareness`, value true | Adressen ligger i et aktsomhetsområde for flom fra elv eller bekk ({src}). | 3 |
+| `floodAwareness`, value false | Adressen ligger ikke i et aktsomhetsområde for flom fra elv eller bekk ({src}). | 5 |
+
+Always "aktsomhetsområde", never "faresone": these are coarse maps of where something is possible. When `quickClay` or `flood200` already gives a zone sentence, still add this one: they are different maps.
+
 ### Environment
 
 **`roadNoise` (Veistøy)**
@@ -170,6 +192,16 @@ Note: the noise map has no data on municipal roads. Oslo is marked "no coverage"
 `{display}` is "65–70 dB (2021)": `{band}` is the part before the brackets, `{year}` the year in them. Example (Arendalsgata 22): "Adressen har beregnet veistøy på 65–70 dB i det strategiske støykartet fra 2021 (Statens vegvesen)."
 
 It only warns in Oslo. Outside Oslo, `roadNoise` already gives the warning: don't write two warning sentences about the same noise. When it is missing, it goes under "Missing data" (no zone = unknown, never "stille").
+
+**`railNoise` (Jernbanestøy)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value "rød" | Adressen ligger i rød støysone fra jernbane{line}, med 68 dB eller mer ({src}). | 2 |
+| value "gul" | Adressen ligger i gul støysone fra jernbane{line}, med 58–68 dB ({src}). | 3 |
+| no warning | Adressen ligger ikke i en støysone fra jernbanen ({src}). | 5 |
+
+`{display}` is "Rød støysone fra jernbane, Drammenbanen (over 68 dB)": `{line}` is ", Drammenbanen" (the part between "jernbane" and the brackets, or nothing). The "no warning" sentence is only about trains: never say the address is quiet (T-bane and trikk are not in the map).
 
 **`aircraftNoise` (Flystøy)**
 
@@ -232,6 +264,19 @@ Never call it "skolen adressen hører til": we do not know the school catchment.
 | value is a number | Nærmeste barnehage er {name}, {distance} unna i luftlinje ({src}). | 6 |
 | value is empty | Det er ingen barnehage innen 3 km i luftlinje ({src}). | 4 |
 
+**`groceryStore`, `pharmacy`, `doctor`** (from OpenStreetMap: `{src}` is "OpenStreetMap")
+
+| When | Sentence | Rank |
+|---|---|---|
+| `groceryStore`, value is a number | Nærmeste dagligvarebutikk er {name}, {distance} unna i luftlinje ({src}). | rule above |
+| `groceryStore`, value is empty | Det er ingen registrert dagligvarebutikk innen 3 km i luftlinje ({src}). | 4 |
+| `pharmacy`, value is a number | Nærmeste apotek er {name}, {distance} unna i luftlinje ({src}). | rule above |
+| `pharmacy`, value is empty | Det er ikke registrert noe apotek innen 5 km i luftlinje ({src}). | 4 |
+| `doctor`, value is a number | Nærmeste legekontor er {name}, {distance} unna i luftlinje ({src}). | rule above |
+| `doctor`, value is empty | Det er ikke registrert noe legekontor innen 5 km i luftlinje ({src}). | 4 |
+
+Example (Grevlingåsen 17): "Nærmeste dagligvarebutikk er Kiwi Hosle, 519 m unna i luftlinje (OpenStreetMap)." Never suggest that the nearest doctor is the address's fastlege.
+
 ### Nature & leisure
 
 **`trails` (Nærmeste tursti eller skiløype)**
@@ -274,6 +319,15 @@ Area numbers are for the whole municipality. Always say "i kommunen", never "i n
 
 - `{year}` is the year in brackets at the end of `{display}` ("728 714 (2026)" → 2026). Write `{value}` with spaces between thousands, as in `{display}`.
 - `municipality`: `{display}` is "Bærum (Akershus)". When the two names are the same, write the name once: "Adressen ligger i Oslo (Kartverket)."
+
+**`neighbourhood` (Nabolaget)** and **`neighbourhoodAge` (Aldersfordeling i nabolaget)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| `neighbourhood` | Adressen ligger i grunnkretsen {name}, som hadde {value} innbyggere i {year} ({src}). | 6 |
+| `neighbourhoodAge` | I grunnkretsen er {under20} % av innbyggerne under 20 år og {over70} % over 70 år ({src}). | 6 |
+
+`neighbourhood` `{display}` is "Hosle nord 06: 220 innbyggere, 1 234 per km² (2025)": `{name}` is the part before the colon, `{year}` the year in brackets. `neighbourhoodAge` `{display}` is "9 % under 20 år, 5 % over 70 år": `{under20}` and `{over70}` are the two numbers. Say "grunnkretsen", not "nabolaget": a grunnkrets is SSB's area, not what people call their neighbourhood.
 
 **`culturalHeritage` (Kulturminner innen 50 m)**
 
