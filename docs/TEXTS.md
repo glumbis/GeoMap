@@ -30,6 +30,7 @@ How to use this file:
 ### `quickClay` — Kvikkleire faresone
 **Forklaring:** Kvikkleire er leire som kan bli flytende når den blir forstyrret, og da kan store områder gli ut. NVE har kartlagt soner der et slikt skred kan skje.
 - **Når i faresone:** Faregraden (lav, middels eller høy) sier hvor sannsynlig et skred er, ikke hvor stor skaden blir. Kommunen kan stille krav til grunnundersøkelser før det bygges eller graves.
+- **Når i kartlagt sone uten faregrad:** NVE har kartlagt kvikkleire her, men ikke vurdert hvor sannsynlig et skred er. Kommunen kan likevel kreve grunnundersøkelser før det bygges eller graves.
 - **Når ikke i kartlagt faresone:** NVE har ikke registrert noen faresone her. Det kan likevel finnes kvikkleire i områder som ikke er kartlagt.
 
 ### `flood200` — Flomsone (200-årsflom)
@@ -40,6 +41,15 @@ How to use this file:
 ### `rockfall` — Steinsprang
 **Forklaring:** Steinsprang er når stein løsner fra bratte fjellsider og faller eller ruller ned. Aktsomhetsområder viser hvor stein i verste fall kan nå, beregnet ut fra terrenget.
 - **Når i aktsomhetsområde:** Kartet er grovt og ikke sjekket på stedet, så den virkelige faren kan være mindre. Det gir ikke svar for én enkelt tomt.
+
+### `debrisFlow` — Jord- og flomskred
+**Forklaring:** Jordskred og flomskred er når løsmasser i bratte skråninger eller bekkeløp raser ut, ofte etter mye regn eller snøsmelting. Aktsomhetsområder viser hvor slike skred er mulige, beregnet ut fra terrenget.
+- **Når i aktsomhetsområde:** Kartet er grovt og ikke sjekket på stedet, så den virkelige faren kan være mindre. Det gir ikke svar for én enkelt tomt.
+
+### `avalanche` — Snøskred
+**Forklaring:** Aktsomhetsområder for snøskred viser hvor snøskred kan løsne og hvor langt de kan nå, beregnet ut fra terrenget. Kartet er grovt og ikke sjekket på stedet.
+- **Når i aktsomhetsområde:** Snøskred kan i verste fall nå hit, også med skogen som står i dag.
+- **Når bare uten skog:** Skogen over beskytter i dag. Hvis skogen hogges eller dør, kan snøskred nå hit.
 
 ## Miljø
 
@@ -65,6 +75,11 @@ How to use this file:
 ### `transitStop` — Nærmeste holdeplass
 **Forklaring:** Avstanden er målt i luftlinje til nærmeste stopp for buss, trikk, T-bane, tog eller båt. Gangveien kan være lengre.
 - Tallet sier ikke hvor ofte det går avganger fra stoppet.
+
+### `transitDepartures` — Avganger innen 500 m
+**Forklaring:** Antall avganger på en vanlig hverdag fra den travleste holdeplassen innen 500 meter i luftlinje, med alle linjer som stopper der. Det sier mer om hvor lett det er å reise kollektivt enn avstanden til nærmeste stopp.
+- **Når ingen avganger:** Det finnes ingen holdeplass med faste avganger innen 500 meter. Det kan gå bestillingstransport eller skolebuss som ikke er med i tallet.
+- Helger og ferier har ofte færre avganger.
 
 ### `school` — Nærmeste grunnskole
 **Forklaring:** Avstanden er målt i luftlinje til nærmeste barne- eller ungdomsskole. Det er ikke sikkert dette er skolen adressen hører til, for kommunen bestemmer skolekretsen, og skolen kan være privat.

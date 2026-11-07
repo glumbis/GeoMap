@@ -69,7 +69,10 @@ Rules for every sentence:
 | warning, value "høy" | Eiendommen ligger i en faresone for kvikkleireskred med høy faregrad ({src}). | 1 |
 | warning, value "middels" | Eiendommen ligger i en faresone for kvikkleireskred med middels faregrad ({src}). | 2 |
 | warning, value "lav" | Eiendommen ligger i en faresone for kvikkleireskred med lav faregrad ({src}). | 3 |
-| no warning | Eiendommen ligger ikke i en kartlagt faresone for kvikkleireskred ({src}). | 5 |
+| value "ingen" (zone without faregrad) | Eiendommen ligger i en kartlagt kvikkleiresone der NVE ikke har satt noen faregrad ({src}). | 6 |
+| no zone | Eiendommen ligger ikke i en kartlagt faresone for kvikkleireskred ({src}). | 5 |
+
+"ingen" is neither a risk nor an all-clear: never write "faresone" or "trygt" for it, and don't add a faregrad.
 
 **`flood200` (Flomsone)**
 
@@ -85,6 +88,23 @@ Rules for every sentence:
 |---|---|---|
 | warning | Eiendommen ligger i et aktsomhetsområde for steinsprang ({src}). | 2 |
 | no warning | Eiendommen ligger ikke i et aktsomhetsområde for steinsprang ({src}). | 5 |
+
+**`debrisFlow` (Jord- og flomskred)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| warning | Eiendommen ligger i et aktsomhetsområde for jord- og flomskred ({src}). | 2 |
+| no warning | Eiendommen ligger ikke i et aktsomhetsområde for jord- og flomskred ({src}). | 5 |
+
+**`avalanche` (Snøskred)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value "medSkog" (warning medium) | Eiendommen ligger i et aktsomhetsområde for snøskred ({src}). | 2 |
+| value "utenSkog" (warning low) | Eiendommen ligger i et område der snøskred bare kan nå fram hvis skogen over blir borte ({src}). | 3 |
+| no warning | Eiendommen ligger ikke i et aktsomhetsområde for snøskred ({src}). | 5 |
+
+Rockfall, debris-slide and avalanche maps are *aktsomhetsområder*: coarse maps of where a slide is possible, made from a terrain model. Always write "aktsomhetsområde", never "faresone", so the summary doesn't make them sound like the mapped quick-clay or flood zones.
 
 ### Environment
 
@@ -129,6 +149,19 @@ Example (Holmenkollveien 196): "Nærmeste holdeplass er Frognerseteren, 155 m un
 |---|---|---|
 | value is a number | Nærmeste holdeplass er {name}, {distance} unna i luftlinje ({src}). | 6 |
 | value is empty | Det er ingen holdeplass innen 2 km i luftlinje ({src}). | 4 |
+
+**`transitDepartures` (Avganger innen 500 m)**
+
+The busiest stop within 500 m in a straight line, counted on one normal weekday. `{display}` is "161 avganger, 2 linjer (Jegeråsen, 212 m)": `{lines}` is the number before "linje"/"linjer", `{name}` and `{distance}` are in the brackets.
+
+| When | Sentence | Rank |
+|---|---|---|
+| value > 0, 1 line | Fra {name}, {distance} unna i luftlinje, går det {value} avganger på en vanlig hverdag med 1 linje ({src}). | 6 if good, 4 if bad |
+| value > 0, more lines | Fra {name}, {distance} unna i luftlinje, går det {value} avganger på en vanlig hverdag fordelt på {lines} linjer ({src}). | 6 if good, 4 if bad |
+| value 0 | Det går ingen kollektivavganger fra holdeplasser innen 500 meter i luftlinje på en vanlig hverdag ({src}). | 4 |
+
+Example (Grevlingåsen 17): "Fra Jegeråsen, 212 m unna i luftlinje, går det 161 avganger på en vanlig hverdag fordelt på 2 linjer (Entur)."
+Say "på en vanlig hverdag", never "per dag" or "hver dag": weekends have fewer. If this stop is also the nearest stop (`transitStop`), one sentence may cover both.
 
 **`school` (Nærmeste grunnskole)**
 
@@ -199,5 +232,5 @@ From `docs/TEST_ADDRESSES.md`. After a change here or in `summary.ts`, the facts
 | 1 | Arendalsgata 22 | Kvikkleire, høy faregrad (rank 1). Veistøy 65–70 dB from the strategic map (rank 2) | Any T-1442 noise zone (no coverage in Oslo) |
 | 2 | Nedre Rælingsveg 148 | 200-årsflom (rank 2). Rød støysone (rank 2) | A second noise warning (strategic map does not warn outside Oslo) |
 | 3 | Gamle Drammensvei 207 | Rød støysone (rank 2) | Kvikkleire, flom |
-| 4 | Grevlingåsen 17 | "ikke i en kartlagt" for quick clay and flood, no noise zone (rank 5). Høy radonaktsomhet (rank 2) | Any other warning |
+| 4 | Grevlingåsen 17 | "ikke i en kartlagt" for quick clay and flood, no noise zone, no rockfall/debris/avalanche area (rank 5). Høy radonaktsomhet (rank 2). Jegeråsen, 161 avganger | Any other warning |
 | 5 | Holmenkollveien 196 | Høy radonaktsomhet (rank 2). Frognerseteren as nearest stop | Kvikkleire, flom, støy |
