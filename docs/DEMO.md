@@ -75,7 +75,7 @@ What the pitch needs, and who it depends on. Update this as things land.
 | Perspective scores (Bo her, Bygge her, Familie, Pendler) | In the profile. Not on the page yet | Erik |
 | Explanations under each data point | Works: main text and the matching "Når ..." text from `docs/TEXTS.md` | Lukas |
 | AI summary | Works. Checked with the key on 2026-11-07: Arendalsgata names the quick clay first, Grevlingåsen invents nothing and says NVE has not mapped quick clay or flood there. Without the key the card shows the fact sentences | Erik, Lukas |
-| "Område" card | Says "Kan ikke vurderes" although all 3 data points are there. Don't open it in the demo | Lukas, Erik |
+| "Område" card | Works: shows "Kun fakta" (information only, no score) | Lukas, Erik |
 | Map tiles | Take 3–5 seconds to appear the first time. Open both pages before presenting | — |
 
 For the 2:15 part, open Miljø on Grevlingåsen: the strategic noise map shows "Ikke tilgjengelig".
@@ -156,10 +156,12 @@ Note: Haiku costs about $0.0005 per address (`PLAN.md`), cached in the database.
 Saved in `docs/demo/` at 1440×900. Retake them after big changes (headless Edge works: `msedge --headless=new --window-size=1440,900 --virtual-time-budget=15000 --screenshot=<file> <url>`).
 
 1. `1-start.png`: the start page with the empty address field. **Taken.**
-2. `2-grevlingasen.png`: the Grevlingåsen 17 page, top part (no warnings, scores). **Retake:** it shows the old score 75.
+2. `2-grevlingasen.png`: the Grevlingåsen 17 page, top part (no warnings, scores). **Taken** (score 67, editorial theme).
 3. `3-data-point.png`: the Miljø card opened on Grevlingåsen, with explanations, sources and one "Ikke tilgjengelig". **Taken.** It also covers 6.
-4. `4-arendalsgata.png`: the Arendalsgata 22 page with the quick-clay warning at the top. **Retake:** it shows the old score 20.
+4. `4-arendalsgata.png`: the Arendalsgata 22 page with the quick-clay warning at the top. **Taken** (score 13, quick-clay zone, AI summary).
 5. `5-map.png`: the map with the quick-clay zone around Arendalsgata. **Taken.**
 6. `6-missing.png`: a data point shown as "Ikke tilgjengelig". Covered by 3.
 
-Retake 2 and 4 once Erik's perspective cards are on the page, so they only need taking once.
+All five retaken on 2026-11-07 after Erik's editorial theme. Retake 2 and 4 again once Erik's perspective cards are on the page.
+
+Tip: headless Edge with `--virtual-time-budget` sometimes captures the map before the hazard layers load. Driving Edge over `--remote-debugging-port` and waiting about 12 seconds per page works every time. Check that the URL is the port Vite printed: if another dev server holds 5173, you get an error page instead.
