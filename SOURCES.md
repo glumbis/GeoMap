@@ -112,6 +112,17 @@ Terms for all Kartverket free data: CC BY 4.0, credit "© Kartverket". Details i
   - Source: NGU county downloads for Oslo and Akershus (FGDB in a zip, EPSG:25833, layer `MuligMarinLeireFlate`), via `nedlasting.ngu.no/api/fileproxy/...` (Atom feed of dataset 641a81c2). NGU's OGC API ignores `bbox`, so the download is used. Data from 2024-06, file 2026-10-26.
   - Classes and `level`: sværtStor 5, sværtStorMenUsammenhengendeEllerTynt 4, stor 3, middels 2, liten 1, stortSettFraværende 0 (`ikkeAngitt` dropped). Scored, no warning (quickClay warns). No polygon = above the marine limit or not classified: neutral.
   - Checked: #1 Arendalsgata "svært ofte" (inside the quick-clay zone), #2 and #4 "ofte", #3 and #5 "stort sett aldri".
+- **Bane NOR Støysoner for jernbanenett** (entry below) → table `banestoy`, script `data/scripts/banestoy.ts`, API `/api/banestoy`, data point `railNoise` (2026-11-07).
+  - Source: Geonorge county downloads for Oslo and Akershus (FGDB in a zip, EPSG:25833, layer `stoysonerjernbanenett_stoy`). Bane NOR's calculation year 2016, file updated 2025-03-12.
+  - T-1442 railway zones: red = Lden 68 dB or more (medium warning), yellow = 58–68 dB (low warning). 156 red and 1,122 yellow polygons on 8 lines (Hoved- og Gardermobanen, Østfoldbanen, Dovrebanen, Gjøvikbanen, ...), simplified to 1 m. No metro or tram (Sporveien).
+  - Columns: `id`, `name`, `stoysone` ('rød' | 'gul'), `line`, `year`, `source`, `geom`.
+  - Street addresses inside (Kartverket address file): 370 red, 4,346 yellow; most in Oslo, Lillestrøm and Nordre Follo. Checked: Arups gate 10A, Oslo (`0301-10261-10A`) red, Linjeveien 32, Oslo (`0301-14353-32`) yellow; no test address is in a zone.
+- **OpenStreetMap: grocery stores, pharmacies, doctors** (entry below) → table `tjenester`, script `data/scripts/tjenester.ts`, API `/api/tjenester`, data points `groceryStore`, `pharmacy`, `doctor` (2026-11-07).
+  - Source: Overpass API (keyless; falls back to overpass.kumi.systems), points and building centres in the study bbox, clipped to Oslo + Akershus.
+  - `kind`: 'dagligvare' (shop=supermarket, plus shop=convenience except kiosk/fuel chains such as 7-Eleven, Narvesen, Mix) = 836; 'apotek' (amenity=pharmacy) = 261; 'lege' (amenity=doctors or healthcare=doctor, general practice or no speciality) = 355. Specialist-only practices and clinics are left out.
+  - Scored by straight-line distance like schools and kindergartens: grocery 400/800/1500/3000 m, pharmacy and doctor 800/1500/3000/5000 m.
+  - Checked: #1 Extra Bjølsen 92 m, Apotek 1 Sagene 167 m; #4 Kiwi Hosle 519 m, Apotek 1 Hosle 494 m; #5 Holmenkollveien is the far one (grocery 2.2 km, pharmacy 3.1 km). OSM is volunteer data, thinnest for doctors.
+  - Licence ODbL 1.0, credit "© OpenStreetMap contributors".
 - Shared helpers in `data/scripts/lib.ts`: `studyBbox()`, `arcgisFeatures()` (pages any ArcGIS REST layer, e.g. NVE, as GeoJSON) and `readZipEntry()` (reads one file out of a downloaded zip).
 
 - **Name:** Eiendom REST-API (property lookup)

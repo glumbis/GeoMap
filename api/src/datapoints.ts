@@ -102,6 +102,8 @@ export const SOURCES: Source[] = [
   { id: "ngu-berggrunn", name: "Berggrunn N50 / N250", owner: "NGU", url: "https://kartkatalog.geonorge.no/metadata/berggrunn-n50/a5c76d05-33bd-4a1d-b28b-81575092e468", licence: "NLOD 2.0" },
   { id: "svv-stoy", name: "Støykartlegging veg", owner: "Statens vegvesen", url: "https://kartkatalog.geonorge.no/metadata/stoeykartlegging-veg-etter-t-1442/d6db9f39-9725-4630-909e-5e62f09a0766", licence: "NLOD 2.0" },
   { id: "svv-stoy-strategisk", name: "Strategisk støykartlegging veg", owner: "Statens vegvesen", url: "https://kartkatalog.geonorge.no/metadata/stoeykart-strategisk-stykartlegging-stydirektivet/93a154a7-47d5-47b8-bdda-f156d92386cc", licence: "NLOD 2.0" },
+  { id: "banenor-stoy", name: "Støysoner for Bane NORs jernbanenett", owner: "Bane NOR", url: "https://kartkatalog.geonorge.no/metadata/stoeysoner-for-bane-nors-jernbanenett/47234f63-a9d1-43c7-b91c-db90c92d5008", licence: "Åpne data, ingen vilkår" },
+  { id: "osm", name: "OpenStreetMap (butikker, apotek, legekontor)", owner: "OpenStreetMap-bidragsytere", url: "https://www.openstreetmap.org/copyright", licence: "ODbL 1.0" },
   { id: "avinor-flystoy", name: "Støysoner Avinors lufthavner", owner: "Avinor", url: "https://kartkatalog.geonorge.no/metadata/stoeysoner-avinors-lufthavner/1489f7f8-40c8-4dc4-83b6-bcf277b56506", licence: "Åpne data, ingen vilkår" },
   { id: "mdir-grunnforurensning", name: "Forurenset grunn", owner: "Miljødirektoratet", url: "https://kartkatalog.geonorge.no/metadata/forurenset-grunn/e48e71ac-16fc-4e47-9e7f-c0a4a4bbfad0", licence: "NLOD 2.0" },
   { id: "entur-stopp", name: "Holdeplasser", owner: "Entur", url: "https://developer.entur.org/stops-and-timetable-data", licence: "NLOD 2.0" },
@@ -412,6 +414,20 @@ export const DATA_POINTS: DataPoint[] = [
     },
   },
   {
+    // data/scripts/banestoy.ts (Sverre): stoysone 'rød' (Lden >= 68 dB) | 'gul' (Lden >= 58 dB), line (e.g. Østfoldbanen).
+    // Bane NOR maps its whole network, so no zone = no railway noise zone. Metro (T-bane) and tram are not included.
+    id: "railNoise", label: "Jernbanestøy", category: "environment", source: "banenor-stoy", importance: "normal",
+    table: "banestoy", find: { kind: "within" },
+    read: (rows) => {
+      if (!rows.length) return { value: null, display: "Ikke i støysone fra jernbane", effect: "good" };
+      const red = rows.find((r) => r.stoysone === "rød");
+      const line = (red ?? rows[0]).line ? `, ${(red ?? rows[0]).line}` : "";
+      return red
+        ? { value: "rød", display: `Rød støysone fra jernbane${line} (over 68 dB)`, effect: "bad", score: 10, warning: { severity: "medium", text: "Rød støysone fra jernbane" } }
+        : { value: "gul", display: `Gul støysone fra jernbane${line} (58–68 dB)`, effect: "bad", score: 50, warning: { severity: "low", text: "Gul støysone fra jernbane" } };
+    },
+  },
+  {
     // data/scripts/flystoy.ts (Sverre): stoysone 'rød' (Lden >= 62 dB) | 'gul' (Lden >= 52 dB), airport.
     // Avinor maps every airport it runs, and Oslo + Akershus has only Gardermoen, so no zone = no aircraft noise zone.
     id: "aircraftNoise", label: "Flystøy", category: "environment", source: "avinor-flystoy", importance: "normal",
@@ -468,6 +484,22 @@ export const DATA_POINTS: DataPoint[] = [
     id: "kindergarten", label: "Nærmeste barnehage", category: "location", source: "udir-barnehager", importance: "normal",
     table: "kindergartens", find: { kind: "nearest", maxM: 3000 },
     read: nearestScore([[400, 100], [800, 80], [1500, 50], [3000, 20]]),
+  },
+  // data/scripts/tjenester.ts (Sverre): OpenStreetMap, kind 'dagligvare' | 'apotek' | 'lege' (GP / legekontor).
+  {
+    id: "groceryStore", label: "Nærmeste dagligvarebutikk", category: "location", source: "osm", importance: "normal",
+    table: "tjenester", find: { kind: "nearest", maxM: 3000, where: "kind = 'dagligvare'" },
+    read: nearestScore([[400, 100], [800, 80], [1500, 50], [3000, 20]]),
+  },
+  {
+    id: "pharmacy", label: "Nærmeste apotek", category: "location", source: "osm", importance: "normal",
+    table: "tjenester", find: { kind: "nearest", maxM: 5000, where: "kind = 'apotek'" },
+    read: nearestScore([[800, 100], [1500, 80], [3000, 50], [5000, 20]]),
+  },
+  {
+    id: "doctor", label: "Nærmeste legekontor", category: "location", source: "osm", importance: "normal",
+    table: "tjenester", find: { kind: "nearest", maxM: 5000, where: "kind = 'lege'" },
+    read: nearestScore([[800, 100], [1500, 80], [3000, 50], [5000, 20]]),
   },
 
   // Nature & leisure.

@@ -90,6 +90,9 @@ How to use this file:
 - **Når 50–55 dB:** Det er noe trafikkstøy, men under nivået for gul sone.
 - Uten treff vet vi ikke om det er stille eller om stedet ikke er kartlagt, så da vises det som ikke tilgjengelig.
 
+### `railNoise` — Jernbanestøy
+**Forklaring:** Støysonene viser beregnet støy fra Bane NORs jernbane, som et snitt over døgnet der kveld og natt teller mer. Rød sone er 68 dB eller mer og regnes som lite egnet for boliger; gul sone er 58–68 dB, der kommunen vurderer støy særskilt ved nye boliger (retningslinje T-1442). T-bane og trikk er ikke med.
+
 ### `aircraftNoise` — Flystøy
 **Forklaring:** Avinor har beregnet støysoner rundt Oslo lufthavn Gardermoen, som et snitt over døgnet der kveld og natt teller mer. Sonene bygger på ventet flytrafikk og sier ikke hvor ofte eller hvor lavt flyene går over akkurat denne adressen.
 - **Når rød sone (62 dB eller mer):** Flystøyen er så høy at området regnes som lite egnet for boliger. Etter retningslinjen T-1442 bør nye boliger som hovedregel unngås her.
@@ -116,6 +119,15 @@ How to use this file:
 
 ### `kindergarten` — Nærmeste barnehage
 **Forklaring:** Avstanden er målt i luftlinje til nærmeste barnehage. Kommunen tildeler barnehageplass etter egne kriterier.
+
+### `groceryStore` — Nærmeste dagligvarebutikk
+**Forklaring:** Avstanden er målt i luftlinje til nærmeste dagligvarebutikk (for eksempel Kiwi, Rema 1000, Extra, Meny eller Joker). Kiosker og bensinstasjoner er ikke med. Butikkene kommer fra OpenStreetMap, som er laget av frivillige og kan mangle nye butikker.
+
+### `pharmacy` — Nærmeste apotek
+**Forklaring:** Avstanden er målt i luftlinje til nærmeste apotek. Apotekene kommer fra OpenStreetMap, som er laget av frivillige.
+
+### `doctor` — Nærmeste legekontor
+**Forklaring:** Avstanden er målt i luftlinje til nærmeste legekontor eller legesenter med allmennleger. Hvilken fastlege du får, avhenger av ledige plasser, ikke av avstand. Legekontorene kommer fra OpenStreetMap, som er laget av frivillige og kan mangle noen kontorer.
 
 ## Natur og friluft
 
