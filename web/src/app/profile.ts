@@ -9,6 +9,8 @@ export interface Rating {
   reason?: string;
   coverage: { present: number; expected: number; criticalMissing: number };
   cappedBy?: { dataPointId: string; cap: number; text: string }[];
+  /** Points taken off for things that count but never cap (radon, awareness areas). */
+  penalties?: { dataPointId: string; points: number; text: string }[];
   weakestCategory?: { id: string; name: string; score: number };
 }
 
@@ -22,7 +24,7 @@ export interface DataPoint {
   unit?: string;
   effect: "good" | "neutral" | "bad";
   score?: number;
-  warning?: { severity: Severity; text: string };
+  warning?: { severity: Severity; text: string; check?: true };
   explanation?: string;
 }
 
@@ -68,6 +70,8 @@ export interface Profile {
   };
   rating: Rating;
   warnings: { severity: Severity; text: string; dataPointId: string; categoryId: string }[];
+  /** Common things to check (radon, awareness areas). areaShare: percent of the municipality's area with the same finding. */
+  checks?: { text: string; dataPointId: string; categoryId: string; areaShare?: { percent: number; municipality: string } }[];
   categories: Category[];
   sources: { id: string; name: string; owner: string; url: string; licence: string }[];
 }

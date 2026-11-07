@@ -38,8 +38,15 @@ export interface Reading {
   effect: Effect;
   /** 0-100. Left out: good = 100, bad = 0, neutral = not scored. */
   score?: number;
-  /** A finding serious enough to show at the top. high caps the score (see rating.ts). */
-  warning?: { severity: Severity; text: string };
+  /**
+   * A finding serious enough to show at the top. high/medium cap the score (see rating.ts).
+   * check: true marks a common thing to check (radon, awareness areas), not a hazard finding: it never caps, it is
+   * listed under the profile's `checks` instead of `warnings`, and `sameArea` (fixed SQL on the data point's table)
+   * picks the rows that count as "the same", so the profile can say how much of the municipality shares it.
+   */
+  warning?: { severity: Severity; text: string; check?: true; sameArea?: string };
+  /** Points taken off the overall and the perspectives that use this data point, after caps. For checks that must still count. */
+  penalty?: number;
   explanation?: string;
 }
 
@@ -68,6 +75,11 @@ export interface DataPoint {
    * Use it so "no zone found" only counts as good where someone actually looked.
    */
   coverage?: string;
+  /**
+   * Id of a more detailed data point for the same hazard (quickClayAwareness -> quickClay). When that one has a
+   * warning, this one's check and penalty are dropped, so one hazard is not counted twice. Its score still counts.
+   */
+  supersededBy?: string;
   /** rows is [] when nothing was found. Return null when the source has no coverage here. */
   read: (rows: Row[], address: Address, mapped?: boolean) => Reading | null;
 }
@@ -202,10 +214,17 @@ export const DATA_POINTS: DataPoint[] = [
       if (!rows.length) return null;
       const a = String(rows[0].aktsomhet);
       if (a === "megetHøy") {
-        return { value: a, display: "Meget høy aktsomhet", effect: "bad", score: 15, warning: { severity: "medium", text: "Meget høy radonaktsomhet" } };
+        // A check, not a cap: high radon likelihood covers much of Oslo and is cheap to measure. It still costs points.
+        return {
+          value: a, display: "Meget høy aktsomhet", effect: "bad", score: 15, penalty: 12,
+          warning: { severity: "low", text: "Meget høy radonaktsomhet", check: true, sameArea: "aktsomhet = 'megetHøy'" },
+        };
       }
       if (a === "høy") {
-        return { value: a, display: "Høy aktsomhet", effect: "bad", score: 30, warning: { severity: "medium", text: "Høy radonaktsomhet" } };
+        return {
+          value: a, display: "Høy aktsomhet", effect: "bad", score: 30, penalty: 8,
+          warning: { severity: "low", text: "Høy radonaktsomhet", check: true, sameArea: "aktsomhet = 'høy'" },
+        };
       }
       if (a === "middels") return { value: a, display: "Middels aktsomhet", effect: "neutral", score: 65 };
       if (a === "lav") return { value: a, display: "Lav aktsomhet", effect: "good", score: 90 };
@@ -316,9 +335,14 @@ export const DATA_POINTS: DataPoint[] = [
     id: "quickClayAwareness", label: "Aktsomhetsområde for kvikkleireskred", category: "hazards", source: "nve-kvikkleire-aktsomhet", importance: "normal",
     table: "kvikkleire_aktsomhet", find: { kind: "within" },
     coverage: "kvikkleire_aktsomhet_dekning",
+    supersededBy: "quickClay",
     read: (rows, _address, mapped) => {
       if (!rows.length) return mapped ? { value: false, display: "Ikke i aktsomhetsområde for kvikkleireskred", effect: "good" } : NOT_MAPPED;
-      return { value: true, display: "I aktsomhetsområde for kvikkleireskred", effect: "bad", score: 50, warning: { severity: "low", text: "Aktsomhetsområde for kvikkleireskred" } };
+      // "Not checked yet", not "dangerous": a check with a small penalty.
+      return {
+        value: true, display: "I aktsomhetsområde for kvikkleireskred", effect: "bad", score: 50, penalty: 3,
+        warning: { severity: "low", text: "Aktsomhetsområde for kvikkleireskred", check: true, sameArea: "true" },
+      };
     },
   },
   {
@@ -326,9 +350,13 @@ export const DATA_POINTS: DataPoint[] = [
     // Coarser than flood200 (which is only mapped in some places), so a low warning: "check before building".
     id: "floodAwareness", label: "Aktsomhetsområde for flom", category: "hazards", source: "nve-flomaktsomhet", importance: "normal",
     table: "flomaktsomhet", find: { kind: "within" },
+    supersededBy: "flood200",
     read: (rows) =>
       rows.length
-        ? { value: true, display: "I aktsomhetsområde for flom", effect: "bad", score: 50, warning: { severity: "low", text: "Aktsomhetsområde for flom" } }
+        ? {
+            value: true, display: "I aktsomhetsområde for flom", effect: "bad", score: 50, penalty: 3,
+            warning: { severity: "low", text: "Aktsomhetsområde for flom", check: true, sameArea: "true" },
+          }
         : { value: false, display: "Ikke i aktsomhetsområde for flom", effect: "good" },
   },
   {

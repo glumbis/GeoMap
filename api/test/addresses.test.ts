@@ -9,7 +9,8 @@ const API = process.env.API_URL ?? "http://localhost:3000/api";
 
 interface DataPoint { id: string; value: unknown; effect: string; warning?: { severity: string } }
 interface Profile {
-  rating: { status: string; score?: number; cappedBy?: { dataPointId: string }[] };
+  rating: { status: string; score?: number; cappedBy?: { dataPointId: string }[]; penalties?: { dataPointId: string; points: number }[] };
+  checks: { dataPointId: string; areaShare?: { percent: number } }[];
   warnings: { dataPointId: string; severity: string }[];
   categories: { dataPoints: DataPoint[]; missing: { id: string; importance: string }[] }[];
   perspectives: { id: string; rating: { status: string; score?: number; cappedBy?: unknown[]; factors: { dataPointId: string }[] } }[];
@@ -76,6 +77,18 @@ describe("hazards are found where they are, and only there", () => {
       const w = warned(profiles[k]);
       for (const id of ["quickClay", "flood200", "roadNoise", "roadNoiseStrategic"]) assert.ok(!w.has(id), `${k}: ${id}`);
     }
+  });
+});
+
+describe("checks (radon, awareness areas)", () => {
+  test("#5 (ski): high radon is a check, not a warning, never caps, still costs points, and says how common it is", () => {
+    const p = profiles.ski;
+    assert.ok(!warned(p).has("radon"));
+    const radon = p.checks.find((c) => c.dataPointId === "radon");
+    assert.ok(radon, "radon check");
+    assert.ok(radon.areaShare && radon.areaShare.percent > 0 && radon.areaShare.percent <= 100);
+    assert.ok(!p.rating.cappedBy?.some((c) => c.dataPointId === "radon"));
+    assert.ok(p.rating.penalties?.some((x) => x.dataPointId === "radon" && x.points > 0));
   });
 });
 

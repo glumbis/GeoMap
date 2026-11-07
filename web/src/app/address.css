@@ -70,3 +70,18 @@
 .dp-score--bad { border-bottom-color: var(--bad); }
 .dp-score--none { border-bottom: 0; }
 .warning-cap { display: block; font-size: 0.75rem; font-style: italic; color: var(--ink-muted); }
+
+/* "Sjekk dette": quiet list under the warnings for common findings that cost points but never cap (radon, awareness areas). */
+.overall-penalty { margin: 0; font-size: 0.875rem; color: var(--ink); }
+.panel > .checks { margin-top: 1rem; }
+.checks-title { margin: 0 0 0.25rem; font-family: var(--font); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); }
+.checks-list { list-style: none; margin: 0; padding: 0; }
+.check {
+  display: flex; flex-direction: column; gap: 0.0625rem; width: 100%;
+  padding: 0.4375rem 0; border: 0; border-top: 1px solid var(--line); background: none; border-radius: 0;
+  font: inherit; font-size: 0.9375rem; text-align: left; color: var(--ink); cursor: pointer;
+}
+.check:hover .check-text { text-decoration: underline; text-underline-offset: 0.2em; }
+.check:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.check-share, .check-action { font-size: 0.8125rem; color: var(--ink-muted); }
+.check-action { color: var(--ink); }

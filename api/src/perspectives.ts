@@ -31,7 +31,8 @@ export const PERSPECTIVES: Perspective[] = [
     name: "Bygge her",
     question: "Hvor krevende er grunnen å bygge på?",
     weights: {
-      quickClay: 4, soilType: 3, flood200: 3, pollutedGround: 3, marineClay: 3, bedrock: 2, radon: 2,
+      // radon only 1: new buildings must have radon protection anyway (TEK17 §13-5).
+      quickClay: 4, soilType: 3, flood200: 3, pollutedGround: 3, marineClay: 3, bedrock: 2, radon: 1,
       quickClayAwareness: 2, floodAwareness: 2, rockfall: 2, debrisFlow: 2, stormSurge: 2, avalanche: 1,
     },
     required: ["quickClay", "soilType", "flood200"],

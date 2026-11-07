@@ -103,3 +103,25 @@ test("a category with only unscored facts is 'informational', and doesn't block 
   assert.equal(o.status, "ok");
   assert.equal(o.score, 100);
 });
+
+test("checks (radon) never cap, but their penalty still lowers the overall", () => {
+  const radon: Scored = {
+    id: "radon", label: "Radon", importance: "critical",
+    reading: { value: "megetHøy", display: "Meget høy", effect: "bad", score: 15, penalty: 12, warning: { severity: "low", text: "Meget høy radon", check: true } },
+  };
+  const withRadon = overall([radon, good("quickClay", "critical")]);
+  const without = overall([good("radon", "critical"), good("quickClay", "critical")]);
+  assert.equal(withRadon.cappedBy, undefined);
+  assert.deepEqual(withRadon.penalties, [{ dataPointId: "radon", points: 12, text: "Meget høy radon" }]);
+  assert.ok(without.score! - withRadon.score! >= 12, `${without.score} vs ${withRadon.score}`);
+});
+
+test("a penalty is taken off before caps, so a capped address is not pushed to the floor", () => {
+  const radon: Scored = {
+    id: "radon", label: "Radon", importance: "critical",
+    reading: { value: "megetHøy", display: "Meget høy", effect: "bad", score: 15, penalty: 12, warning: { severity: "low", text: "Radon", check: true } },
+  };
+  const o = overall([radon, warn("quickClay", "high")]);
+  assert.ok(o.score! > 10, String(o.score));
+  assert.deepEqual(o.cappedBy?.map((c) => c.dataPointId), ["quickClay"]);
+});
