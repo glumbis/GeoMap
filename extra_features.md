@@ -35,7 +35,7 @@ A downloadable report about one address, like a condition report ("tilstandsrapp
 2. **Summary:** the AI summary (marked "AI-generert") and the top warnings.
 3. **Perspectives chart:** Bo her, Bygge her, Familie, Pendler as a bar chart, each with the factors that pull it down.
 4. **One page per category:** score, every data point with value, source and info text from `docs/TEXTS.md`, and a small map of the relevant layer (quick clay zone, flood zone, noise band).
-5. **Compared to the area:** where this address sits against other addresses in the same kommune or grunnkrets (percentile, histogram). Needs scores for many addresses (batch job); until then leave it out.
+5. **Compared to the area:** where this address sits against other addresses in the same kommune or grunnkrets (percentile, histogram). Needs scores for many addresses (batch job). **Data ready 2026-11-07 (Sverre):** `GET /api/omrade/<id>` gives the address's percentile and the median in its grunnkrets and kommune (`npm run scores`).
 6. **Future check and sun** (ideas 6 and 7), when built.
 7. **Questions to ask** (idea 3).
 8. **Missing data:** what we could not check and why, so nobody reads silence as "safe".
@@ -66,6 +66,7 @@ The user types their work or school address and gets travel time by public trans
 ## 5. Find areas that fit me
 
 Turn the map around: instead of "tell me about this address", the user says "low hazard, quiet, school within 1 km, under 30 min to Oslo S" and the map colours the areas that fit. Needs scores pre-computed on a grid or per grunnkrets. The biggest job here, but also the most "wow" for people who don't have an address yet.
+**Status 2026-11-07:** first building block done (Sverre): every street address is rated and summarised per grunnkrets; `/api/grunnkrets_scores` is a map layer with the median overall score, the share with serious warnings and the median per perspective (Bo her, Bygge her, Familie, Pendler). Filters by need are still to come.
 
 ## 6. Future check (climate)
 

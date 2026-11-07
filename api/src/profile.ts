@@ -8,7 +8,10 @@ import { rateCategory, rateOverall, ratePerspective, type Factor, type MissingPo
 
 export const PROFILE_VERSION = 1;
 
-type MissingReason = "noCoverage" | "sourceUnavailable" | "notLoaded" | "outsideArea";
+export type MissingReason = "noCoverage" | "sourceUnavailable" | "notLoaded" | "outsideArea";
+
+/** One data point's outcome for an address: a reading, or why it is missing. */
+export type ReadingResult = { dp: DataPoint; reading?: Reading; reason?: MissingReason };
 
 export interface PresentDataPoint extends Reading {
   id: string;
@@ -110,7 +113,7 @@ export async function buildProfile(id: string): Promise<Profile> {
   // Study area = the kommuner table (Oslo + Akershus). Outside it no dataset covers the address (docs/PROFILE.md, rule 6).
   const outside = (await isMapped("kommuner", loaded, address.lng, address.lat)) === false;
 
-  const results: { dp: DataPoint; reading?: Reading; reason?: MissingReason }[] = [];
+  const results: ReadingResult[] = [];
   for (const dp of DATA_POINTS) {
     if (!/^[a-z0-9_]+$/.test(dp.table)) throw new Error(`bad table name in data point ${dp.id}: ${dp.table}`);
     if (outside) {
@@ -131,7 +134,24 @@ export async function buildProfile(id: string): Promise<Profile> {
       results.push({ dp, reason: "sourceUnavailable" });
     }
   }
+  // Area shares need the database, so they are looked up here and handed to assembleProfile (which has no DB access).
+  const shares = new Map<string, number>();
+  if (!outside) {
+    for (const r of results) {
+      const w = r.reading?.warning;
+      if (!w?.check || !w.sameArea) continue;
+      const share = await areaShare(r.dp.table, w.sameArea, address.municipalityNumber).catch(() => undefined);
+      if (share != null) shares.set(r.dp.id, share);
+    }
+  }
+  return assembleProfile(address, results, outside, shares);
+}
 
+/**
+ * Readings -> the full profile (categories, warnings, ratings, perspectives). No database access, so the
+ * batch scoring of every address (data/area-scores.ts) uses exactly the same rules as the address page.
+ */
+export function assembleProfile(address: Address, results: ReadingResult[], outside = false, shares: Map<string, number> = new Map()): Profile {
   // A coarse awareness area is not counted again when the detailed hazard zone for the same hazard already warns.
   for (const r of results) {
     const by = r.dp.supersededBy && results.find((x) => x.dp.id === r.dp.supersededBy);
@@ -167,8 +187,7 @@ export async function buildProfile(id: string): Promise<Profile> {
     .sort((a, b) => order.indexOf(a.severity) - order.indexOf(b.severity));
   const checks = [];
   for (const { p, categoryId } of flagged.filter(({ p }) => p.warning!.check)) {
-    const dp = DATA_POINTS.find((d) => d.id === p.id)!;
-    const share = outside || !p.warning!.sameArea ? undefined : await areaShare(dp.table, p.warning!.sameArea, address.municipalityNumber).catch(() => undefined);
+    const share = outside ? undefined : shares.get(p.id);
     checks.push({
       text: p.warning!.text,
       dataPointId: p.id,

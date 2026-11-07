@@ -22,7 +22,9 @@ const parts: string[] = [];
 for (const f of FILES) {
   const zip = await download(`${BASE}/${f.file}.zip`, `grunnkretser_${f.county}.zip`);
   parts.push(`
-    SELECT grunnkretsnummer AS id, grunnkretsnavn AS name, kommunenummer, statistikkar::INTEGER AS year,
+    -- The file stores the number as a number, so Oslo's leading zero is lost (3016005): pad back to 8 digits
+    -- so it matches Kartverket's address file and SSB (03016005).
+    SELECT lpad(CAST(grunnkretsnummer AS VARCHAR), 8, '0') AS id, grunnkretsnavn AS name, kommunenummer, statistikkar::INTEGER AS year,
       totalbefolkning::INTEGER AS population, (${UNDER_20})::INTEGER AS under20, (${OVER_70})::INTEGER AS over70,
       ST_Area(SHAPE) / 1e6 AS areaKm2,
       ST_Transform(ST_SimplifyPreserveTopology(SHAPE, 1.0), 'EPSG:25833', 'EPSG:4326', always_xy := true) AS geom
