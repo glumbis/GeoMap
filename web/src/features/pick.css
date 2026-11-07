@@ -1,0 +1,65 @@
+/* Pin dropped by clicking the map, and the nearest-address block in the popup. Tokens from theme.css. */
+
+.pick-pin {
+  box-sizing: border-box;
+  width: 0.875rem;
+  height: 0.875rem;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  background: var(--teal);
+  box-shadow: 0 0 0 1px var(--ink);
+  cursor: pointer;
+}
+.pick-pin:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.pick-popup__address {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding-right: 0.75rem;
+}
+.pick-popup__address:not(:first-child) {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--line);
+}
+.pick-popup__address strong {
+  font-weight: 600;
+}
+.pick-popup__muted {
+  color: var(--ink-muted);
+}
+.pick-popup__link {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+  font-weight: 600;
+  color: var(--teal);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.pick-popup__link:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+.pick-hint--map {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 1;
+  margin: 0;
+  padding: 0.25rem 0.5rem;
+  background: var(--surface);
+  color: var(--ink-muted);
+  font-family: var(--font);
+  font-size: 0.75rem;
+  border-radius: var(--radius);
+}
+
+.pick-popup__address { font-size: 0.875rem; line-height: 1.4; }
+
+.pick-popup__none { margin: 0 0 0.25rem; }

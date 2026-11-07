@@ -1,4 +1,4 @@
-import { Popup, type ExpressionSpecification, type GeoJSONSource, type Map, type MapGeoJSONFeature } from "maplibre-gl";
+import { Popup, type ExpressionSpecification, type GeoJSONSource, type Map, type MapGeoJSONFeature, type MapMouseEvent } from "maplibre-gl";
 import { cssVar, h } from "../app/dom";
 import "./hazards.css";
 
@@ -320,6 +320,9 @@ function layerGroups(): Group[] {
 
 const emptyData = { type: "FeatureCollection" as const, features: [] };
 
+/** Set by pick.ts: gets every map click with the hazard blocks for that spot (maybe none) and owns the popup. */
+export const clickHook: { current?: (e: MapMouseEvent, blocks: HTMLElement[]) => void } = {};
+
 export default function (map: Map) {
   const groups = layerGroups();
   const layers = groups.flatMap((g) => g.layers);
@@ -388,12 +391,18 @@ export default function (map: Map) {
 
   map.on("click", (e) => {
     const hits = map.queryRenderedFeatures(e.point, { layers: fillIds.filter((id) => map.getLayer(id)) });
-    if (!hits.length) return;
     // One block per layer, in panel order: the most serious zone of each.
     const blocks = layers.flatMap((L) => {
       const mine = hits.filter((f) => f.layer.id === `hz-${L.id}-fill`);
       return mine.length ? [L.facts(L.pick ? L.pick(mine) : mine[0])] : [];
     });
+    // pick.ts takes over the click (also with no hits) and shows one popup: these blocks plus the nearest address.
+    if (clickHook.current) {
+      popup.remove();
+      clickHook.current(e, blocks);
+      return;
+    }
+    if (!blocks.length) return;
     popup.setLngLat(e.lngLat).setDOMContent(h("div", { class: "hz-popup__body" }, ...blocks)).addTo(map);
   });
   for (const id of fillIds) {
@@ -405,10 +414,42 @@ export default function (map: Map) {
   const container = map.getContainer();
   container.querySelector(".hz-panel")?.remove();
   const zoomNote = h("p", { class: "hz-panel__note", hidden: true }, "Zoom inn for å se sonene.");
+  const STORE = "omnium.kartlag.collapsed";
+  let collapsed = true; // collapsed unless the user has chosen otherwise
+  try {
+    const stored = localStorage.getItem(STORE);
+    if (stored != null) collapsed = stored === "1";
+  } catch {
+    /* private mode: fine */
+  }
+  const count = h("span", { class: "hz-panel__count" });
+  const toggle = h("button", { class: "hz-panel__toggle", type: "button", "aria-controls": "hz-panel-body" });
+  const applyCollapsed = () => {
+    toggle.setAttribute("aria-expanded", String(!collapsed));
+    toggle.setAttribute("aria-label", collapsed ? "Vis kartlag" : "Skjul kartlag");
+    toggle.textContent = collapsed ? "▸" : "▾";
+    const n = Object.values(visible).filter(Boolean).length;
+    count.textContent = collapsed ? ` · ${n} på` : "";
+    panel.classList.toggle("is-collapsed", collapsed);
+    body.hidden = collapsed;
+  };
+  toggle.addEventListener("click", () => {
+    collapsed = !collapsed;
+    try {
+      localStorage.setItem(STORE, collapsed ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+    applyCollapsed();
+  });
+  const body = h("div", { class: "hz-panel__body", id: "hz-panel-body" });
   const panel = h(
     "section",
     { class: "hz-panel", "aria-labelledby": "hz-panel-title" },
-    h("h2", { class: "hz-panel__title", id: "hz-panel-title" }, "Kartlag"),
+    h("div", { class: "hz-panel__head" }, h("h2", { class: "hz-panel__title", id: "hz-panel-title" }, "Kartlag", count), toggle),
+    body,
+  );
+  body.append(
     ...groups.map((g) =>
       h(
         "fieldset",
@@ -419,12 +460,15 @@ export default function (map: Map) {
     ),
     zoomNote,
   );
+  applyCollapsed();
+  panel.querySelector<HTMLElement>(".hz-panel__title")!.addEventListener("click", () => toggle.click());
   container.append(panel);
 
   function layerRow(L: MapLayer): HTMLElement {
     const input = h("input", { type: "checkbox", id: `hz-toggle-${L.id}`, checked: visible[L.id] });
     input.addEventListener("change", () => {
       visible[L.id] = input.checked;
+      applyCollapsed();
       const v = input.checked ? "visible" : "none";
       for (const part of ["fill", "line", "hatch"]) {
         if (map.getLayer(`hz-${L.id}-${part}`)) map.setLayoutProperty(`hz-${L.id}-${part}`, "visibility", v);
