@@ -42,6 +42,9 @@ Times are a guide. Bold = what you click or show.
 **Point at the warnings and the low Naturfare score, then at the red quick-clay zone around the pin on the map (screenshot 5).**
 **Point at the score and the warnings listed under it.**
 > Samlet karakter faller fra 67 til 13, og naturfare fra 100 til 24. Og siden sier hvorfor: kvikkleiren, radon og støy holder karakteren nede. Den alvorligste risikoen står alltid først, og den kan ikke gjemmes i et snitt.
+> Og Arendalsgata er ikke alene: over 4 200 adresser i Oslo og Akershus ligger i en faresone for kvikkleireskred med høy eller middels faregrad, 433 av dem med høy faregrad.
+
+Where the number comes from (Sverre, 2026-11-07): all 362 241 street addresses in Oslo + Akershus (Kartverket, Matrikkelen Adresse) checked against our `nve_kvikkleire` table, each address counted once under its worst faregrad: 433 høy + 3 842 middels = 4 275, about 1 in 85. Say "adresser", never "boliger" or "hus".
 
 **Only if the perspective cards are on the page (Erik, `PLAN.md` item 8):** point at them on Arendalsgata and add:
 > Og svaret avhenger av hvem du er. For en pendler får adressen 100. For å bo her får den 13.
@@ -77,7 +80,7 @@ What the pitch needs, and who it depends on. Update this as things land.
 
 For the 2:15 part, open Miljø on Grevlingåsen: the strategic noise map shows "Ikke tilgjengelig".
 
-Timing: the spoken text is about 290 words (about 300 with the perspective line), about 2:15 at a calm pace, which leaves about 45 seconds for typing and clicks. The two address parts are the tightest (about 85 words in 45 seconds): keep talking while the page loads. If time runs short, drop the perspective line first.
+Timing: the spoken text is about 315 words (about 325 with the perspective line), about 2:25 at a calm pace, which leaves about 45 seconds for typing and clicks. The two address parts are the tightest (about 85 words in 45 seconds): keep talking while the page loads. If time runs short, drop the perspective line first, then the "4 200 adresser" line.
 
 ## Questions the judges may ask
 
@@ -93,6 +96,11 @@ Note: there is no automatic refresh yet. Rebuilding is `npm run setup` (about 4 
 
 **Hvordan regner dere ut karakteren?**
 > Hver kategori får en karakter fra datapunktene. Alvorlige advarsler setter et tak, så en kvikkleiresone kan ikke jevnes ut av at det er kort vei til bussen. Og vi viser alltid hvorfor: hvilke advarsler som holder karakteren nede.
+
+**Stemmer det at over 4 200 adresser ligger i en kvikkleiresone?**
+> Ja, vi sjekket alle 362 000 adressene i Oslo og Akershus mot NVE sine faresoner. Det er et minimum: NVE har ikke kartlagt kvikkleire overalt. Og en adresse er ikke det samme som en bolig, for én adresse kan ha mange leiligheter.
+
+Most høy by municipality: Lillestrøm 122, Ullensaker 80, Nannestad 67, Oslo 53, Gjerdrum 48.
 
 **Kan AI-en finne på ting?**
 > AI-en får bare faktasetningene vi har laget fra dataene, og skal bare bruke dem. Vi har sjekket sammendraget for alle testadressene. Hvis AI-en ikke svarer, viser vi faktasetningene i stedet.
