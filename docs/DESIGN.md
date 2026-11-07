@@ -16,7 +16,7 @@ Type one address, get one honest answer about the place: what is good, what is r
   - Sizes are in `rem` (text, spacing, the left column, the top bar), so everything grows together. Avoid fixed `px` except for 1 px lines.
   - The map simply gets more room.
 - No mobile or tablet layouts, no media queries for small screens, no touch-specific work. Don't spend time on it.
-- Below 1280 px the page may scroll sideways. That is fine for now.
+- The page never scrolls sideways, at any width. Below 1280 px it just gets tighter; we don't design for it.
 - Mobile comes after the hackathon, if at all.
 
 ## Page flow
@@ -25,15 +25,19 @@ There are two pages. Nothing else.
 
 ### 1. Start page (the first thing anyone sees)
 
-- Almost empty. Paper background (`--paper`), lots of white space.
-- Centred: the logo (`/logo.png`, or `/logo-mark.png` + the word "Omnium"), and below it **one big search field** (40 rem wide).
-- Placeholder text: "Skriv inn en adresse" ("Enter an address").
-- Autocomplete as you type, from Geonorge `https://ws.geonorge.no/adresser/v1/sok?sok=<text>&fuzzy=true&treffPerSide=20`.
+The start page should feel like the logo: a round window onto a soft, living map.
+
+- **Background:** a full-screen map of Oslo that drifts slowly in a loop (not interactive, one loop every 2 minutes). For smooth motion the map is drawn once, larger than the screen, and slid with a CSS transform; never move the map itself every frame (that stutters). It is faded into the paper colour toward the middle, so the map shows around the edges and the content sits on calm paper. With "reduce motion" turned on in the OS, the map stands still.
+- **Centred, top to bottom:**
+  - The logo (`/logo.png`, blended into the page with `mix-blend-mode: multiply`).
+  - A rolling line of things you can check: "Sjekk" + a phrase that rolls up like a slot machine every ~2.4 s, in the brand gradient: "radon i grunnen", "støy fra veien", "kvikkleire under huset", "flomfare", "nærmeste skole", "nærmeste barnehage", "bussen og trikken", "forurenset grunn", "turstier og skiløyper", "steinsprang". Only phrases we have or plan to have data for. Screen readers get the full list once; no rolling with "reduce motion".
+  - **One big search field** (40 rem wide). Placeholder: "Skriv inn en adresse".
+  - One short line under the field: "Alt offentlig tilgjengelig om en eiendom i Oslo og Akershus".
+- Autocomplete as you type, from Geonorge `https://ws.geonorge.no/adresser/v1/sok?sok=<text>&fuzzy=true&treffPerSide=50`.
   - Keep only `objtype` `Vegadresse` in Oslo (`0301`) and Akershus (`32xx`); Geonorge can't filter on several municipalities at once, so filter in the browser. Show at most 8.
   - Show street, number, postcode and place.
   - Arrow keys + Enter + Escape work. Debounce ~150 ms.
-- One short line under the field: "Alt offentlig tilgjengelig om en eiendom i Oslo og Akershus" ("All public info about a property in Oslo and Akershus").
-- No map, no menus, no buttons besides the field. The map is not the first page.
+- No menus, no buttons besides the field.
 
 ### 2. Address page (after picking an address)
 
@@ -78,7 +82,7 @@ There are two pages. Nothing else.
 The map should look like part of the logo, not like a default web map.
 
 - **Top-down only:** no tilt, no rotation (turn off pitch and rotate gestures, no compass).
-- **Basemap:** Kartverket raster tiles (free, no key). Start from `topograatone` (grey) and warm it up with MapLibre raster paint properties (`raster-saturation`, `raster-contrast`, `raster-brightness-min/max`, `raster-hue-rotate`) until it sits calmly on the paper colour. The data layers are the colour; the basemap is the quiet background.
+- **Basemap:** Kartverket raster tiles (free, no key). They are finished images, so single features can't be recoloured. We use the colour `topo` map and soften it toward the logo with MapLibre raster paint (less saturation, lower contrast, lifted shadows) over a warm `--map-land` background: cream land, soft green, light blue water. One shared style in `web/src/app/basemap.ts`, used by the start page and the address page. The data layers are the strong colour; the basemap stays quiet.
 - **Data layers:** brand colours with transparency. Hazards in `--bad`/`--warn` fills at ~30% opacity with a thin solid outline. Nature in `--green`, water in `--map-water`. Municipality borders thin navy.
 - **Pin:** orange teardrop with a white dot, as in the logo.
 - **Controls:** zoom buttons and attribution restyled to match (white, rounded, soft shadow). Keep the "© Kartverket" attribution visible.
