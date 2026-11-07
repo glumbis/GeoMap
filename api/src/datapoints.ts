@@ -110,12 +110,26 @@ export const SOURCES: Source[] = [
   { id: "mdir-naturvern", name: "Naturvernområder (Naturbase)", owner: "Miljødirektoratet", url: "https://kartkatalog.geonorge.no/metadata/naturvernomraader/5857ec0a-8d2c-4cd8-baa2-0dc54ae213b4", licence: "NLOD 2.0" },
   { id: "mdir-friluft", name: "Statlig sikra friluftslivsområder", owner: "Miljødirektoratet", url: "https://kart.miljodirektoratet.no/arcgis/rest/services/friluftsliv_statlig_sikra/MapServer/0", licence: "NLOD 2.0" },
   { id: "ra-kulturminner", name: "Kulturminner - Lokaliteter, Enkeltminner og Sikringssoner", owner: "Riksantikvaren", url: "https://kartkatalog.geonorge.no/metadata/kulturminner-lokaliteter-enkeltminner-og-sikringssoner/c72906a0-2bc2-41d7-bea2-c92d368e3c49", licence: "NLOD 2.0" },
+  { id: "ssb-krim", name: "Anmeldte lovbrudd etter gjerningssted (tabell 08487)", owner: "SSB", url: "https://www.ssb.no/statbank/table/08487", licence: "CC BY 4.0" },
   { id: "ssb-kommune", name: "Statistikkbanken", owner: "SSB", url: "https://www.ssb.no/statbank", licence: "CC BY 4.0" },
 ];
 
 // ---- Helpers for common shapes -------------------------------------------------------------
 
 const metres = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1).replace(".", ",")} km`);
+
+const decimal = (n: number) => String(Math.round(n * 10) / 10).replace(".", ",");
+
+/** SSB crime per 1000 residents for the municipality (krim_kommuner), with Norway next to it. Neutral: info only. */
+function crimeReading(rows: Row[], type: "total" | "violence"): Reading | null {
+  const v = rows[0]?.[`${type}Per1000`];
+  if (v == null) return null;
+  const norway = rows[0][`${type}Per1000Norway`];
+  const country = norway != null ? `, landet ${decimal(Number(norway))}` : "";
+  // Ullensaker (3209) counts crime at Oslo lufthavn Gardermoen (e.g. smuggling), which lifts its numbers.
+  const airport = rows[0].kommunenummer === "3209" ? ", inkl. Gardermoen" : "";
+  return { value: Number(v), unit: "per 1000 innbyggere", display: `${decimal(Number(v))} per 1000 innbyggere (${rows[0].period})${country}${airport}`, effect: "neutral" };
+}
 
 /** "Nearest X" data point: score falls with distance. steps = [[maxMetres, score], ...] ascending. */
 function nearestScore(steps: [number, number][]) {
@@ -461,6 +475,18 @@ export const DATA_POINTS: DataPoint[] = [
       rows[0]?.incomeMedianAfterTax != null
         ? { value: Number(rows[0].incomeMedianAfterTax), display: `${Number(rows[0].incomeMedianAfterTax).toLocaleString("nb-NO")} kr (${rows[0].incomeYear})`, unit: "kr", effect: "neutral" }
         : null,
+  },
+  {
+    // data/scripts/ssb_krim.ts (Even): krim_kommuner, SSB 08487, per 1000 residents, two-year average (period "2024–2025").
+    // Info only (neutral, not scored). Lukas may use crimeRate/violentCrime in the family perspective.
+    id: "crimeRate", label: "Anmeldte lovbrudd i kommunen", category: "area", source: "ssb-krim", importance: "normal",
+    table: "krim_kommuner", find: { kind: "within" },
+    read: (rows) => crimeReading(rows, "total"),
+  },
+  {
+    id: "violentCrime", label: "Anmeldt vold i kommunen", category: "area", source: "ssb-krim", importance: "normal",
+    table: "krim_kommuner", find: { kind: "within" },
+    read: (rows) => crimeReading(rows, "violence"),
   },
   {
     // data/scripts/kulturminner.ts (Even): Riksantikvaren sites, status (e.g. "vedtaksfredet"), statusCode (AUT, KOM, ...), fredet.

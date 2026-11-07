@@ -266,6 +266,8 @@ Area numbers are for the whole municipality. Always say "i kommunen", never "i n
 | `municipality` | Adressen ligger i {display} ({src}). | 6 |
 | `population` | Kommunen hadde {value} innbyggere i {year} ({src}). | 6 |
 | `medianIncome` | Medianinntekten etter skatt for husholdninger i kommunen var {value} kr i {year} ({src}). | 6 |
+| `crimeRate` | Det ble anmeldt {value} lovbrudd per 1000 innbyggere i kommunen i snitt per år i {period}, mot {norway} i hele landet ({src}). | 6 |
+| `violentCrime` | Det ble anmeldt {value} saker om vold og mishandling per 1000 innbyggere i kommunen i snitt per år i {period}, mot {norway} i hele landet ({src}). | 6 |
 
 - `{year}` is the year in brackets at the end of `{display}` ("728 714 (2026)" → 2026). Write `{value}` with spaces between thousands, as in `{display}`.
 - `municipality`: `{display}` is "Bærum (Akershus)". When the two names are the same, write the name once: "Adressen ligger i Oslo (Kartverket)."
@@ -280,6 +282,8 @@ Area numbers are for the whole municipality. Always say "i kommunen", never "i n
 
 `{display}` is "Myren arbeiderboliger - Arendalsgata (vernet etter plan- og bygningsloven), 26 m unna, og 1 til": `{name}` is the text before the last bracket pair, `{status}` the text in it, `{distance}` the "26 m" part. Leave out "og 1 til". Example (Arendalsgata 22): "Det er registrert et kulturminne 26 m fra adressen: Myren arbeiderboliger - Arendalsgata, vernet etter plan- og bygningsloven (Riksantikvaren)."
 Use `{status}` exactly. Only write "fredet" when the status says so ("kommunalt listeført" is not fredet).
+
+Crime (`crimeRate`, `violentCrime`): `{display}` is "100,1 per 1000 innbyggere (2024–2025), landet 59,9". `{value}` is the first number, `{period}` the years in brackets, `{norway}` the number after "landet". When `{display}` ends with "inkl. Gardermoen" (Ullensaker), add: "Tallet tar med lovbrudd på Oslo lufthavn Gardermoen." Never call an area "trygt" or "utrygt": these are numbers for the whole municipality, not for the neighbourhood.
 
 Example (Arendalsgata 22): "Kommunen hadde 728 714 innbyggere i 2026 (SSB)." and "Medianinntekten etter skatt for husholdninger i kommunen var 635 200 kr i 2024 (SSB)."
 

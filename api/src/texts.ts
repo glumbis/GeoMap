@@ -82,6 +82,12 @@ export const OUTCOMES: Record<string, Record<string, (r: Reading) => boolean>> =
     "uavklart vernestatus": (r) => ["UAV", "FPG", "SAM"].includes(String(r.value)),
     "ingen registrert": (r) => r.value === null,
   },
+  crimeRate: {
+    "Gardermoen er med": (r) => r.display.includes("Gardermoen"),
+  },
+  violentCrime: {
+    "Gardermoen er med": (r) => r.display.includes("Gardermoen"),
+  },
   transitDepartures: {
     "ingen avganger": (r) => r.value === 0,
   },

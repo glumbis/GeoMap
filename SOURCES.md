@@ -563,7 +563,9 @@ NGU datasets: https://www.ngu.no/geologiske-kart/datasett (download per county, 
     - 06944 Inntekt for husholdninger: median income after tax, all households (2024)
     - 06265 Boliger: dwellings and share detached, semi-detached, terraced, apartment (2026)
     - 09429 Utdanningsnivå: share of people 16+ with a university or college degree (2025)
-  - Not loaded yet: crime (anmeldte lovbrudd) and anything per grunnkrets.
+  - Not loaded yet: anything per grunnkrets.
+  - **Crime loaded** (2026-11-07) as table `krim_kommuner` by `data/scripts/ssb_krim.ts`, API `/api/krim_kommuner`: SSB table 08487 (anmeldte lovbrudd etter gjerningssted), per 1000 residents, yearly average over the latest two years (2024–2025), for all lovbrudd, vold og mishandling, eiendomstyveri and rusmiddellovbrudd, with Norway's number next to each. Data points `crimeRate` and `violentCrime` (info only, not scored).
+  - Watch out: Oslo is one number for the whole city (SSB has no bydel numbers in this table). Ullensaker includes crime at Gardermoen airport (145,5 vs 59,9 for Norway).
 
 - **Name:** Kulturminner - Lokaliteter, Enkeltminner og Sikringssoner
   - Owner: Riksantikvaren

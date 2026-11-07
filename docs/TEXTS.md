@@ -134,6 +134,15 @@ How to use this file:
 ### `medianIncome` — Medianinntekt etter skatt (husholdning)
 **Forklaring:** Halvparten av husholdningene i kommunen har mer enn dette etter skatt, og halvparten har mindre. Inntektene kan variere mye mellom ulike deler av kommunen, særlig i Oslo.
 
+### `crimeRate` — Anmeldte lovbrudd i kommunen
+**Forklaring:** Antall lovbrudd som ble anmeldt i kommunen per 1000 innbyggere, som et årlig snitt over to år, med tallet for hele landet ved siden av. Tallet gjelder hele kommunen, og i Oslo kan det variere mye mellom bydelene.
+- **Når Gardermoen er med:** Lovbrudd på Oslo lufthavn Gardermoen, for eksempel smugling, blir talt med i Ullensaker og trekker tallet opp.
+- Ikke alle lovbrudd blir anmeldt, og hvor mye politiet kontrollerer påvirker også tallet.
+
+### `violentCrime` — Anmeldt vold i kommunen
+**Forklaring:** Antall anmeldte saker om vold og mishandling i kommunen per 1000 innbyggere, som et årlig snitt over to år. Tallet tar også med vold i nære relasjoner og sier ikke hvor trygt det er akkurat i nabolaget.
+- **Når Gardermoen er med:** Lovbrudd på Oslo lufthavn Gardermoen blir talt med i Ullensaker.
+
 ### `culturalHeritage` — Kulturminner innen 50 m
 **Forklaring:** Kulturminner er spor etter menneskers liv og virke, for eksempel bygninger, gravhauger og fornminner, registrert av Riksantikvaren. Her vises kulturminner med vern innen 50 meter i luftlinje, det nærmeste først.
 - **Når fredet:** Et fredet kulturminne er vernet etter kulturminneloven og kan ikke endres eller skades uten tillatelse. Automatisk fredete kulturminner har i tillegg en sikringssone på minst 5 meter rundt seg.
