@@ -97,6 +97,13 @@ Terms for all Kartverket free data: CC BY 4.0, credit "© Kartverket". Details i
   - Columns: `id`, `name`, `years` (20 | 200), `climate` ('nå' | '2100'), `waterLevelCm` (above NN2000: 140–160 cm for 20-year, 160–190 for 200-year today, 220–240 in 2100), `source`, `geom`.
   - Checked: no test address is in a zone. Real hits match Kartverket's ground height (hoydedata API): Drammensveien 281, Oslo (`0301-11290-281`, 20-year today, ground 1.51 m vs water 1.6 m); Frognerstranda 6 (`0301-12047-6`, 2100); Scheens vei 1, Bærum; Nessetveien 55, Nesodden.
   - Licence CC BY 4.0, credit "© Kartverket".
+- **Avinor Støysoner Avinors lufthavner** (entry below) → table `flystoy`, script `data/scripts/flystoy.ts`, API `/api/flystoy`, data point `aircraftNoise` (2026-11-07).
+  - Source: Geonorge county download for Akershus (GeoPackage in a zip, EPSG:25833, layer `Støy`). Oslo has no Avinor airport, so only Gardermoen (ENGM) is in the study area. Avinor's calculation year 2022, file updated 2026-10-12.
+  - T-1442 airport zones: red = Lden 62 dB or more, yellow = 52–62 dB. 1 red and 2 yellow (multi)polygons, simplified to 1 m.
+  - Columns: `id`, `name`, `stoysone` ('rød' | 'gul'), `airportCode`, `airport`, `year`, `source`, `geom`.
+  - Avinor maps every airport it runs, so no zone = "Ikke i flystøysone" (not "unknown").
+  - Street addresses inside (Kartverket address file, 2026-11-07): 357 red, 1,637 yellow, in Ullensaker, Nannestad, Gjerdrum and Eidsvoll. Checked: Brigadevegen 35, Ullensaker (`3209-2340-35`) red; Korsmogutua 7, Gjerdrum (`3230-1104-7`) yellow; no test address is in a zone.
+  - Licence: open data, no conditions.
 - Shared helpers in `data/scripts/lib.ts`: `studyBbox()`, `arcgisFeatures()` (pages any ArcGIS REST layer, e.g. NVE, as GeoJSON) and `readZipEntry()` (reads one file out of a downloaded zip).
 
 - **Name:** Eiendom REST-API (property lookup)

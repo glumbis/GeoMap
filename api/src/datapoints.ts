@@ -100,6 +100,7 @@ export const SOURCES: Source[] = [
   { id: "ngu-berggrunn", name: "Berggrunn N50 / N250", owner: "NGU", url: "https://kartkatalog.geonorge.no/metadata/berggrunn-n50/a5c76d05-33bd-4a1d-b28b-81575092e468", licence: "NLOD 2.0" },
   { id: "svv-stoy", name: "Støykartlegging veg", owner: "Statens vegvesen", url: "https://kartkatalog.geonorge.no/metadata/stoeykartlegging-veg-etter-t-1442/d6db9f39-9725-4630-909e-5e62f09a0766", licence: "NLOD 2.0" },
   { id: "svv-stoy-strategisk", name: "Strategisk støykartlegging veg", owner: "Statens vegvesen", url: "https://kartkatalog.geonorge.no/metadata/stoeykart-strategisk-stykartlegging-stydirektivet/93a154a7-47d5-47b8-bdda-f156d92386cc", licence: "NLOD 2.0" },
+  { id: "avinor-flystoy", name: "Støysoner Avinors lufthavner", owner: "Avinor", url: "https://kartkatalog.geonorge.no/metadata/stoeysoner-avinors-lufthavner/1489f7f8-40c8-4dc4-83b6-bcf277b56506", licence: "Åpne data, ingen vilkår" },
   { id: "mdir-grunnforurensning", name: "Forurenset grunn", owner: "Miljødirektoratet", url: "https://kartkatalog.geonorge.no/metadata/forurenset-grunn/e48e71ac-16fc-4e47-9e7f-c0a4a4bbfad0", licence: "NLOD 2.0" },
   { id: "entur-stopp", name: "Holdeplasser", owner: "Entur", url: "https://developer.entur.org/stops-and-timetable-data", licence: "NLOD 2.0" },
   { id: "udir-skoler", name: "Grunnskoler", owner: "Utdanningsdirektoratet", url: "https://kartkatalog.geonorge.no/metadata/grunnskoler/db4b872f-264d-434c-9574-57232f1e90d2", licence: "NLOD 2.0" },
@@ -331,6 +332,20 @@ export const DATA_POINTS: DataPoint[] = [
         : oslo && lden >= 55 ? { severity: "low" as const, text: `Veistøy ${band}` }
         : undefined;
       return { value: lden, unit: "dB", display: `${band}${year}`, effect: lden >= 55 ? "bad" : "good", score, ...(warning && { warning }) };
+    },
+  },
+  {
+    // data/scripts/flystoy.ts (Sverre): stoysone 'rød' (Lden >= 62 dB) | 'gul' (Lden >= 52 dB), airport.
+    // Avinor maps every airport it runs, and Oslo + Akershus has only Gardermoen, so no zone = no aircraft noise zone.
+    id: "aircraftNoise", label: "Flystøy", category: "environment", source: "avinor-flystoy", importance: "normal",
+    table: "flystoy", find: { kind: "within" },
+    read: (rows) => {
+      if (!rows.length) return { value: null, display: "Ikke i flystøysone", effect: "good" };
+      const red = rows.find((r) => r.stoysone === "rød");
+      const zone = red ?? rows[0];
+      return red
+        ? { value: "rød", display: `Rød flystøysone, ${zone.airport} (over 62 dB)`, effect: "bad", score: 10, warning: { severity: "medium", text: "Rød støysone fra fly" } }
+        : { value: "gul", display: `Gul flystøysone, ${zone.airport} (52–62 dB)`, effect: "bad", score: 50, warning: { severity: "low", text: "Gul støysone fra fly" } };
     },
   },
   {

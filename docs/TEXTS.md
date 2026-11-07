@@ -79,6 +79,9 @@ How to use this file:
 - **Når 50–55 dB:** Det er noe trafikkstøy, men under nivået for gul sone.
 - Uten treff vet vi ikke om det er stille eller om stedet ikke er kartlagt, så da vises det som ikke tilgjengelig.
 
+### `aircraftNoise` — Flystøy
+**Forklaring:** Støysonene viser beregnet flystøy rundt Oslo lufthavn Gardermoen, som et snitt over døgnet der kveld og natt teller mer. Rød sone er 62 dB eller mer og regnes som lite egnet for boliger; gul sone er 52–62 dB, der kommunen vurderer støy særskilt ved nye boliger (retningslinje T-1442).
+
 ### `pollutedGround` — Forurenset grunn
 **Forklaring:** Miljødirektoratet registrerer steder der grunnen er eller kan være forurenset, for eksempel gamle fyllinger, industritomter og skytebaner.
 - **Når registrert i nærheten:** At et sted er registrert, betyr ikke alltid at grunnen faktisk er forurenset. Det har mest å si hvis man skal grave, bygge eller dyrke i jorda.
