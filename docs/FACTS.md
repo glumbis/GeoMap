@@ -238,6 +238,24 @@ Road and aircraft noise are different sources, so an address can get one sentenc
 | warning | Det er registrert et sted med mulig forurenset grunn {value} meter fra adressen ({src}). | 3 |
 | no warning | Det er ikke registrert forurenset grunn innen 100 meter fra adressen ({src}). | 5 |
 
+**`powerLine` (Nærmeste høyspentlinje)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value is a number | Nærmeste høyspentlinje i regional- eller transmisjonsnettet går {distance} fra adressen i luftlinje, med {kv} ({src}). | 6 |
+| value is empty | Det går ingen høyspentlinje i regional- eller transmisjonsnettet innen 1 km fra adressen ({src}). | 6 |
+
+`{display}` is "180 m unna (132 kV regionalnett)": `{distance}` is the part before "unna", `{kv}` the "132 kV" part (leave out ", med {kv}" when there is no kV). Never say the line is a health risk, and never say there is no power line near: the local grid is not in the map.
+
+**`trafficVolume` (Mest trafikkerte vei innen 100 m)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value is a number | Den mest trafikkerte veien innen 100 meter i luftlinje har i snitt {value} kjøretøy i døgnet ({year}, {src}). | 6 |
+| value is empty | No sentence: most small streets have no traffic count, so "no road" would be wrong. | — |
+
+`{display}` is "7 270 kjøretøy i døgnet, 40 m unna (2025, 7 % tunge kjøretøy)": `{value}` is the first number, `{year}` the year in brackets. Never call a road "farlig" or "trygg".
+
 ### Location
 
 Distances are in a straight line. Say so once ("i luftlinje"), so the summary does not suggest walking distance.
@@ -265,6 +283,24 @@ The busiest stop within 500 m in a straight line, counted on one normal weekday.
 Example (Grevlingåsen 17): "Fra Jegeråsen, 212 m unna i luftlinje, går det 161 avganger på en vanlig hverdag fordelt på 2 linjer (Entur)."
 Say "på en vanlig hverdag", never "per dag" or "hver dag": weekends have fewer. If this stop is also the nearest stop (`transitStop`), one sentence may cover both.
 
+**`cityBike` (Nærmeste bysykkelstasjon)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value is a number | Nærmeste bysykkelstasjon er {name}, {distance} unna i luftlinje ({src}). | 6 |
+| value is empty | Det er ingen stasjon for Oslo Bysykkel innen 1 km i luftlinje ({src}). | 6 |
+
+`{display}` is "250 m unna (Jernbanetorget)": `{distance}` is the part before "unna", `{name}` the text in brackets. Outside Oslo there is no reading and no sentence.
+
+**`trafficAccidents` (Trafikkulykker innen 200 m)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value > 0 | Politiet har registrert {value} trafikkulykker med personskade innen 200 meter i luftlinje siden 2016{soft} ({src}). | 6 |
+| value 0 | Det er ikke registrert trafikkulykker med personskade innen 200 meter i luftlinje siden 2016 ({src}). | 6 |
+
+`{display}` is "12 ulykker med personskade siden 2016, 3 med fotgjenger eller syklist": `{soft}` is ", {n} av dem med fotgjenger eller syklist" when the display has that part, else empty. Use "1 trafikkulykke" for one. Never call the area or a road "farlig" or "trygg".
+
 **`school` (Nærmeste grunnskole)**
 
 | When | Sentence | Rank |
@@ -273,6 +309,14 @@ Say "på en vanlig hverdag", never "per dag" or "hver dag": weekends have fewer.
 | value is empty | Det er ingen grunnskole innen 5 km i luftlinje ({src}). | 4 |
 
 Never call it "skolen adressen hører til": we do not know the school catchment.
+
+**`schoolBullying` (Mobbing på nærmeste grunnskole)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value is a number | I Elevundersøkelsen {year} svarte {value} av elevene på {grade}. trinn ved {name} at de er blitt mobbet, mot {norway} i hele landet ({src}). | 6 |
+
+`{display}` is "6,1 % mobbet, 7. trinn ved Hosle skole (2025-26), landet 7,9 %": `{value}` is the first percentage, `{grade}` the number before ". trinn", `{name}` the school after "ved", `{year}` the school year in brackets, `{norway}` the percentage after "landet" (leave out ", mot …" when it is missing). No sentence when the value is missing (Udir hides it for small groups). Never call a school "trygg" or "utrygg".
 
 **`kindergarten` (Nærmeste barnehage)**
 
@@ -328,6 +372,10 @@ Area numbers are for the whole municipality. Always say "i kommunen", never "i n
 | `municipality` | Adressen ligger i {display} ({src}). | 6 |
 | `population` | Kommunen hadde {value} innbyggere i {year} ({src}). | 6 |
 | `medianIncome` | Medianinntekten etter skatt for husholdninger i kommunen var {value} kr i {year} ({src}). | 6 |
+| `housePrice` | Gjennomsnittlig kvadratmeterpris for solgte selveierboliger i kommunen i {year} var {prices} ({src}). | 6 |
+| `municipalFees` | De kommunale gebyrene for vann, avløp og renovasjon i kommunen er {value} kr i året for en vanlig bolig ({year}, uten mva., {src}). | 6 |
+| `propertyTax`, ja | Kommunen har eiendomsskatt på bolig, {rate}{deduction} ({year}, {src}). | 6 |
+| `propertyTax`, nei | Kommunen har ikke eiendomsskatt på bolig ({year}, {src}). | 6 |
 | `areaIncome` | Medianinntekten etter skatt for husholdninger i {area} var {value} kr i {year}, mot {kommune} kr i hele kommunen ({src}). | 6 |
 | `crimeRate`, kommune | Det ble anmeldt {value} lovbrudd per 1000 innbyggere i kommunen i snitt per år i {period}, mot {norway} i hele landet ({src}). | 6 |
 | `crimeRate`, Oslo bydel | Det ble anmeldt {value} lovbrudd per 1000 innbyggere i {area} i {period}, mot {oslo} i hele Oslo og {norway} i landet ({src}). | 6 |
@@ -357,6 +405,12 @@ Area numbers are for the whole municipality. Always say "i kommunen", never "i n
 
 `{display}` is "Myren arbeiderboliger - Arendalsgata (vernet etter plan- og bygningsloven), 26 m unna, og 1 til": `{name}` is the text before the last bracket pair, `{status}` the text in it, `{distance}` the "26 m" part. Leave out "og 1 til". Example (Arendalsgata 22): "Det er registrert et kulturminne 26 m fra adressen: Myren arbeiderboliger - Arendalsgata, vernet etter plan- og bygningsloven (Riksantikvaren)."
 Use `{status}` exactly. Only write "fredet" when the status says so ("kommunalt listeført" is not fredet).
+
+`housePrice`: `{display}` is "enebolig 72 000 kr, småhus 61 000 kr, blokk 85 000 kr per m² (2024)": `{prices}` is the list before "per m²", written "72 000 kr per m² for enebolig, 61 000 kr for småhus og 85 000 kr for blokkleilighet" (only the types that are there), `{year}` the year in brackets. It is an average for the whole municipality: never call it the price of this home.
+
+`municipalFees`: `{display}` is "13 730 kr i året i Bærum (2026, uten mva.): vann 4 345 kr, avløp 5 078 kr, renovasjon 4 307 kr": `{value}` is the first amount, `{year}` the year in brackets. It is the municipality's standard fee, not this home's bill.
+
+`propertyTax`: `{display}` is "Ja i Oslo: 1,7 promille, bunnfradrag 4 900 000 kr (2026). Snitt 1 939 kr per bolig (2025)" or "Ingen eiendomsskatt på bolig i Bærum (2026)". `{rate}` is "{n} promille", `{deduction}` ", med et bunnfradrag på {amount} kr" when there is one, `{year}` the year in brackets. Never guess what this home pays.
 
 `areaIncome`: `{display}` is "711 200 kr i Østerås (2024), kommunen 650 000 kr": `{area}` is the name after "i", `{kommune}` the number after "kommunen" (leave out ", mot …" when it is missing). It is about SSB's delområde, not the street.
 

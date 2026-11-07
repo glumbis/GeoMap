@@ -119,6 +119,14 @@ How to use this file:
 ### `wind` — Vind (hovedvindretning)
 **Forklaring:** Hvor vinden oftest blåser fra, målt time for time siden 2016 på nærmeste værstasjon fra Meteorologisk institutt. Retningen sier hvilken side av huset som får mest vind, og hvor uteplassen får mest le. Vindrosen i rapporten viser alle retninger og hvor sterk vinden er. Dette er bare informasjon og teller ikke i poengsummen.
 
+### `powerLine` — Nærmeste høyspentlinje
+**Forklaring:** Avstanden er målt i luftlinje til nærmeste luftledning i regional- eller transmisjonsnettet, med spenning fra NVE. Lavspente linjer og jordkabler i det lokale strømnettet er ikke med.
+- Magnetfeltet fra en kraftlinje avtar raskt med avstanden. Ved noen titalls meter fra de største linjene er det som regel på nivå med vanlige boliger, men det varierer med strømmen i linjen. Direktoratet for strålevern og atomsikkerhet (DSA) kan svare på spørsmål om magnetfelt.
+
+### `trafficVolume` — Mest trafikkerte vei innen 100 m
+**Forklaring:** Gjennomsnittlig antall kjøretøy i døgnet (ÅDT) i begge retninger på den mest trafikkerte veien innen 100 meter i luftlinje, fra Statens vegvesen. Mye trafikk kan bety mer støy, støv og eksos, og at veien er vanskeligere å krysse.
+- Statens vegvesen har tall for europa-, riks- og fylkesveier og noen kommunale veier, men ikke for de fleste små boliggater. Det kan derfor gå en vei med lite trafikk nærmere enn den som vises.
+
 ## Beliggenhet
 
 ### `transitStop` — Nærmeste holdeplass
@@ -130,8 +138,19 @@ How to use this file:
 - **Når ingen avganger:** Det finnes ingen holdeplass med faste avganger innen 500 meter. Det kan gå bestillingstransport eller skolebuss som ikke er med i tallet.
 - Helger og ferier har ofte færre avganger.
 
+### `cityBike` — Nærmeste bysykkelstasjon
+**Forklaring:** Avstanden er målt i luftlinje til nærmeste stasjon for Oslo Bysykkel, der man kan låne og levere sykkel med en app. Bysykkelen finnes bare i Oslo, og mest i de sentrale bydelene. Om vinteren er det færre eller ingen sykler ute.
+
+### `trafficAccidents` — Trafikkulykker innen 200 m
+**Forklaring:** Antall trafikkulykker med personskade som politiet har registrert innen 200 meter i luftlinje siden 2016, fra Statens vegvesen, og hvor mange av dem som gjaldt en fotgjenger eller syklist. Det kan si noe om hvor trygg veien til skole og butikk er.
+- Ulykker uten personskade er ikke med, og noen ulykker med lettere skader blir aldri meldt til politiet. Steder med mye trafikk får naturlig flere ulykker.
+
 ### `school` — Nærmeste grunnskole
 **Forklaring:** Avstanden er målt i luftlinje til nærmeste barne- eller ungdomsskole. Det er ikke sikkert dette er skolen adressen hører til, for kommunen bestemmer skolekretsen, og skolen kan være privat.
+
+### `schoolBullying` — Mobbing på nærmeste grunnskole
+**Forklaring:** Andelen elever ved nærmeste grunnskole som svarte i Elevundersøkelsen at de er blitt mobbet de siste månedene, på det høyeste trinnet som ble spurt (7. eller 10. trinn), sammenlignet med landet. Skolen er den samme som i "Nærmeste grunnskole", og det er ikke sikkert det er skolen adressen hører til.
+- Ved små skoler svarer få elever, så noen få svar kan endre tallet mye fra år til år. Udir viser ikke tallet når for få har svart.
 
 ### `kindergarten` — Nærmeste barnehage
 **Forklaring:** Avstanden er målt i luftlinje til nærmeste barnehage. Kommunen tildeler barnehageplass etter egne kriterier.
@@ -180,6 +199,19 @@ How to use this file:
 ### `areaIncome` — Medianinntekt i nærområdet (husholdning)
 **Forklaring:** Halvparten av husholdningene i området har mer enn dette etter skatt, og halvparten har mindre. Området er SSBs delområde, en gruppe grunnkretser med noen tusen innbyggere (i Oslo ofte en del av en bydel), og kommunens tall står ved siden av.
 - Der SSB ikke har tall for delområdet, vises bydelen eller kommunen.
+
+### `housePrice` — Kvadratmeterpris i kommunen (selveier)
+**Forklaring:** Gjennomsnittlig pris per kvadratmeter for selveierboliger som ble solgt i kommunen i løpet av året, for enebolig, småhus (som rekkehus og tomannsbolig) og blokkleilighet. Prisen kan være mye høyere eller lavere i ulike deler av kommunen og for den enkelte bolig.
+- SSB viser ikke prisen for en boligtype når det ble solgt for få boliger av den typen. Borettslag er ikke med.
+
+### `municipalFees` — Kommunale gebyrer (vann, avløp, renovasjon)
+**Forklaring:** Hva kommunen tar i året for vann, avløp og avfall for en vanlig bolig, slik kommunen har meldt det til SSB (uten 25 % merverdiavgift). Dette er faste utgifter man har som eier, i tillegg til strøm og eventuelt eiendomsskatt.
+- Gebyret kan være annerledes for din bolig, for eksempel med vannmåler, hytte eller egen septiktank. Feiing og tilsyn kommer i tillegg. I et borettslag eller sameie er gebyrene ofte en del av felleskostnadene.
+
+### `propertyTax` — Eiendomsskatt på bolig
+**Forklaring:** Om kommunen tar eiendomsskatt på boliger, og i så fall satsen i promille av boligens skattegrunnlag og et eventuelt bunnfradrag, slik kommunen har meldt det til SSB.
+- Hvor mye en bolig betaler, avhenger av verdien kommunen setter på den. Med et høyt bunnfradrag, som i Oslo, betaler mange lite eller ingenting. Kommunen kan svare på hva skatten blir for en bestemt bolig.
+- En kommune uten eiendomsskatt på bolig kan innføre den senere, og kan ha eiendomsskatt på næring eller kraftanlegg.
 
 ### `crimeRate` — Anmeldte lovbrudd i området
 **Forklaring:** Antall lovbrudd som ble anmeldt der de skjedde, per 1000 innbyggere. I Oslo gjelder tallet bydelen (siste år) og sammenlignes med Oslo og landet; ellers gjelder det hele kommunen (snitt over to år) og sammenlignes med landet.
