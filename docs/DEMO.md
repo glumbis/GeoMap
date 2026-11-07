@@ -39,7 +39,7 @@ Times are a guide. Bold = what you click or show.
 **1:30–2:15 — Kontrasten: Arendalsgata 22**
 **Go back, type "Arendalsgata 22", pick it.**
 > Så ser vi en leilighet på Sagene i Oslo. Like nær buss og skole. Men øverst ser du advarsler, den alvorligste først: eiendommen ligger i en faresone for kvikkleireskred med høy faregrad, fra NVE. I tillegg veistøy på 65–70 dB og et registrert sted med mulig forurenset grunn i nærheten.
-**Point at the warnings and the low Naturfare score.** (Once Erik adds the quick-clay layer to the map, also point at the zone around the pin.)
+**Point at the warnings and the low Naturfare score, then at the red quick-clay zone around the pin on the map (screenshot 5).**
 **Point at the score and the warnings listed under it.**
 > Samlet karakter faller fra 75 til 20, og naturfare fra 100 til 30. Og siden sier hvorfor: kvikkleiren, radon og støy holder karakteren nede. Den alvorligste risikoen står alltid først, og den kan ikke gjemmes i et snitt.
 
@@ -50,7 +50,7 @@ Times are a guide. Bold = what you click or show.
 **2:40–3:00 — Avslutning**
 > Omnium bruker bare åpne, offentlige data, og dekker i dag Oslo og Akershus. Neste steg er hele Norge. Én adresse, all offentlig informasjon, på sekunder.
 
-If the AI summary works on the day, show it on the Arendalsgata page at 1:30 and say: *"Et kort sammendrag skrevet av AI, bare fra faktaene vi har, og merket som AI-generert."*
+The "Sammendrag" card sits under the warnings. With `ANTHROPIC_API_KEY` in `.env` it is written by AI and labelled "AI-generert"; without the key it lists the plain fact sentences from `docs/FACTS.md` (still correct, no label). If the AI version works on the day, show it on the Arendalsgata page at 1:30 and say: *"Et kort sammendrag skrevet av AI, bare fra faktaene vi har, og merket som AI-generert."*
 
 ## Ready for the demo?
 
@@ -62,10 +62,10 @@ What the pitch needs, and who it depends on. Update this as things land.
 | Start page with address search | Works. Search shows two Grevlingåsen 17: pick 1362 Hosle | Erik |
 | Address page: warnings, category cards, data points with source | Works | Erik |
 | "Ikke tilgjengelig" for missing data | Works (e.g. "Veistøy (strategisk støykart)" under Miljø on Grevlingåsen) | Erik |
-| Quick-clay zone visible on the map | Not yet: data at `/api/nve_kvikkleire`, no map layer | Erik |
+| Quick-clay zone visible on the map | Works: quick-clay and flood zones on the address map, on by default, with a "Kartlag" panel | Erik |
 | Overall rating (a number) | Works: Grevlingåsen 75, Arendalsgata 20 (caps stack: high 40, medium 75, minus 10 per extra serious warning) | Lukas |
 | Explanations under each data point | Main text from `docs/TEXTS.md` is in the profile. Per-outcome texts ("Når ...") not yet | Lukas |
-| AI summary | Endpoint works with the key in `.env` and follows `docs/FACTS.md`. Not on the page yet | Erik |
+| AI summary | On the page ("Sammendrag" card). AI text needs the key in `.env`; without it the card shows the fact sentences | Erik, Lukas |
 | Map tiles | Take 3–5 seconds to appear the first time. Open both pages before presenting | — |
 
 For the 2:15 part, open Miljø on Grevlingåsen: the strategic noise map shows "Ikke tilgjengelig".
@@ -82,6 +82,7 @@ Timing: the spoken text is about 280 words, about 2:10 at a calm pace, which lea
 - [ ] Rehearse once with a timer. Cut words, not clicks, if it runs long.
 
 **One hour before**
+- [ ] Stop every other `npm run dev` on the laptop (old clones too). If port 5173 or 3000 is taken, the page can silently come from an old copy. Check that Vite prints `Local: http://localhost:5173/`.
 - [ ] `npm run dev` running, http://localhost:5173 open in a clean browser window. Zoom so the back row can read it.
 - [ ] Open each demo address once, so the data and AI summary are cached and load fast.
 - [ ] Wi-Fi works (the address search and map tiles need the internet). Have a phone hotspot ready.
@@ -101,7 +102,7 @@ Saved in `docs/demo/` at 1440×900. Retake them after big changes (headless Edge
 2. `2-grevlingasen.png`: the Grevlingåsen 17 page, top part (no warnings, scores). **Taken.**
 3. `3-data-point.png`: the Miljø card opened on Grevlingåsen, with explanations, sources and one "Ikke tilgjengelig". **Taken.** It also covers 6.
 4. `4-arendalsgata.png`: the Arendalsgata 22 page with the quick-clay warning at the top. **Taken.**
-5. `5-map.png`: the map with the quick-clay zone around Arendalsgata.
+5. `5-map.png`: the map with the quick-clay zone around Arendalsgata. **Taken.** Screenshots 2 and 4 were retaken at the same time, with the map layers and the summary card (fact sentences, no AI key).
 6. `6-missing.png`: a data point shown as "Ikke tilgjengelig".
 
 Not taken yet: 5 needs the quick-clay map layer.
