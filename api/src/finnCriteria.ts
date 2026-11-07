@@ -82,6 +82,30 @@ export function parseLimit(raw: string | undefined): number {
   return Math.min(n, LIMIT_MAX);
 }
 
+/**
+ * A forgiving key for municipality names: case-insensitive, "Baerum" = "Bærum", "Lorenskog"/"Loerenskog" = "Lørenskog",
+ * "Aas" = "Ås", a trailing " kommune" is ignored, hyphens and extra spaces don't matter.
+ */
+export function kommuneKey(s: string): string {
+  return s
+    .trim()
+    .toLowerCase()
+    .replace(/\s+kommune$/, "")
+    .replace(/æ/g, "ae")
+    .replace(/[øö]/g, "o")
+    .replace(/oe/g, "o")
+    .replace(/[åä]/g, "a")
+    .replace(/aa/g, "a")
+    .replace(/[\s-]+/g, " ");
+}
+
+/** The entry in `kommuner` (names or numbers) that `input` means, written as there; undefined if none. */
+export function matchKommune(input: string, kommuner: string[]): string | undefined {
+  const want = kommuneKey(input);
+  if (!want) return undefined;
+  return kommuner.find((k) => k === input.trim()) ?? kommuner.find((k) => kommuneKey(k) === want);
+}
+
 const clamp = (n: number, [lo, hi]: readonly [number, number]) => Math.round(Math.min(hi, Math.max(lo, n)));
 
 function looseNumber(v: unknown): number | undefined {
@@ -91,7 +115,7 @@ function looseNumber(v: unknown): number | undefined {
 
 /**
  * AI output -> criteria. Keeps known keys only, clamps numbers into range, turns flags into true or drops them.
- * kommune is kept only if it matches one of `kommuner` (names or numbers, case-insensitive); it is returned as written there.
+ * kommune is kept only if it matches one of `kommuner` (names or numbers, forgiving: see kommuneKey); returned as written there.
  */
 export function sanitizeAi(raw: unknown, kommuner: string[] = []): Criteria {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
@@ -103,8 +127,7 @@ export function sanitizeAi(raw: unknown, kommuner: string[] = []): Criteria {
   if (d != null) c.minTransitDepartures = clamp(d, DEPARTURES_RANGE);
   for (const k of FLAG_KEYS) if (o[k] === true || o[k] === 1 || o[k] === "true" || o[k] === "1") c[k] = true;
   if (typeof o.kommune === "string" && o.kommune.trim()) {
-    const want = o.kommune.trim().toLowerCase();
-    const hit = kommuner.find((k) => k.toLowerCase() === want);
+    const hit = matchKommune(o.kommune, kommuner);
     if (hit) c.kommune = hit;
   }
   return c;

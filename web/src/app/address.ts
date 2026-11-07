@@ -11,6 +11,7 @@ import { summaryCard } from "./summary";
 import { audienceSection } from "./audience";
 import { shareActions } from "./share";
 import { reportLink } from "./report";
+import { finnBackLink } from "./finn";
 import "./address.css";
 import type { Category, DataPoint, Missing, Profile, Rating, Severity } from "./profile";
 
@@ -22,7 +23,11 @@ export async function renderAddress(app: HTMLElement, id: string) {
 
   const logo = topbarLogo();
 
-  const panel = h("section", { class: "panel", "aria-live": "polite" }, loading());
+  const panel = h("section", { class: "panel", "aria-live": "polite" });
+  // Came here from /finn: a way back to the same search, above whatever the column shows.
+  const back = finnBackLink();
+  const fill = (...nodes: (Node | string)[]) => panel.replaceChildren(...(back ? [back] : []), ...nodes);
+  fill(loading());
   const mapEl = h("div", { class: "map" });
   app.replaceChildren(
     h(
@@ -40,11 +45,11 @@ export async function renderAddress(app: HTMLElement, id: string) {
     const res = await fetch(`/api/address/${encodeURIComponent(id)}/profile`);
     const body = await res.json().catch(() => null);
     if (req !== current) return;
-    if (!res.ok) return panel.replaceChildren(errorState(res.status, body?.message));
+    if (!res.ok) return fill(errorState(res.status, body?.message));
     profile = body;
   } catch {
     if (req !== current) return;
-    return panel.replaceChildren(errorState(0));
+    return fill(errorState(0));
   } finally {
     setLogoLoading(logo, false);
   }
@@ -53,7 +58,7 @@ export async function renderAddress(app: HTMLElement, id: string) {
   a.place = titleCase(a.place);
   a.municipality = titleCase(a.municipality);
   document.title = `${a.text}, ${a.place} · Omnium`;
-  panel.replaceChildren(
+  fill(
     summary(profile),
     audienceSection(profile) ?? "",
     summaryCard(id, () => req === current),

@@ -122,6 +122,8 @@ export default function (map: Map) {
     if (ev.key === "Escape" && (marker || popup)) clear();
   };
   document.addEventListener("keydown", onKey);
+  // A new page (e.g. "Sjekk denne adressen" or browser back): the old pin and popup go away. The router fires popstate.
+  window.addEventListener("popstate", clear);
 
   // Quiet hint in the Kartlag panel (or a tiny map hint if the panel is missing).
   const container = map.getContainer();
@@ -132,6 +134,7 @@ export default function (map: Map) {
 
   map.once("remove", () => {
     document.removeEventListener("keydown", onKey);
+    window.removeEventListener("popstate", clear);
     if (clickHook.current === place) clickHook.current = undefined;
     clear();
   });

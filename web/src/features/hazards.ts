@@ -479,10 +479,27 @@ const emptyData = { type: "FeatureCollection" as const, features: [] };
 /** Set by pick.ts: gets every map click with the hazard blocks for that spot (maybe none) and owns the popup. */
 export const clickHook: { current?: (e: MapMouseEvent, blocks: HTMLElement[]) => void } = {};
 
+// Quiet mode for pages with their own task on the map (/finn): the panel folds away and every layer goes off.
+// Leaving quiet mode puts back the layers and the panel as they were. Nothing of this is saved in localStorage.
+let quiet = false;
+let applyQuiet: ((on: boolean) => void) | undefined;
+export function setQuietLayers(on: boolean) {
+  if (quiet === on) return;
+  quiet = on;
+  applyQuiet?.(on);
+}
+
 export default function (map: Map) {
   const groups = layerGroups();
   const layers = groups.flatMap((g) => g.layers);
   const visible: Record<string, boolean> = Object.fromEntries(layers.map((L) => [L.id, L.on]));
+  // Started in quiet mode (the map was first made on /finn): start with everything off, and keep the defaults to restore.
+  let beforeQuiet: { visible: Record<string, boolean>; collapsed: boolean } | undefined;
+  if (quiet) {
+    beforeQuiet = { visible: { ...visible }, collapsed: true };
+    for (const id of Object.keys(visible)) visible[id] = false;
+  }
+  const inputs: Record<string, HTMLInputElement> = {}; // the panel's checkboxes, by layer id
   const aborts: Record<string, AbortController | undefined> = {};
   const status: Record<string, HTMLElement> = {};
 
@@ -607,6 +624,10 @@ export default function (map: Map) {
   } catch {
     /* private mode: fine */
   }
+  if (beforeQuiet) {
+    beforeQuiet.collapsed = collapsed;
+    collapsed = true;
+  }
   const count = h("span", { class: "hz-panel__count" });
   const toggle = h("button", { class: "hz-panel__toggle", type: "button", "aria-controls": "hz-panel-body" });
   const applyCollapsed = () => {
@@ -621,6 +642,7 @@ export default function (map: Map) {
   toggle.addEventListener("click", (e) => {
     e.stopPropagation();
     collapsed = !collapsed;
+    if (quiet) return applyCollapsed(); // a choice made in quiet mode is not remembered
     try {
       localStorage.setItem(STORE, collapsed ? "1" : "0");
     } catch {
@@ -652,18 +674,45 @@ export default function (map: Map) {
     if (collapsed || target.closest(".hz-panel__head")) toggle.click();
   });
   container.append(panel);
+  panel.classList.toggle("is-quiet", quiet);
+
+  // Quiet mode on: remember the layers and the panel, then fold it and switch every layer off. Off: put them back.
+  applyQuiet = (on) => {
+    if (on) {
+      beforeQuiet = { visible: { ...visible }, collapsed };
+      for (const L of layers) setVisible(L, false);
+      collapsed = true;
+    } else if (beforeQuiet) {
+      for (const L of layers) setVisible(L, beforeQuiet.visible[L.id] ?? L.on);
+      collapsed = beforeQuiet.collapsed;
+      beforeQuiet = undefined;
+    }
+    panel.classList.toggle("is-quiet", on);
+    applyCollapsed();
+  };
+  map.once("remove", () => {
+    applyQuiet = undefined;
+  });
+
+  function setVisible(L: MapLayer, on: boolean) {
+    if (inputs[L.id]) inputs[L.id].checked = on;
+    if (visible[L.id] === on) return;
+    visible[L.id] = on;
+    const v = on ? "visible" : "none";
+    for (const part of ["fill", "line", "hatch"]) {
+      if (map.getLayer(`hz-${L.id}-${part}`)) map.setLayoutProperty(`hz-${L.id}-${part}`, "visibility", v);
+    }
+    if (!on) popup.remove();
+    void load(L);
+  }
 
   function layerRow(L: MapLayer): HTMLElement {
     const input = h("input", { type: "checkbox", id: `hz-toggle-${L.id}`, checked: visible[L.id] });
+    inputs[L.id] = input;
     input.addEventListener("change", () => {
-      visible[L.id] = input.checked;
+      visible[L.id] = !input.checked; // setVisible() flips it and does the rest
+      setVisible(L, input.checked);
       applyCollapsed();
-      const v = input.checked ? "visible" : "none";
-      for (const part of ["fill", "line", "hatch"]) {
-        if (map.getLayer(`hz-${L.id}-${part}`)) map.setLayoutProperty(`hz-${L.id}-${part}`, "visibility", v);
-      }
-      if (!input.checked) popup.remove();
-      void load(L);
     });
     status[L.id] = h("span", { class: "hz-panel__status", hidden: true });
     // A single-class layer needs no legend: the swatch in the row says it all.
