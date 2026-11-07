@@ -108,7 +108,9 @@ The code is the source of truth (`api/src/profile.ts`, `api/src/rating.ts`, `api
 - `cappedBy`: warnings that pulled the score down. `weakestCategory`: overall only, whenever at least one category is rated.
 - A data point's `source` is a source `id` from `sources`. `unit`, `score`, `warning` and `explanation` are optional.
 - `missing[].reason`: `noCoverage` | `sourceUnavailable` | `notLoaded`.
-- Severity caps: a `high` warning caps its category at 30 and the overall at 40; `medium` caps both at 60; `low` gives no cap.
+- Severity caps, category: a `high` warning caps its category at 30, `medium` at 60; `low` gives no cap.
+- Severity caps, overall: the worst warning sets the cap (`high` 40, `medium` 75). Every further `high` or `medium` warning lowers it by 10, down to 10. `low` gives no cap. When the cap binds, `cappedBy` lists every `high` and `medium` warning, each with the final cap.
+  Why: one medium cap of 60 made most addresses score exactly 60 (high radon is common around Oslo), so a quiet suburb tied with a flood zone next to a loud road.
 - Data point without `score`: `good` counts 100, `bad` counts 0, `neutral` is not scored.
 
 ## Rules for anyone reading the profile (web app, agents, scripts, AI summary)

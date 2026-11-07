@@ -47,9 +47,9 @@ export interface Reading {
  * How to ask the table about the address point. Every row comes back without `geom`.
  * - within:  rows whose geometry contains the point (zones, municipalities).
  * - nearest: the closest row within maxM metres, with an extra `distanceM` column.
- * - count:   one row `{ count }`: features within radiusM metres.
+ * - around:  every row within radiusM metres, nearest first (max 500), each with `distanceM`.
  */
-export type Find = ({ kind: "within" } | { kind: "nearest"; maxM: number } | { kind: "count"; radiusM: number }) & {
+export type Find = ({ kind: "within" } | { kind: "nearest"; maxM: number } | { kind: "around"; radiusM: number }) & {
   /** Optional extra SQL filter on the table's own columns, e.g. "isPrimary". Fixed text only, never user input. */
   where?: string;
 };
@@ -253,6 +253,26 @@ export const DATA_POINTS: DataPoint[] = [
     id: "transitStop", label: "Nærmeste holdeplass", category: "location", source: "entur-stopp", importance: "normal",
     table: "stops", find: { kind: "nearest", maxM: 2000 },
     read: nearestScore([[300, 100], [600, 75], [1000, 50], [2000, 20]]),
+  },
+  {
+    // data/scripts/stops.ts (Even): departures and lines per stop on one weekday (departuresDate).
+    // Busiest stop, not a sum: a trip passing two nearby stops would count twice.
+    id: "transitDepartures", label: "Avganger innen 500 m", category: "location", source: "entur-stopp", importance: "normal",
+    table: "stops", find: { kind: "around", radiusM: 500 },
+    read: (rows) => {
+      const served = rows.filter((r) => Number(r.departures) > 0);
+      if (!served.length) return { value: 0, display: "Ingen avganger innen 500 m", effect: "bad", score: 0 };
+      const best = served.reduce((a, b) => (Number(b.departures) > Number(a.departures) ? b : a));
+      const n = Number(best.departures);
+      const lines = Number(best.lines);
+      const score = n >= 200 ? 100 : n >= 100 ? 85 : n >= 50 ? 65 : n >= 20 ? 40 : 20;
+      const where = best.name ? ` (${best.name}, ${metres(Number(best.distanceM))})` : "";
+      return {
+        value: n, unit: "avganger", display: `${n} avganger, ${lines} ${lines === 1 ? "linje" : "linjer"}${where}`,
+        effect: score >= 50 ? "good" : "bad", score,
+        explanation: "Travleste holdeplass innen 500 m i luftlinje, avganger på en vanlig hverdag.",
+      };
+    },
   },
   {
     id: "school", label: "Nærmeste grunnskole", category: "location", source: "udir-skoler", importance: "normal",

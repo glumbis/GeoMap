@@ -92,6 +92,13 @@ const RULES: Record<string, Rule> = {
       ? [rankOf(d, 3), `Det er registrert forurenset grunn ${d.value} meter fra adressen`]
       : [5, "Det er ikke registrert forurenset grunn innen 100 meter fra adressen"],
   transitStop: nearest("Nærmeste holdeplass", "ingen holdeplass innen 2 km"),
+  // Not in FACTS.md yet (new data point).
+  transitDepartures: (d) => {
+    if (!d.value) return [4, "Det er ingen avganger fra holdeplasser innen 500 m i luftlinje på en vanlig hverdag"];
+    const { head, bracket } = splitDisplay(d.display);
+    const stop = bracket ? `, ${bracket.replace(/, ([^,]+)$/, ", $1 unna")},` : "";
+    return [d.effect === "bad" ? 4 : 6, `Den travleste holdeplassen innen 500 m i luftlinje${stop} har ${head.replace(", ", " og ")} på en vanlig hverdag`];
+  },
   school: nearest("Nærmeste grunnskole", "ingen grunnskole innen 5 km"),
   kindergarten: nearest("Nærmeste barnehage", "ingen barnehage innen 3 km"),
   trails: nearest("Nærmeste registrerte tursti eller skiløype", "ingen registrert tursti eller skiløype innen 3 km"),

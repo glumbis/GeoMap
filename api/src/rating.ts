@@ -41,9 +41,12 @@ export interface MissingPoint {
   importance: "critical" | "normal";
 }
 
-// A high finding caps its category at 30 and the overall at 40; medium caps at 60 / 60. Low: no cap.
+// docs/PROFILE.md -> "Severity caps". Category: high caps at 30, medium at 60. Low: no cap.
+// Overall: the worst warning sets the cap (high 40, medium 75); each further high/medium warning lowers it by 10.
 const CATEGORY_CAP: Partial<Record<Severity, number>> = { high: 30, medium: 60 };
-const OVERALL_CAP: Partial<Record<Severity, number>> = { high: 40, medium: 60 };
+const OVERALL_CAP: Partial<Record<Severity, number>> = { high: 40, medium: 75 };
+const OVERALL_STEP = 10;
+const OVERALL_FLOOR = 10;
 const MIN_OK_WEIGHT = 0.6;
 
 const list = (xs: string[]) => xs.join(", ");
@@ -59,6 +62,14 @@ function caps(points: Scored[], table: Partial<Record<Severity, number>>): Cap[]
     const cap = w && table[w.severity];
     return cap != null ? [{ dataPointId: p.id, cap, text: w!.text }] : [];
   });
+}
+
+/** Overall: one stacked cap from all high/medium warnings. Every warning that counted is listed with the final cap. */
+function overallCaps(points: Scored[]): Cap[] {
+  const found = caps(points, OVERALL_CAP).sort((a, b) => a.cap - b.cap); // worst first
+  if (!found.length) return [];
+  const cap = Math.max(OVERALL_FLOOR, Math.min(...found.map((c) => c.cap)) - OVERALL_STEP * (found.length - 1));
+  return found.map((c) => ({ ...c, cap }));
 }
 
 function applyCaps(score: number, found: Cap[]): Pick<Rating, "score" | "cappedBy"> {
@@ -127,5 +138,5 @@ export function rateOverall(categories: { category: Category; rating: Rating; pr
   // Weighted average of rated categories only (weights rescaled), then capped by serious warnings anywhere.
   const avg = ok.reduce((s, c) => s + c.rating.score! * c.category.weight, 0) / okWeight;
   const allPresent = categories.flatMap((c) => c.present);
-  return { status: "ok", ...applyCaps(avg, caps(allPresent, OVERALL_CAP)), coverage, weakestCategory };
+  return { status: "ok", ...applyCaps(avg, overallCaps(allPresent)), coverage, weakestCategory };
 }

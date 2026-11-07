@@ -2,6 +2,7 @@
 import { lookupAddress, type Address } from "./address.ts";
 import { CATEGORIES, DATA_POINTS, SOURCES, type DataPoint, type Find, type Reading, type Row, type Severity } from "./datapoints.ts";
 import { query } from "./db.ts";
+import { INFO_TEXTS } from "./texts.ts";
 import { rateCategory, rateOverall, type MissingPoint, type Rating, type Scored } from "./rating.ts";
 
 export const PROFILE_VERSION = 1;
@@ -59,7 +60,7 @@ async function findRows(table: string, find: Find, lng: number, lat: number): Pr
   if (find.kind === "nearest") {
     return query(`SELECT * FROM (${near}) WHERE distanceM <= $7 ORDER BY distanceM LIMIT 1`, params);
   }
-  return query(`SELECT count(*)::INTEGER AS count FROM (${near}) WHERE distanceM <= $7`, params);
+  return query(`SELECT * FROM (${near}) WHERE distanceM <= $7 ORDER BY distanceM LIMIT 500`, params);
 }
 
 export async function buildProfile(id: string): Promise<Profile> {
@@ -89,7 +90,11 @@ export async function buildProfile(id: string): Promise<Profile> {
     const missing: MissingDataPoint[] = [];
     for (const { dp, reading, reason } of mine) {
       const base = { id: dp.id, label: dp.label, importance: dp.importance, source: dp.source };
-      if (reading) dataPoints.push({ ...base, ...reading });
+      if (reading) {
+        // explanation = the general info text (docs/TEXTS.md), then anything read() adds for this result.
+        const explanation = [INFO_TEXTS.get(dp.id), reading.explanation].filter(Boolean).join(" ");
+        dataPoints.push({ ...base, ...reading, ...(explanation && { explanation }) });
+      }
       else missing.push({ ...base, reason: reason! });
     }
     const present: Scored[] = mine.filter((r) => r.reading).map((r) => ({ id: r.dp.id, label: r.dp.label, importance: r.dp.importance, reading: r.reading! }));
