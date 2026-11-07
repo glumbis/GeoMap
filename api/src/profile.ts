@@ -8,7 +8,10 @@ import { rateCategory, rateOverall, ratePerspective, type Factor, type MissingPo
 
 export const PROFILE_VERSION = 1;
 
-type MissingReason = "noCoverage" | "sourceUnavailable" | "notLoaded" | "outsideArea";
+export type MissingReason = "noCoverage" | "sourceUnavailable" | "notLoaded" | "outsideArea";
+
+/** One data point's outcome for an address: a reading, or why it is missing. */
+export type ReadingResult = { dp: DataPoint; reading?: Reading; reason?: MissingReason };
 
 export interface PresentDataPoint extends Reading {
   id: string;
@@ -80,7 +83,7 @@ export async function buildProfile(id: string): Promise<Profile> {
   // Study area = the kommuner table (Oslo + Akershus). Outside it no dataset covers the address (docs/PROFILE.md, rule 6).
   const outside = (await isMapped("kommuner", loaded, address.lng, address.lat)) === false;
 
-  const results: { dp: DataPoint; reading?: Reading; reason?: MissingReason }[] = [];
+  const results: ReadingResult[] = [];
   for (const dp of DATA_POINTS) {
     if (!/^[a-z0-9_]+$/.test(dp.table)) throw new Error(`bad table name in data point ${dp.id}: ${dp.table}`);
     if (outside) {
@@ -101,7 +104,14 @@ export async function buildProfile(id: string): Promise<Profile> {
       results.push({ dp, reason: "sourceUnavailable" });
     }
   }
+  return assembleProfile(address, results, outside);
+}
 
+/**
+ * Readings -> the full profile (categories, warnings, ratings, perspectives). No database access, so the
+ * batch scoring of every address (data/area-scores.ts) uses exactly the same rules as the address page.
+ */
+export function assembleProfile(address: Address, results: ReadingResult[], outside = false): Profile {
   const categories = CATEGORIES.map((category) => {
     const mine = results.filter((r) => r.dp.category === category.id);
     const dataPoints: PresentDataPoint[] = [];

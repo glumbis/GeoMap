@@ -132,6 +132,11 @@ Terms for all Kartverket free data: CC BY 4.0, credit "© Kartverket". Details i
   - Columns: `id` (grunnkretsnummer), `name`, `kommunenummer`, `year`, `population`, `under20`, `over70`, `areaKm2`, `perKm2`, `pctUnder20`, `pctOver70`, `source`, `geom`. SSB hides age groups of 1–2 people, so age sums can be slightly low.
   - Info only (never scored). The age share is left out under 20 inhabitants. These are also the grunnkrets polygons Even's grunnkrets stats can join to (`id` = grunnkretsnummer).
   - Checked: #1 Sagene rode 6 (851 people, 15,569 per km²), #4 Hosle nord 06 (220), #5 Tryvann (29).
+- **Area scores (Omnium, computed)** → tables `adresser`, `adresse_scores`, `grunnkrets_scores`, `kommune_scores`, script `data/area-scores.ts` (`npm run scores`, after `npm run ingest`), API `/api/grunnkrets_scores` (map layer) and `/api/omrade/<id>` (2026-11-07).
+  - Every street address (vegadresse, 362,241) from Kartverket's address file (Matrikkelen Adresse CSV, EPSG:4258, Oslo + Akershus) is rated with the same rules as the address page: `assembleProfile()` in `api/src/profile.ts`, fed by one spatial join per data point table for each block of 10,000 addresses. About 17 minutes on Sverre's PC.
+  - `grunnkrets_scores` / `kommune_scores`: median and quartiles of the overall score, share of addresses with a high or a serious (high/medium) warning, median per perspective. Only areas with at least 5 rated addresses.
+  - `/api/omrade/<id>`: the address's live score plus its percentile in its grunnkrets and kommune (share of rated addresses that score lower, ties half).
+  - Scores are a snapshot (`computedAt`): rerun `npm run scores` after a data or rating change.
 - Shared helpers in `data/scripts/lib.ts`: `studyBbox()`, `arcgisFeatures()` (pages any ArcGIS REST layer, e.g. NVE, as GeoJSON) and `readZipEntry()` (reads one file out of a downloaded zip).
 
 - **Name:** Eiendom REST-API (property lookup)
