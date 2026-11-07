@@ -13,7 +13,7 @@ Two homes, both in Bærum/Oslo, both near a bus and a school. On paper they look
 | Role | Address | Id | What it shows |
 |---|---|---|---|
 | Start: the calm case | Grevlingåsen 17, 1362 Hosle | `3201-1574-17` | No warnings. Naturfare 100. Bus 82 m, school 256 m, kindergarten 226 m. |
-| Contrast: the hidden risk | Arendalsgata 22, 0463 Oslo | `0301-10223-22` | Warnings: quick-clay zone, faregrad **høy** (NVE), and road noise 65–70 dB (strategic noise map). Naturfare 30. Bus 31 m. |
+| Contrast: the hidden risk | Arendalsgata 22, 0463 Oslo | `0301-10223-22` | Warnings: quick-clay zone, faregrad **høy** (NVE), and road noise 65–70 dB (strategic noise map). Also a registered polluted-ground site 17 m away (low). Naturfare 30. Bus 31 m. |
 | Backup / extra | Nedre Rælingsveg 148, 2005 Rælingen | `3224-8900-148` | Two warnings: 200-year flood zone and red road noise zone. |
 
 Numbers above are from the profile on 2026-11-07. Check them again before the demo (see checklist): they change when data or the rating changes.
@@ -62,7 +62,6 @@ What the pitch needs, and who it depends on. Update this as things land.
 | Address page: warnings, category cards, data points with source | Not built yet | Erik |
 | Quick-clay zone visible on the map | Data at `/api/nve_kvikkleire`, no map layer yet | Erik |
 | "Ikke tilgjengelig" for missing data | In the profile, not shown yet | Erik |
-| Miljø score for Grevlingåsen | "insufficient data" until polluted ground is loaded (strategic noise has no zone there, so it counts as missing) | Sverre |
 | Overall rating (a number) | Not yet: "insufficient data" until ground data (radon, løsmasser) is loaded | Sverre, Lukas |
 | Explanations under each data point | Texts in `docs/TEXTS.md`, not in the profile yet | Lukas |
 | AI summary | Endpoint works; needs `ANTHROPIC_API_KEY` and the rules in `docs/FACTS.md` | Lukas |

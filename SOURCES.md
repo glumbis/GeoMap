@@ -327,6 +327,8 @@ NGU datasets: https://www.ngu.no/geologiske-kart/datasett (download per county, 
   - Category: environment
   - Priority: high
   - Notes: continuously updated. Has GeoJSON + REST API, easy ingest. Source db: grunn.miljodirektoratet.no
+  - **Loaded** (2026-11-07) as table `grunnforurensning` by `data/scripts/grunnforurensning.ts`, API `/api/grunnforurensning`: 4023 sites (areas) from the ArcGIS service `https://kart.miljodirektoratet.no/arcgis/rest/services/grunnforurensning2/MapServer/1` (GeoJSON, max 15000 per request). Columns: name, siteType, status, impact (påvirkningsgrad: '1' little or none, '2' acceptable with today's use, '3' action needed, 'X' suspected), impactText, healthClass, factSheet (link), kommunenummer.
+  - Watch out: 739 sites have impact '1' (little or no pollution). A warning for those would overstate the risk.
 
 - **Name:** NILU Luftkvalitet API
   - Owner: NILU / Miljødirektoratet
@@ -418,6 +420,8 @@ NGU datasets: https://www.ngu.no/geologiske-kart/datasett (download per county, 
   - Category: nature
   - Priority: medium
   - Notes: updated weekly. Includes ski tracks, so maybe no separate ski source needed. Quality varies.
+  - **Loaded** (2026-11-07) as table `turruter` by `data/scripts/turruter.ts`, API `/api/turruter`: 20332 route lines (17817 fotrute, 1401 skiløype, 706 sykkelrute, 408 annen rute) from the county FGDB zips on nedlasting.geonorge.no (read from the zip with `/vsizip/`, EPSG:25833 → 4326). Columns: routeType, name (route names, or Tursti/Skiløype/... when unnamed), lit, kommunenummer.
+  - Watch out: few ski tracks in Oslo (Skiforeningen's Nordmarka tracks are mostly missing). Nearest ski track from Holmenkollveien 196 is 1.2 km. Skiforeningen's own track data would be better for skiing.
 
 - **Name:** Friluftslivsområder - kartlagte og verdsatte
   - Owner: Miljødirektoratet
