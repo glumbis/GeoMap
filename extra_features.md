@@ -24,7 +24,7 @@ Suggested order: 2, 3, 8 first (cheap, they spread the product), then 1 (the fir
 
 ## 1. Omnium Rapport: an in-depth PDF about the property (Lukas)
 
-**Status 2026-11-07: first version built** (free): `GET /api/address/<id>/report.pdf`, spec in `docs/REPORT.md`. Built with sections 1–4, 7, 8 and 9 below; area comparison and ideas 6–7 are still to come. Paid version later.
+**Status 2026-11-07: first version built** (free): `GET /api/address/<id>/report.pdf`, spec in `docs/REPORT.md`. Built with sections 1–5, 7, 8 and 9 below (5, area comparison, added 2026-11-07 by Sverre); ideas 6–7 are still to come. Paid version later.
 
 A downloadable report about one address, like a condition report ("tilstandsrapport") for the ground and the surroundings. The address page answers "is this OK?" in 10 seconds; the report is for the person who is about to spend millions and wants everything, on paper, with graphs.
 

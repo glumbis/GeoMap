@@ -32,7 +32,7 @@ redirects to `report.html?print`, so the button on the website works unchanged.
 ## What is in it
 
 1. **Cover:** logo, address, postcode, kommune, gnr/bnr, map with pin, overall score on a 0–100 scale, the cap reason (never "God" when capped), weakest category, data coverage, top 3 findings, and the disclaimer.
-2. **Oversikt:** AI summary (labelled with the model, only when `aiGenerated`), otherwise the fact sentences. Category bars with weights. The four perspectives with what pulls each down.
+2. **Oversikt:** AI summary (labelled with the model, only when `aiGenerated`), otherwise the fact sentences. Category bars with weights. The four perspectives with what pulls each down. **Sammenlignet med området:** a score histogram for the grunnkrets and the kommune with the address marked, its percentile and the median (`api/src/area.ts`, same numbers as `/api/omrade/<id>`). Needs `npm run scores`; without it the report says the comparison is not available yet.
 3. **Funn og faresoner:** a 1.6 km map with every NVE hazard zone near the address, and all findings, worst first.
 4. **Detaljer per kategori:** every data point with value, score bar, warning, info text and source; missing data points as "Ikke tilgjengelig" with the reason.
 5. **Spørsmål å stille:** a checklist for the viewing, from the findings. The questions are written by hand in `QUESTIONS` in `api/src/report.ts`, never by the AI. A data point with a warning and no written question gets a plain "Spør selger eller megler om dette: ...".
