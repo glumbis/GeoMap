@@ -20,7 +20,7 @@ npm install        # ALWAYS after a pull that touched package-lock.json (the PDF
 
 **The dev server** (`npm run dev` = API on :3000 + web on http://localhost:5173, Vite proxies `/api`):
 - Check first, it is often already running: `curl -s -o /dev/null -w "%{http_code}" localhost:5173/api/health` → 200 means reuse it. Never start a second copy.
-- 502 from `/api/...` but the web page loads = the API half crashed (usually after a pull that needed `npm install`, or while an ingest held the database). `tsx watch` is still alive and restarts on any file change: run `touch api/src/index.ts` (changes only the timestamp) and wait ~5 s.
+- 502 from `/api/...` but the web page loads = the API half crashed (usually after a pull that needed `npm install`, or while an ingest held the database). The API watcher (`node --watch`) is still alive and restarts on any file change: run `touch api/src/index.ts` (changes only the timestamp) and wait ~5 s.
 - **Data:** one DuckDB file, `data/geomap.duckdb` (gitignored). Only one process may write it: stop the dev server before `npm run ingest <name>`, then start it again. On Windows, find the processes with `Get-CimInstance Win32_Process -Filter "name='node.exe'"` (look for `concurrently`, `vite`, `tsx`), stop them, ingest, then `npm run dev` in the background. An endpoint answering `{"error":"unavailable","message":"Table 'x' is not loaded. Run: npm run ingest x"}` just needs that ingest.
 - `.env` holds `ANTHROPIC_API_KEY` (AI summaries). Never print or commit it.
 
