@@ -38,7 +38,7 @@ npm run dev                 # API on :3000 + web on http://localhost:5173 (open 
 - `npm run test:addresses`: checks the 5 test addresses (hazards, scores, caps, summary facts) against the running API. Needs `npm run dev`.
 - Stop `npm run dev` before running an ingest: DuckDB lets only one process write the file.
 - AI summaries need `ANTHROPIC_API_KEY` in `.env` (copy `.env.example`). Everything else runs without keys.
-- Check the API: `http://localhost:5173/api/health` lists loaded tables. Address profile: `http://localhost:5173/api/address/0301-10223-22/profile`.
+- Check the API: `http://localhost:5173/api/health` lists loaded tables. Address profile: `http://localhost:5173/api/address/0301-10223-22/profile`. PDF report: `http://localhost:5173/api/address/0301-10223-22/report.pdf` (needs Chrome or Edge installed, or `CHROME_PATH` in `.env`).
 - In the browser console (dev only), `map` is the MapLibre map.
 
 ## Add things (no shared file to edit)
@@ -75,10 +75,12 @@ api/                 backend
   src/profile.ts     builds the address profile (rating.ts scores it, address.ts looks up ids)
   src/texts.ts       reads info texts from docs/TEXTS.md at startup (restart the API after editing it)
   src/summary.ts     AI summary: fact sentences (rules from docs/FACTS.md) + Claude Haiku, cached in table summaries
+  src/report.ts      PDF report (docs/REPORT.md): profile + summary + maps -> A4 HTML; pdf.ts prints it with local Chrome/Edge
 docs/
   PROFILE.md         standard for the address profile (read before touching rating, profile or the address panel)
   DESIGN.md          look, page flow, map style (read before touching anything people see)
   TEST_ADDRESSES.md  the 5 addresses we test and demo with
+  REPORT.md          the PDF report: contents, endpoint, and how the website links to it
   TEXTS.md           info text per data point (shown when a data point is opened)
   FACTS.md           fact-sentence rules for the AI summary
   DEMO.md            demo story, pitch, readiness table and checklist
@@ -98,6 +100,7 @@ data/
 
 ## API conventions
 - **Every API response is JSON.** No HTML, CSV or plain text. This keeps every endpoint usable the same way by the web app, other agents and scripts.
+  - **One exception:** `GET /api/address/:id/report.pdf` returns the PDF report (`docs/REPORT.md`). Its errors are still JSON. No other non-JSON endpoints without asking Lukas.
   - Map layers return GeoJSON (it is JSON). Everything else returns plain JSON objects.
   - Field names in `camelCase`. Coordinates as numbers in EPSG:4326 (`lng`, `lat`). Dates as ISO 8601 strings.
   - Errors are JSON too: an error code and a readable message, with a matching HTTP status.

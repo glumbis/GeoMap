@@ -24,6 +24,8 @@ Suggested order: 2, 3, 8 first (cheap, they spread the product), then 1 (the fir
 
 ## 1. Omnium Rapport: an in-depth PDF about the property (Lukas)
 
+**Status 2026-11-07: first version built** (free): `GET /api/address/<id>/report.pdf`, spec in `docs/REPORT.md`. Built with sections 1–4, 7, 8 and 9 below; area comparison and ideas 6–7 are still to come. Paid version later.
+
 A downloadable report about one address, like a condition report ("tilstandsrapport") for the ground and the surroundings. The address page answers "is this OK?" in 10 seconds; the report is for the person who is about to spend millions and wants everything, on paper, with graphs.
 
 **Who buys it:** homebuyers before a bid, people building or renovating, developers checking a plot, people who want to show the bank or insurer the risks are known.
@@ -45,7 +47,7 @@ A downloadable report about one address, like a condition report ("tilstandsrapp
 
 **How to build it (suggestion):**
 - A web page `/a/<id>/rapport` that uses the existing profile and summary endpoints, laid out for A4 with print CSS, charts as inline SVG. The browser turns it into a PDF. No new dependency.
-- Later, for a "Download PDF" button: render that same page with headless Chrome (Playwright) in a script or worker. Note: the API rule is "every API response is JSON", so a PDF endpoint needs a team decision, or the PDF is made outside `api/`.
+- Built instead as an API endpoint that prints with the local Chrome/Edge (`playwright-core`). The team agreed it is the one exception to "every API response is JSON".
 - Payment (Vipps or Stripe) only after people actually use the free version.
 
 ## 2. Compare addresses

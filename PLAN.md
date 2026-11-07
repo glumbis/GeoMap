@@ -78,6 +78,7 @@ What the demo still needs, most important first:
 7. ~~**Even:** update `docs/DEMO.md` and `docs/TEST_ADDRESSES.md`: scores above, Strandvegen 81 now 40, the bus caveat can go (Jegeråsen, 212 m, 161 weekday departures), and #3–#5 show "Ikke kartlagt her" for quick clay and flood. (FACTS.md rules for `ikkeKartlagt` are done, and the code matches them.)~~ Done 2026-11-07.
 8. **Erik (new, big for the demo):** show the four perspective scores (`profile.perspectives`) on the address page. Today the page has one number; make the perspectives the main way to read an address: a row of four score cards under the address (name, score or reason, the `question` as subtitle), and opening one shows its top 3 `factors` as "Hva trekker ned" with each data point's display and score. Overall stays, smaller, with its cap reason. Same rule as overall: when `cappedBy` is present, show the cap reason, never "God". Render the list as given; never hard-code the four. Spec: `docs/PROFILE.md` → "Perspectives".
 9. ~~**Even:** scores changed again (soft caps + perspectives): update the numbers in `docs/DEMO.md`, and consider pitching with the perspectives ("bra å bo, krevende å bygge").~~ Done 2026-11-07: new numbers, an optional perspective line (Arendalsgata: Pendler 100, Bo her 13) and a Q&A section in `docs/DEMO.md`.
+10. **Erik (new):** add a "Last ned rapport (PDF)" button to the address page that opens `/api/address/<id>/report.pdf` in a new tab. The report is done (Lukas, 2026-11-07). Where, wording and style: `docs/REPORT.md` → "For Erik".
 
 After these, stop adding data and move to phase 3 (demo).
 
@@ -87,7 +88,7 @@ Each role lists: what you own, your tasks in order, and when a task is done.
 
 ### Lukas — lead, API, rating
 
-**Owns:** `api/src/index.ts`, `api/src/db.ts`, `api/src/geojson.ts`, `api/src/routes/address.ts`, `api/src/rating.ts`, `api/src/summary.ts`, `docs/PROFILE.md`, `PLAN.md`, `AGENTS.md`.
+**Owns:** `api/src/index.ts`, `api/src/db.ts`, `api/src/geojson.ts`, `api/src/routes/address.ts`, `api/src/rating.ts`, `api/src/summary.ts`, `api/src/report.ts`, `api/src/pdf.ts`, `docs/PROFILE.md`, `docs/REPORT.md`, `PLAN.md`, `AGENTS.md`.
 
 1. ~~Scaffold the stack and push it.~~ Done.
 2. ~~**Decide the address id**~~ Done: `<kommunenummer>-<adressekode>-<nummer><bokstav>`, see "Address id" in `docs/PROFILE.md`. Erik's tasks below say how to build it.
@@ -147,6 +148,7 @@ Each role lists: what you own, your tasks in order, and when a task is done.
 - Product name: **Omnium**. UI text in Norwegian (bokmål); code and docs in English.
 - Rating: severity caps + always show the weakest category (`suggestions.md`). Confirmed by Lukas 2026-11-07, with stacked overall caps (see `docs/PROFILE.md`).
 - Missing data is never shown as good, and is never faked (`docs/PROFILE.md`).
+- The PDF report (`/api/address/:id/report.pdf`) is the one API response that is not JSON. Free now, may become a paid extra later. Decided by Lukas 2026-11-07 (`docs/REPORT.md`).
 
 ## Where to look
 - **Geonorge** (geonorge.no): the national catalog. Most things below are found here. Search by topic.
