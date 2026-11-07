@@ -144,11 +144,17 @@ export const DATA_POINTS: DataPoint[] = [
   // Natural hazards. Proposed tables from NVE (Sverre). No zone = "not in a mapped zone": that is real data.
   {
     id: "quickClay", label: "Kvikkleire faresone", category: "hazards", source: "nve-kvikkleire", importance: "critical",
-    table: "kvikkleire", find: { kind: "within" }, // proposed columns: name (sone), faregrad ('Høy' | 'Middels' | 'Lav')
+    table: "nve_kvikkleire", find: { kind: "within" }, // data/scripts/nve_kvikkleire.ts (Sverre): name, faregrad ('Høy' | 'Middels' | 'Lav' | 'Ingen'), risikoklasse
     read: (rows) => {
       if (!rows.length) return { value: null, display: "Ikke i kartlagt faresone", effect: "good" };
       const order = ["høy", "middels", "lav"];
-      const worst = [...rows].sort((a, b) =>
+      const graded = rows.filter((r) => order.includes(String(r.faregrad).toLowerCase()));
+      if (!graded.length) {
+        // NVE zone with faregrad 'Ingen': mapped, but no hazard level given. Not a warning, not scored.
+        const sone = rows[0].name ? ` "${rows[0].name}"` : "";
+        return { value: "ingen", display: `I kartlagt sone${sone} uten faregrad`, effect: "neutral" };
+      }
+      const worst = [...graded].sort((a, b) =>
         order.indexOf(String(a.faregrad).toLowerCase()) - order.indexOf(String(b.faregrad).toLowerCase()))[0];
       const grad = String(worst.faregrad).toLowerCase();
       const sone = worst.name ? ` "${worst.name}"` : "";
