@@ -97,7 +97,7 @@ Save addresses and get a mail when something changes: NVE updates a hazard map, 
 Not bugs: small ideas from the simulated user tests and the design review of the web app. The free print version of idea 1 ("Skriv ut" on the address page) and the per-audience tabs ("Hva betyr dette for deg?") are built.
 
 **Address page**
-- **Explain jumps between neighbours.** A pin 15 m from a quick-clay address can score 59 against 13. Show "Utenfor faresone, ca. X m fra nærmeste sone" in the pin popup and on the address page.
+- **Explain jumps between neighbours.** A pin 15 m from a quick-clay address can score 59 against 13. Show "Utenfor faresone, ca. X m fra nærmeste sone" in the pin popup and on the address page. **Address page done 2026-11-07 (Sverre):** hazard data points get `nearestZone` and "ca. X m til nærmeste ..." within 250 m (`docs/PROFILE.md`). Pin popup still open.
 - **Hazard checklist strip** under the score: one chip per hazard with ✓ / ✕ / ? (? in grey for not mapped or missing).
 - **Key-numbers row:** 4 tabular figures, e.g. radon level, road noise in dB, metres to school and to the nearest stop.
 - **Cap explanation:** a small "Hvorfor?" next to the cap line, saying which warning sets the cap.
