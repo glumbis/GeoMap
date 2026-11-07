@@ -74,6 +74,23 @@ async function findRows(table: string, find: Find, lng: number, lat: number): Pr
   return query(`SELECT * FROM (${near}) WHERE distanceM <= $7 ORDER BY distanceM LIMIT 500`, params);
 }
 
+/** How far to look for a hazard zone next to an address that is outside it (DataPoint.near). */
+export const NEAR_ZONE_M = 250;
+
+/**
+ * Outside every zone: is one close? Sets reading.nearestZone and adds "ca. X m til nærmeste ..." (or "ca. X m unna") to the display.
+ * Rounded (5 m under 50 m, else 10 m): zone lines and address points are not more exact than that. Never touches the score.
+ */
+async function addNearestZone(dp: DataPoint, reading: Reading, lng: number, lat: number): Promise<void> {
+  const [row] = await findRows(dp.table, { kind: "nearest", maxM: NEAR_ZONE_M, where: dp.near!.where }, lng, lat);
+  if (!row) return;
+  const d = Number(row.distanceM);
+  const distanceM = Math.max(5, Math.round(d / (d < 50 ? 5 : 10)) * (d < 50 ? 5 : 10));
+  const text = dp.near!.text?.(row);
+  reading.nearestZone = { distanceM, ...(text && { text }) };
+  reading.display = `${reading.display}, ca. ${distanceM} m ${text ? `til nærmeste ${text}` : "unna"}`;
+}
+
 const shareCache = new Map<string, Promise<number | undefined>>();
 
 /**
@@ -127,6 +144,7 @@ export async function buildProfile(id: string): Promise<Profile> {
     try {
       const mapped = dp.coverage ? await isMapped(dp.coverage, loaded, address.lng, address.lat) : undefined;
       const reading = dp.read(await findRows(dp.table, dp.find, address.lng, address.lat), address, mapped);
+      if (reading && dp.near && reading.effect === "good") await addNearestZone(dp, reading, address.lng, address.lat);
       results.push(reading ? { dp, reading } : { dp, reason: "noCoverage" });
     } catch (err) {
       // A broken entry must not break the whole profile. Show it as missing and log why.

@@ -1,0 +1,32 @@
+@font-face { font-family: Outfit; src: url(assets/Outfit.ttf); font-display: swap; }
+html { font-size: 16px; }
+body { height: auto; min-height: 100vh; padding: 32px clamp(20px, 5vw, 80px) 48px; font-family: Outfit, system-ui, sans-serif; background: var(--paper); color: var(--ink); }
+main { max-width: 1360px; margin: 0 auto; }
+header, .title-row, .controls, .transport { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+header { margin-bottom: 36px; }
+.brand { display: inline-flex; gap: 12px; align-items: center; text-decoration: none; color: var(--ink); font-size: 28px; font-weight: 600; }
+.brand img { width: 44px; height: 44px; }
+.edition, .title-row > span, footer { color: var(--ink-muted); font-size: 15px; }
+.title-row { margin-bottom: 20px; }
+h1 { font-size: clamp(30px, 3.5vw, 48px); line-height: 1.1; font-weight: 500; margin: 0; letter-spacing: -.03em; }
+video { display: block; width: auto; max-width: 100%; height: auto; max-height: calc(100svh - 240px); margin-inline: auto; aspect-ratio: 16/9; border-radius: 20px; background: var(--paper); box-shadow: var(--shadow); }
+.controls { margin: 18px 0 28px; flex-wrap: wrap; }
+.transport { justify-content: flex-start; gap: 24px; }
+button, select, .download { min-height: 44px; font: inherit; font-size: 16px; }
+button, select { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); padding: 10px 16px; cursor: pointer; }
+button:hover { border-color: var(--teal); }
+button:focus-visible, select:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--orange); outline-offset: 4px; }
+label { color: var(--ink-muted); }
+select { margin-left: 8px; }
+.download { display: inline-flex; align-items: center; padding: 10px 16px; border-radius: 12px; background: var(--teal); color: var(--surface); text-decoration: none; }
+.chapters { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.chapters button { text-align: left; padding: 12px; color: var(--ink-muted); font-size: 13px; background: transparent; }
+.chapters span { display: block; font-size: 15px; color: var(--ink); margin-top: 6px; }
+.chapters button[aria-current="step"] { border-color: var(--teal); background: var(--surface); color: var(--teal); }
+#film-help { font-size: 14px; color: var(--ink-muted); margin: 18px 0 28px; line-height: 1.5; }
+details { border-top: 1px solid var(--line); padding: 20px 0; max-width: 900px; }
+summary { cursor: pointer; color: var(--teal); min-height: 44px; }
+details p { line-height: 1.65; max-width: 75ch; }
+footer { margin-top: 12px; font-size: 13px; }
+@media (max-width: 900px) { .chapters { grid-template-columns: repeat(4, 1fr); } .title-row > span { display: none; } }
+@media (max-width: 540px) { .chapters { grid-template-columns: repeat(2, 1fr); } header { align-items: flex-start; } .edition { max-width: 130px; text-align: right; } .transport { gap: 10px; } body { padding-top: 20px; } }

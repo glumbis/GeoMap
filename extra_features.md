@@ -24,7 +24,7 @@ Suggested order: 2, 3, 8 first (cheap, they spread the product), then 1 (the fir
 
 ## 1. Omnium Rapport: an in-depth PDF about the property (Lukas)
 
-**Status 2026-11-07: first version built** (free): `GET /api/address/<id>/report.pdf`, spec in `docs/REPORT.md`. Built with sections 1–4, 7, 8 and 9 below; area comparison and ideas 6–7 are still to come. Paid version later.
+**Status 2026-11-07: first version built** (free): `GET /api/address/<id>/report.pdf`, spec in `docs/REPORT.md`. Built with sections 1–5, 7, 8 and 9 below (5, area comparison, added 2026-11-07 by Sverre); ideas 6–7 are still to come. Paid version later.
 
 A downloadable report about one address, like a condition report ("tilstandsrapport") for the ground and the surroundings. The address page answers "is this OK?" in 10 seconds; the report is for the person who is about to spend millions and wants everything, on paper, with graphs.
 
@@ -97,7 +97,7 @@ Save addresses and get a mail when something changes: NVE updates a hazard map, 
 Not bugs: small ideas from the simulated user tests and the design review of the web app. The free print version of idea 1 ("Skriv ut" on the address page) and the per-audience tabs ("Hva betyr dette for deg?") are built.
 
 **Address page**
-- **Explain jumps between neighbours.** A pin 15 m from a quick-clay address can score 59 against 13. Show "Utenfor faresone, ca. X m fra nærmeste sone" in the pin popup and on the address page.
+- **Explain jumps between neighbours.** A pin 15 m from a quick-clay address can score 59 against 13. Show "Utenfor faresone, ca. X m fra nærmeste sone" in the pin popup and on the address page. **Address page done 2026-11-07 (Sverre):** hazard data points get `nearestZone` and "ca. X m til nærmeste ..." within 250 m (`docs/PROFILE.md`). Pin popup still open.
 - **Hazard checklist strip** under the score: one chip per hazard with ✓ / ✕ / ? (? in grey for not mapped or missing).
 - **Key-numbers row:** 4 tabular figures, e.g. radon level, road noise in dB, metres to school and to the nearest stop.
 - **Cap explanation:** a small "Hvorfor?" next to the cap line, saying which warning sets the cap.
