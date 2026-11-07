@@ -51,6 +51,11 @@ export async function renderAddress(app: HTMLElement, id: string) {
     ...profile.categories.map((c) => categoryCard(c, profile)),
     sourcesBlock(profile),
   );
+  // Fade the column in, one block after the other (transitions.css).
+  Array.from(panel.children).forEach((el, i) => {
+    el.classList.add("reveal");
+    (el as HTMLElement).style.setProperty("--reveal-i", String(Math.min(i, 8)));
+  });
   showMap(mapEl, a.lng, a.lat);
 }
 

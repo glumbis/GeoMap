@@ -1,0 +1,19 @@
+.kart-map { min-height: 0; }
+.kart-hint {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 0.4rem 0.875rem;
+  background: var(--paper);
+  border: 1px solid var(--rule, var(--ink));
+  color: var(--ink);
+  font-size: 0.8125rem;
+  pointer-events: none;
+  white-space: nowrap;
+  max-width: calc(100% - 2rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,0 +1,33 @@
+/* Page transitions (router.ts) and the fly-in pin (map.ts). */
+
+/* The shared map lives in .map-host and is moved between pages. */
+.map-host.maplibregl-map { position: absolute; inset: 0; }
+
+/* Orange pin: small pop when the flight ends (MapLibre positions the marker itself, so animate the svg). */
+.map-pin.is-drop svg { animation: pin-pop 260ms ease-out both; transform-origin: 50% 100%; }
+@keyframes pin-pop {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Soft cross-fade between pages; the map is excluded so it never flashes. */
+.map-host { view-transition-name: map; }
+::view-transition-group(root) { animation-duration: 250ms; }
+::view-transition-old(map) { display: none; }
+::view-transition-new(map) { animation: none; }
+::view-transition-group(map) { animation: none; }
+
+/* Left column fades in block by block. */
+.panel > .reveal {
+  animation: reveal 260ms ease-out both;
+  animation-delay: calc(var(--reveal-i, 0) * 50ms);
+}
+@keyframes reveal {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-pin.is-drop svg, .panel > .reveal { animation: none; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}
