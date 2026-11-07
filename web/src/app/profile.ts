@@ -44,8 +44,16 @@ export interface Category {
   missing: Missing[];
 }
 
+export interface Perspective {
+  id: string;
+  name: string;
+  question: string;
+  rating: Omit<Rating, "weakestCategory"> & { factors: { dataPointId: string; label: string; weight: number; score: number }[] };
+}
+
 export interface Profile {
   version: number;
+  perspectives?: Perspective[];
   address: {
     id: string;
     text: string;
