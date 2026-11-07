@@ -1,60 +1,93 @@
-# Omnium presentation film
+# Omnium — Se mer. Vit mer.
 
-A Norwegian, 36.5-second, 16:9 motion film. Python is the editable source; it renders
-an H.264 MP4 with an original procedural soundtrack. No browser, online renderer,
-paid service, or reference-video media is needed to render it.
+The current cut is **28 seconds, Norwegian, 1920×1080 at 60 fps**, with an original
+150 BPM synthesized soundtrack. It is 8.5 seconds (23%) shorter than the first cut.
+The film is rendered from Python, and can be regenerated without a browser or API.
 
 ## Run it
 
-From the repository root (Python 3.12+):
+From the repository root, with Python 3.12+:
 
 ```powershell
 python -m pip install --target docs/presentation/.packages -r docs/presentation/requirements.txt
-python docs/presentation/render.py --preview
 python docs/presentation/render.py
+python docs/presentation/serve.py
 ```
 
-Open `docs/presentation/index.html` to play the finished film. Outputs are in
-`docs/presentation/output/` and are ignored by Git. `--width 1280` produces a
-smaller review render; `--fps 60` is available. The default is 1920×1080, 30 fps.
+The player is at `http://127.0.0.1:5184/docs/presentation/index.html`.
+`serve.py` binds only to localhost and implements byte ranges so chapter seeking
+works. It serves presentation media and the two shared brand resources only.
+You can also open `index.html` locally or play the MP4 directly.
 
-Edit `SCENES` for timing, `PAIRS` for the two scrolling columns, and the individual
-scene functions for copy and choreography. Every frame is a deterministic function
-of time, so rendering and storyboard previews use exactly the same animation.
-The font is Outfit (OFL license included); brand colours are read directly from
-`web/src/style.css`. The ring and wordmark come from the logo in the README.
+Fast review commands:
 
-## Story
+```powershell
+python docs/presentation/render.py --preview --width 960
+python docs/presentation/render.py --width 960 --fps 24 --name review-3
+```
 
-| Seconds | Message | Motion |
-|---|---|---|
-| 0–3 | Du ser adressen. Men ser du alt? | Word reveals, ring draw, pin/logo rotation |
-| 3–6 | Omnium. Én adresse. Et større bilde. | Circular reveal into the original logo |
-| 6–10 | Søk. Se. Forstå. | Search field grows into the actual app |
-| 10–14.5 | Oppdag det skjulte. | Map push, enlarged real score and warning |
-| 14.5–18.5 | Mer enn en tomt. | Staggered categories beside the real map |
-| 18.5–22.5 | Fakta. Kilder. Forklart. | Inverted palette, actual explanation panel |
-| 22.5–29.5 | For … / Til … | Paired vertical reels, short holds and fast rolls |
-| 29.5–32.5 | Mange behov. Ett kart. | Category words converge on the logo ring |
-| 32.5–36.5 | Se mer. Vit mer. | Full logo hold, clear geographic scope |
+Use `?cut=review-3` in the player to inspect a named review render. The normal URL
+always loads `output/omnium-v2.mp4`. Widths must be multiples of 32. All generated
+videos, audio, QA frames, and logs stay in the Git-ignored `output/` directory.
+The renderer checks the entire encoded stream before replacing a finished export.
 
-## Capture and reference status
+## Edit the film
 
-- The local map was started and all five demo profile endpoints were checked.
-  Their scores were 20 / 65 / 65 / 75 / 75 on 2026-11-07.
-- **These are the existing screenshots in `docs/demo/`, not fresh captures.**
-  The browser-control tool stopped because it could not confidently determine
-  the browser URL. No alternate browser-control route was used afterward.
-- The screenshots precede the new summary card and hazard-layer work. The film
-  does not simulate hazard polygons or claim that visible map layers were captured.
-  The summary capability is described in editorial text, not a fabricated app view.
-- Fresh screenshots and a visual review of the reference remain follow-up work.
-  The supplied reference was
-  https://www.youtube.com/shorts/RAf6CKpVuRo ; its content could not be inspected.
-  This first cut follows the user's described fast typography, transformations,
-  paired rolling words, and memorable logo treatment; it does not claim to match
-  specific observed shots from the reference.
-- Map attribution remains visible in full screenshots; cropped map shots carry
-  `© Kartverket`. Scores are illustrative results for the named demo addresses.
-- No voiceover is included. The on-screen copy carries the narrative and the
-  synthesized soundtrack supplies the pulse, ticks, and transition sweeps.
+- `render.py`: stable command entry point.
+- `motion.py`: composition, timing, typography, reel pairs, and soundtrack.
+- `WINDOW`: shared shape keyframes; the logo circle becomes the search field,
+  map window, summary panel, reel highlight, and closing logo.
+- `PAIRS`, `REEL_START`, `REEL_STEP`: paired users/use cases, with readable holds
+  between quick vertical rolls. The audio clicks use the same timing constants.
+- `player.css` / `player.js`: player layout, chapter jumps, replay, and speed.
+
+All colours come from `web/src/style.css`; Outfit and its OFL license are bundled.
+The logo mark and wordmark are taken from the original README logo. Bitmap crops
+keep their aspect ratios. Motion is deterministic and render-resolution independent.
+
+## Chapters
+
+| Seconds | Message / action |
+|---|---|
+| 0–2.4 | Én adresse. Hvor mye vet du? |
+| 2.4–4 | Omnium. Alt starter her. |
+| 4–7.2 | Typed address; search field grows into the actual app |
+| 7.2–10.4 | Se risikoen. Camera moves into the actual hazard map |
+| 10.4–13.6 | Se mulighetene. School, transit, nature |
+| 13.6–16.8 | Fakta. Kilder. Forklart. Actual AI summary |
+| 16.8–23.2 | For / Til: seven user–use-case pairs |
+| 23.2–28 | Reel frame contracts into the original logo; Se mer. Vit mer. |
+
+## Review record
+
+1. Reviewed the first cut: long holds, repeated full-frame slides, and small
+   supporting text weakened the pace. Rebuilt around persistent geometry.
+2. Rendered `review-1` at 960×540 / 15 fps. Inspected the storyboard and 24
+   transition samples. Fixed clipped reel headings, accented-word baselines,
+   and the detached logo during the search-field transformation.
+3. Rendered `review-2` at 960×540 / 24 fps. Rechecked temporal strips. Added
+   slow map zooms, removed overlapping logo instances at two handoffs, and
+   preserved the selection panel under the scrolling words.
+4. Rendered the final 1080p / 60 fps export. Full-stream decoding succeeds.
+   Reviewed browser playback; fixed the preview server's byte-range support,
+   verified chapter seeking and speed selection, and constrained the player
+   to fit a laptop viewport. A static text version is available below the video.
+
+## Capture provenance
+
+`assets/captures/` contains fresh, unmodified browser screenshots taken from the
+running map on 2026-11-07, at the browser's default 1280×720 viewport:
+
+- `risk.png`: Arendalsgata 22, actual hazard polygons, warnings, and score 9.
+- `summary.png`: the same address, scrolled to its actual AI-generated summary.
+- `neighborhood.png`: Grevlingåsen 17, actual map and score 63 at capture time.
+
+These are frozen footage assets. The live app and its rating model continue to
+change; the film does not present these example scores as permanent values.
+Map attribution is retained or repeated on cropped map shots. Source details
+are shown inside the actual app screenshots. No hazard geometry was invented.
+
+The supplied [YouTube reference](https://www.youtube.com/shorts/RAf6CKpVuRo) was
+visually inspected in this revision: oversized typography, circular motifs,
+rapid scale changes, and procedural line/dot patterns informed the motion.
+No video frames, music, or other media from that reference are included.
