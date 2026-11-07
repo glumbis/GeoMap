@@ -188,11 +188,18 @@ export const DATA_POINTS: DataPoint[] = [
   },
   {
     id: "rockfall", label: "Steinsprang", category: "hazards", source: "nve-steinsprang", importance: "normal",
-    table: "steinsprang", find: { kind: "within" },
-    read: (rows) =>
-      rows.length
-        ? { value: true, display: "I aktsomhetsområde for steinsprang", effect: "bad", score: 30, warning: { severity: "medium", text: "Aktsomhetsområde for steinsprang" } }
-        : { value: false, display: "Ikke i aktsomhetsområde", effect: "good" },
+    table: "steinsprang", find: { kind: "within" }, // data/scripts/steinsprang.ts (Sverre): zone 'utløsning' (release) | 'utløp' (runout)
+    read: (rows) => {
+      if (!rows.length) return { value: false, display: "Ikke i aktsomhetsområde", effect: "good" };
+      const runout = rows.some((r) => r.zone === "utløp");
+      const release = rows.some((r) => r.zone === "utløsning");
+      const where = runout && release ? "utløsnings- og utløpsområde" : runout ? "utløpsområde" : "utløsningsområde";
+      return {
+        value: true, display: `I aktsomhetsområde for steinsprang (${where})`, effect: "bad", score: 30,
+        warning: { severity: "medium", text: "Aktsomhetsområde for steinsprang" },
+        explanation: "Oversiktskart laget fra terrengmodell: viser hvor steinsprang er mulig, ikke hvor det vil skje.",
+      };
+    },
   },
 
   // Environment.

@@ -61,6 +61,12 @@ Terms for all Kartverket free data: CC BY 4.0, credit "© Kartverket". Details i
   - Columns: `id` (NGU lokalId), `name` (soil type), `losmassetype` (NGU code), `marineClay` (type 41: thick marine clay, where quick clay can occur), `scale`, `source`, `geom`.
   - Checked: #1 thick marine clay (fits its quick clay zone), #2 river deposits, #3 weathered material, #4 fill, #5 bare rock.
   - Licence NLOD, credit "NGU".
+- **NVE Steinsprang aktsomhetsområder** (see Even's entry below for the source) → table `steinsprang`, script `data/scripts/steinsprang.ts`, API `/api/steinsprang` (2026-11-07).
+  - Source: NVE ArcGIS REST `SkredSteinAktR`, layer 1 (utløsningsområde = release) and layer 2 (utløpsområde = runout). Layer 0 is a raster and is skipped.
+  - 2836 areas (1505 release, 1331 runout), quality "Nokså god" (overview map from a terrain model). Outlines simplified to ~2 m.
+  - Columns: `id`, `name`, `zone` ('utløsning' | 'utløp'), `quality`, `source`, `geom`.
+  - Checked: none of the 5 test addresses is in an area (nearest: #3, ~500 m). 6 random sample points all match NVE. A real hit: Ringeriksveien 284, Bærum (`3201-1002-284`) is in a runout area, confirmed against NVE.
+  - Licence NLOD, credit "NVE".
 
 - **Name:** Eiendom REST-API (property lookup)
   - Owner: Kartverket

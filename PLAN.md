@@ -81,7 +81,7 @@ Each role lists: what you own, your tasks in order, and when a task is done.
 
 1. **Agree the table shape with Lukas** (first hour): every table has `geom` (EPSG:4326), `name`, `source`, plus the columns the profile needs (e.g. `faregrad` for hazard zones). Proposed table and column names are already in `api/src/datapoints.ts` (`kvikkleire.faregrad`, `flomsoner.gjentaksintervall`, `steinsprang`, `losmasser.jordart`, `radon.aktsomhet`, `veistoy.stoysone`, ...). Use them, or change the entry to match your table.
 2. **NVE hazard zones first** (quick clay, flood, landslide/rockfall/avalanche). These make the demo. Test addresses #1 and #2 must fall inside the right zones.
-   ~~Quick clay~~ done (`nve_kvikkleire`, `/api/nve_kvikkleire`, #1 checked). ~~Flood~~ done (`flomsoner`, `/api/flomsoner`, #2 checked). Next: landslide/rockfall/avalanche.
+   ~~Quick clay~~ done (`nve_kvikkleire`, `/api/nve_kvikkleire`, #1 checked). ~~Flood~~ done (`flomsoner`, `/api/flomsoner`, #2 checked). ~~Rockfall~~ done (`steinsprang`). Next: debris slides (jord- og flomskred), avalanche.
 3. **NGU ground data:** soil type (løsmasser), radon risk, bedrock.
    ~~Radon~~ done (`radon`). ~~Soil type~~ done (`losmasser`, NGU "lokalt"). Bedrock not started.
 4. **Addresses and buildings** (Kartverket), if the profile needs them beyond the Geonorge address API.
