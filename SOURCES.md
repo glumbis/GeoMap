@@ -654,6 +654,24 @@ New datasets that would make the profile better. URLs, table numbers and licence
 
 Already in this file (not repeated): NADAG, NILU luftkvalitet, PVGIS (sun), Naturbase, kulturminner, stormflo og havnivå. Rechecks worth doing: Enova energiattester and Nkom bredbånd (both "no open download" below, but may have an API on request), and reguleringsplaner through the municipalities' own map services.
 
+### More ideas (2026-11-07 evening)
+Endpoints marked "responds" were called on 2026-11-07; licences still need a check. Sorted by priority.
+
+- **Skredhendelser (historic landslides, rockfalls, avalanches)**: NVE ArcGIS REST `Skredhendelser2` (responds, keyless). Registered slide events with date and type. "Det har gått 2 skred innen 500 m siden 1950" is the history the hazard maps lack. Category: hazards. Priority: high.
+- **Fartsgrense i gata**: Statens vegvesen NVDB object type 105 (responds; reuse `data/scripts/nvdb.ts`). Speed limit on the nearest road: 30 vs 60 km/t matters to families. Category: location. Priority: high.
+- **Farlig stoff-anlegg**: DSB, Geonorge "Farlig stoff-anlegg" (REST, responds). Sites storing flammable, explosive or pressurised substances (gas stations, tank farms, industry). Distance to the nearest one. Category: environment. Priority: high.
+- **Høyde over havet og helning**: Kartverket `ws.geonorge.no/hoydedata/v1/punkt` (responds, keyless, DTM 1 m). Elevation per point (Arendalsgata 22: 70.7 m). Context for storm surge, sea-level rise and flood; slope from 4 nearby points. Not a table: needs a point lookup in the profile (ask Lukas). Category: ground. Priority: medium.
+- **Arealbruk rundt adressen (AR5/AR50)**: NIBIO, Geonorge "Arealressurskart" (FKB-AR5 detailed, AR50 coarse). Share of forest, farmland and built-up land within 500 m: "hvor grønt er det her". Category: nature. Priority: medium.
+- **Tilfluktsrom**: DSB, Geonorge "Tilfluktsrom - Offentlige" (download, responds). Nearest public shelter and its capacity. Topical in 2026. Category: area. Priority: medium.
+- **Brannstasjoner**: DSB, Geonorge "Brannstasjoner" (download, responds). Distance to the nearest fire station: response time, and it can affect insurance. Category: location. Priority: medium.
+- **Barnehagefakta**: Udir, `barnehagefakta.no/api` (returned 500 on 2026-11-07, check again). Children per adult, share of pedagogues and parent satisfaction for the nearest kindergarten, like `schoolBullying`. Category: location. Priority: medium.
+- **Lekeplasser og idrettsanlegg**: OpenStreetMap (`leisure=playground`, `leisure=pitch|sports_centre`), same Overpass setup as `tjenester.ts`. Nearest playground and sports facility. Category: nature. Priority: medium.
+- **Avstand til sjø og badeplass**: Kartverket N50 kystkontur, OSM `leisure=beach_resort` / `natural=beach`. Category: nature. Priority: low.
+- **Fjernvarme-konsesjonsområder**: NVE / Geonorge (only some municipalities on Geonorge so far). Inside a district-heating area, new buildings can be required to connect. Category: area. Priority: low.
+- **Utdanning, byggeår og boligtyper per grunnkrets**: SSB (per grunnkrets / delområde; the kommune versions are in `ssb_kommuner`, texts ready in `docs/TEXTS.md`). Category: area. Priority: low.
+
+Not usable now: **NILU luftkvalitet** (`api.nilu.no` returned 401 on 2026-11-07: needs a key now).
+
 ### Checked, not usable now
 - **Reguleringsplaner** (zoning plans, DiBK): Norge digitalt-lisens, not open data. WMS picture only, cannot be stored or scored. https://kartkatalog.geonorge.no/metadata/reguleringsplaner/dac27348-5c2e-4a6a-9497-c4c792108cae
 - **Bredbåndsdekning** (Nkom): no open download found (Geonorge only has Agder).
