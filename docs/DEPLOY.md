@@ -13,6 +13,16 @@ docker run -p 3000:3000 ghcr.io/glumbis/geomap
 Open http://localhost:3000. No Node, no ingest, no keys needed.
 Optional: AI summaries with `-e ANTHROPIC_API_KEY=...` (without it the page shows the plain fact sentences).
 
+## Live site
+
+**https://omnium-e7ps.onrender.com** (Render free plan, Frankfurt, set up from `render.yaml`).
+- Sleeps after 15 minutes without visitors; the first visit after that takes about a minute.
+- **PDF report does not work there yet:** 512 MB is too little for Chromium next to the database, and a PDF
+  request restarts the instance (the site is back after ~30 s). Everything else works.
+- New image -> new deploy: GitHub calls Render's deploy hook after each build, once the hook is saved as the
+  repo secret `RENDER_DEPLOY_HOOK` (Render: omnium -> Settings -> Deploy Hook; GitHub: repo -> Settings ->
+  Secrets and variables -> Actions). Until then: Render -> omnium -> Manual Deploy.
+
 ## Put it on the internet
 
 Any host that runs a Docker image works. Point it at `ghcr.io/glumbis/geomap:latest`, port `3000`
