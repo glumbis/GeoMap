@@ -2,7 +2,25 @@
 
 Hackathon web map: all public info about any property in Norway (start: Oslo + Akershus). Search an address, see data, stats and a rating.
 See `PLAN.md` for product, roles and rating. Collect data sources in `SOURCES.md`.
-4 people, each working with coding agents. Speed over polish. The repo starts empty on purpose.
+4 people, each working with coding agents. Speed over polish.
+
+## Run it
+Needs Node 22+. From the repo root:
+```bash
+npm install                 # once, and after pulling new dependencies
+npm run ingest              # build data/geomap.duckdb from every script in data/scripts/ (or: npm run ingest kommuner)
+npm run dev                 # API on :3000 + web on http://localhost:5173 (open this)
+```
+- `npm run typecheck` checks api + web. `npm run build` builds the web app to `web/dist/`.
+- Stop `npm run dev` before running an ingest: DuckDB lets only one process write the file.
+- AI summaries need `ANTHROPIC_API_KEY` in `.env` (copy `.env.example`). Everything else runs without keys.
+- Check the API: `http://localhost:5173/api/health` lists loaded tables.
+- In the browser console (dev only), `map` is the MapLibre map.
+
+## Add things (no shared file to edit)
+- **Dataset:** `data/scripts/<name>.ts` (copy `kommuner.ts`). Helpers in `data/scripts/lib.ts`: `download`, `getJson`, `rawPath`. Use `conn` from `api/src/db.ts`. Clip to Oslo + Akershus with `WHERE ST_Intersects(geom, (SELECT ST_Union_Agg(geom) FROM kommuner))`.
+- **Endpoint:** `api/src/routes/<name>.ts` exporting a Hono app is auto-mounted at `/api/<name>`. For a map layer, one line: `export default new Hono().get("/", (c) => layer(c, "<table>"));` (`api/src/geojson.ts` handles bbox, q, limit and GeoJSON). Throw `HTTPException` for JSON errors.
+- **Map feature:** `web/src/features/<name>.ts` exporting `default function (map: Map)` is auto-loaded after the map loads (copy `kommuner.ts`).
 
 ## Stack
 - TypeScript everywhere. Node 22+.
@@ -21,13 +39,15 @@ web/                 frontend
   src/main.ts        map setup + Kartverket basemap
   src/features/      one file per feature: export default function (map: Map)
 api/                 backend
-  src/index.ts       Hono app, registers routes
+  src/index.ts       Hono app, auto-mounts every file in src/routes/, JSON errors
   src/routes/        one file per dataset/endpoint
-  src/db.ts          shared DuckDB connection (opens data/geomap.duckdb)
+  src/db.ts          shared DuckDB connection (opens data/geomap.duckdb), query() helper
+  src/geojson.ts     layer(): standard bbox/q/limit GeoJSON endpoint for a table
 docs/
   PROFILE.md         standard for the address profile (read before touching rating, profile or the address panel)
 data/
   scripts/           one ingest script per dataset: download -> data/raw/ -> table in geomap.duckdb
+                     (run.ts runs them, lib.ts has helpers)
   raw/               downloaded files (gitignored)
   geomap.duckdb      built database (gitignored)
 ```
@@ -56,7 +76,7 @@ data/
 - Small commits. `git pull --rebase` before `git push`. Push straight to `main`.
 - Never commit API keys. Prefer free, keyless Norwegian open data.
 - Keep it simple: add a dependency only if it saves real work.
-- Put the commands to run the project in this file once they exist.
+- Keep "Run it" above up to date when commands change.
 
 ## Norwegian geodata (free, CORS-enabled, no key)
 - Kartverket tiles: `https://cache.kartverket.no/v1/wmts/1.0.0/{layer}/default/webmercator/{z}/{y}/{x}.png` (layers: `topo`, `topograatone`, `toporaster`, `sjokartraster`). Attribution: "© Kartverket".
