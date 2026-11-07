@@ -46,7 +46,7 @@ h1, h2, .address-title, .card-title, .ai-title, .start-logo span, .overall-word,
 .start-tagline { font-size: 1rem; max-width: 40rem; }
 
 /* Top bar: a masthead with a heavy rule */
-.topbar { background: var(--paper); border-bottom: 2px solid var(--rule); }
+.topbar { background: var(--paper); border-bottom: 1px solid var(--line); }
 .topbar-logo { font-family: var(--serif); font-weight: 700; font-size: 1.375rem; color: var(--ink); }
 .topbar-logo img { width: 2rem; height: 2rem; }
 .search--compact .search-input { padding: 0.5rem 0.875rem; }
@@ -57,33 +57,30 @@ h1, h2, .address-title, .card-title, .ai-title, .start-logo span, .overall-word,
 .address-sub { margin-top: -0.5rem; font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.06em; }
 .summary { gap: 1rem; margin-bottom: 0.5rem; }
 
-/* Rating: big serif figure on a heavy rule instead of a ring */
-.overall { background: none; box-shadow: none; border-radius: 0; padding: 1rem 0; border-top: 3px solid var(--rule); border-bottom: 1px solid var(--line); align-items: flex-start; gap: 1.25rem; }
+/* Rating: big serif figure, no ring, no rules: whitespace separates it */
+.overall { background: none; box-shadow: none; border-radius: 0; padding: 0.5rem 0 0; align-items: flex-start; gap: 1.25rem; }
 .ring { width: auto; height: auto; }
 .ring svg { display: none; }
 .ring-number { position: static; display: block; font-family: var(--serif); font-size: 5rem; line-height: 0.9; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 .ring-number::after { content: "/100"; font-family: var(--font); font-size: 0.875rem; font-weight: 500; letter-spacing: 0; color: var(--ink-muted); margin-left: 0.25rem; }
-.overall-text { gap: 0.375rem; padding-top: 0.25rem; }
-.overall-word { font-size: 1.375rem; color: var(--ink); line-height: 1.2; }
-.overall-weakest, .overall-coverage { font-size: 0.875rem; color: var(--ink-muted); }
-.overall-weakest strong { color: var(--ink); font-variant-numeric: tabular-nums; }
-.overall-cap { color: var(--bad-text); font-size: 0.875rem; font-weight: 500; }
+.overall-text { gap: 0.25rem; padding-top: 0.25rem; }
+.overall-word { font-size: 1.625rem; font-weight: 700; color: var(--ink); line-height: 1.15; }
+.overall-meaning, .overall-why { font-size: 1rem; line-height: 1.4; color: var(--ink); }
+.overall-coverage { margin-top: 0.25rem !important; font-size: 0.8125rem; color: var(--ink-muted); }
 
-/* Warnings: ruled list with a severity bar */
-.warnings { gap: 0; margin-top: 0.25rem; border-top: 1px solid var(--line); }
-.warning { border: 0; border-bottom: 1px solid var(--line); border-left: 4px solid var(--ink-muted); border-radius: 0; background: none; padding: 0.75rem 0.5rem 0.75rem 0.75rem; align-items: baseline; }
-.warning:hover { background: var(--hover); border-color: var(--line); border-left-color: var(--ink); }
-.warning--high { border-left-color: var(--bad); }
-.warning--medium { border-left-color: var(--warn); }
-.warning--low { border-left-color: var(--ink-muted); }
-.warning .dot { display: none; }
-.warning-sev { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; min-width: 4.5rem; }
+/* Warnings: a plain list, a coloured dot and the severity word per row, no rules */
+.warnings { gap: 0; margin-top: 0.25rem; }
+.warning { border: 0; border-radius: 0; background: none; padding: 0.375rem 0; align-items: baseline; }
+.warning:hover { background: none; }
+.warning:hover .warning-text { text-decoration: underline; text-underline-offset: 0.2em; }
+.warning .dot { border-radius: 50%; }
+.warning-sev { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; min-width: 4.25rem; }
 .warning--high .warning-sev { color: var(--bad-text); }
 .warning--medium .warning-sev { color: var(--warn-text); }
 .warning-text { line-height: 1.35; }
 
 /* Summary: an editorial standfirst, not a card */
-.ai { background: none; box-shadow: none; border-radius: 0; padding: 0.25rem 0 1rem 1rem; margin: 0.75rem 0 1.25rem; border-left: 3px solid var(--teal); gap: 0.5rem; }
+.ai { background: none; box-shadow: none; border-radius: 0; padding: 0; margin: 0; gap: 0.5rem; }
 .ai-title { font-size: 0.8125rem; font-family: var(--font); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; color: var(--ink-muted); }
 .ai-badge { border-radius: 2px; background: none; border: 1px solid var(--ink-muted); color: var(--ink); font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.0625rem 0.4rem; }
 .ai-text { font-family: var(--serif); font-size: 1.0625rem; line-height: 1.55; }
@@ -92,8 +89,8 @@ h1, h2, .address-title, .card-title, .ai-title, .start-logo span, .overall-word,
 .sk { border-radius: 2px; }
 
 /* Category cards become an index of ruled rows */
-.card { background: none; box-shadow: none; border-radius: 0; border-top: 1px solid var(--ink); }
-.card:last-of-type { border-bottom: 1px solid var(--ink); }
+.card { background: none; box-shadow: none; border-radius: 0; border-top: 1px solid var(--line); }
+.card:last-of-type { border-bottom: 1px solid var(--line); }
 .card-head { padding: 0.875rem 0; gap: 0.625rem; }
 .card-title { font-size: 1.1875rem; font-weight: 600; }
 .card-count { font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
@@ -112,7 +109,7 @@ h1, h2, .address-title, .card-title, .ai-title, .start-logo span, .overall-word,
 .dot { width: 0.5rem; height: 0.5rem; border-radius: 0; transform: translateY(-0.0625rem); }
 .dot--missing { background: none; border: 0.125rem solid var(--unknown); }
 
-.sources { border-top: 3px solid var(--rule); padding-top: 0.75rem; }
+.sources { border-top: 0; padding-top: 0; }
 .sources h2 { font-family: var(--serif); font-size: 1.125rem; }
 .btn { border-radius: 2px; background: var(--ink); }
 .map .maplibregl-ctrl-group { border-radius: 2px; box-shadow: none; border: 1px solid var(--ink); }

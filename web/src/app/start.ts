@@ -79,15 +79,15 @@ const USES: [string, string][] = [
   ["studenter", "å finne et rolig sted"],
   ["huseiere", "å måle radon i tide"],
 ];
-const ROLL_ITEMS = 12; // words that scroll past before it stops
-const ROLL_MS = 1300; // one roll: fast at first, easing to a stop
+const ROLL_ITEMS = 28; // words that scroll past before it stops
+const ROLL_MS = 1100; // one roll: a fast, blurred spin that overshoots and snaps back onto the pair
 const HOLD_MS = 2600; // how long a pair stays
 
 /**
  * The line sits between the logo and the field. The static words are in their own grid column, right-aligned against
  * the centre, and the changing words start at the centre, so nothing shifts sideways as the words change.
- * The changing words scroll up like a slot machine: a column of words slides past in one eased transition and stops
- * on the next pair. It fades out (keeping its space, so nothing moves) while the field has text.
+ * The changing words spin up like a slot machine: a long column of words races past, motion-blurred, overshoots a
+ * little and snaps back onto the next pair, sharp. It fades out (keeping its space, so nothing moves) while the field has text.
  */
 function usesLine(search: HTMLElement): HTMLElement {
   const whoSlot = h("span", { class: "uses-slot", "aria-hidden": "true" });
@@ -105,14 +105,22 @@ function usesLine(search: HTMLElement): HTMLElement {
   whoSlot.append(track([USES[0][0]]));
   whatSlot.append(track([USES[0][1]]));
 
-  /** Scroll a slot from its current word through `fill` to `to`. Both slots get the same pairs, so every row reads right. */
-  const roll = (slot: HTMLElement, part: 0 | 1, fill: number[], to: string, delay: number) => {
+  /** Spin a slot from its current word through `fill` to `to`. Both slots get the same pairs, so every row reads right. */
+  const roll = (slot: HTMLElement, part: 0 | 1, fill: number[], to: string) => {
     const from = slot.textContent ?? "";
-    const t = track([from, ...fill.map((k) => USES[k][part]), to]);
+    const t = track([from, ...fill.map((k) => USES[k][part]), to, USES[fill[0]][part]]); // one word past "to" shows in the overshoot
     slot.replaceChildren(t);
-    t.style.transition = `transform ${ROLL_MS}ms cubic-bezier(0.15, 0.6, 0.2, 1) ${delay}ms`;
-    t.addEventListener("transitionend", () => slot.replaceChildren(track([to])), { once: true });
-    requestAnimationFrame(() => requestAnimationFrame(() => (t.style.transform = `translateY(${-(ROLL_ITEMS - 1) * 1.5}em)`)));
+    const end = (ROLL_ITEMS - 1) * 1.5; // em; each word is 1.5em tall
+    t.animate(
+      [
+        { transform: "translateY(0)", filter: "blur(0)", easing: "cubic-bezier(0.5, 0, 0.9, 0.6)" },
+        { transform: `translateY(-3em)`, filter: "blur(3px)", offset: 0.12, easing: "cubic-bezier(0.1, 0.5, 0.3, 1)" },
+        { transform: `translateY(${-end - 0.35}em)`, filter: "blur(0.5px)", offset: 0.82, easing: "ease-out" },
+        { transform: `translateY(${-end + 0.08}em)`, filter: "blur(0)", offset: 0.93, easing: "ease-in-out" },
+        { transform: `translateY(${-end}em)`, filter: "blur(0)" },
+      ],
+      { duration: ROLL_MS, fill: "forwards" },
+    ).finished.then(() => slot.replaceChildren(track([to])), () => {});
   };
 
   const input = search.querySelector("input");
@@ -126,8 +134,8 @@ function usesLine(search: HTMLElement): HTMLElement {
       if (!document.hidden && !line.classList.contains("is-hidden")) {
         i = (i + 1) % USES.length;
         const fill = Array.from({ length: ROLL_ITEMS - 2 }, () => Math.floor(Math.random() * USES.length));
-        roll(whoSlot, 0, fill, USES[i][0], 0);
-        roll(whatSlot, 1, fill, USES[i][1], 0);
+        roll(whoSlot, 0, fill, USES[i][0]);
+        roll(whatSlot, 1, fill, USES[i][1]);
       }
       window.setTimeout(step, ROLL_MS + HOLD_MS);
     };
