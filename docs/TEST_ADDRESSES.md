@@ -19,8 +19,8 @@ The id is the address id from `docs/PROFILE.md` (`<kommunenummer>-<adressekode>-
 
 | Case | Address | Id | Kommune (nr) | lat | lng | Expected result |
 |---|---|---|---|---|---|---|
-| Quick clay | Kjelsåsveien 162, 0491 Oslo | `0301-13747-162` | Oslo (0301) | 59.965764 | 10.776008 | Quick clay zone "Kjelsås", faregrad Middels. App on 2026-11-07: overall 64, warnings quick clay (middels), høy radon, strategic noise 55–60 dB |
-| Flood zone | Strandvegen 81, 2005 Rælingen | `3224-11700-81` | Rælingen (3224) | 59.947770 | 11.047739 | Inside 200-year flood zone `fs002_37`, and also inside the **20-year** flood zone (NVE `Flomsoner2` layer 14, checked 2026-11-07). The app shows only "I 20-årsflomsone": the most frequent zone wins. Overall 31 (a 20-year flood zone is a high warning since 2026-11-07, TEK17 §7-2). Also inside a yellow road noise zone (checked 2026-11-07) |
+| Quick clay | Kjelsåsveien 162, 0491 Oslo | `0301-13747-162` | Oslo (0301) | 59.965764 | 10.776008 | Quick clay zone "Kjelsås", faregrad Middels. App on 2026-11-07 afternoon: overall 47, warnings quick clay (middels), høy radon, strategic noise 55–60 dB, plus low warnings for marine clay, quick-clay and flood awareness areas and polluted ground |
+| Flood zone | Strandvegen 81, 2005 Rælingen | `3224-11700-81` | Rælingen (3224) | 59.947770 | 11.047739 | Inside 200-year flood zone `fs002_37`, and also inside the **20-year** flood zone (NVE `Flomsoner2` layer 14, checked 2026-11-07). The app shows only "I 20-årsflomsone": the most frequent zone wins. Overall 32 on 2026-11-07 afternoon (a 20-year flood zone is a high warning since 2026-11-07, TEK17 §7-2). Also inside a yellow road noise zone (checked 2026-11-07) |
 
 ## Source endpoints used
 
@@ -65,8 +65,9 @@ Radon checked against NGU's map service **`RadonUranAktsomhetWMS`**, layer `Rado
 - Ski tracks at #5: Turrutebasen (`turruter`) has a trail 45 m away but the nearest ski track 1.2 km away (TRY-løypa). Turrutebasen lacks most Nordmarka ski tracks, so this does not show the ski area well.
 - Polluted ground (`grunnforurensning`) on 2026-11-07: #1 has a registered site 17 m away ("Arendalsgata 3-22", påvirkningsgrad 2: acceptable with today's use). The others have none within 100 m.
 - Radon and soil type (from Sverre's `radon` and `losmasser`) on 2026-11-07: #1 meget høy radon, marine clay (hav- og fjordavsetning). #2 middels radon, fluvial deposit. #3 meget høy radon. #4 høy radon, fill (fyllmasse). #5 høy radon, bare rock. **Checked against NGU on 2026-11-07: all 5 match** for both radon and soil type (see "Radon and soil checked against NGU" below).
-- Overall rating on 2026-11-07 (after Lukas's soft caps: a capped score is scaled into the cap, not cut at it): #1 13, #2 49, #3 49, #4 67, #5 63. Backups: Kjelsåsveien 162 46, Strandvegen 81 31.
-- Perspective scores on 2026-11-07 (Bo her / Bygge her / Familie / Pendler): #1 13/14/13/100, #2 45/61/46/89, #3 41/62/39/100, #4 64/63/67/91, #5 58/63/53/80. Backups: Kjelsåsveien 162 47/35/48/100, Strandvegen 81 29/31/30/81.
+- Overall rating on 2026-11-07 afternoon (soft caps, plus Sverre's new datasets and Lukas's perspective weights): #1 14, #2 51, #3 52, #4 60, #5 61. Backups: Kjelsåsveien 162 47, Strandvegen 81 32. #4 fell from 67 because it lies in NVE's quick-clay awareness area (low warning); #5 is now slightly above #4 because #4 has that extra warning.
+- Perspective scores on 2026-11-07 afternoon (Bo her / Bygge her / Familie / Pendler): #1 15/15/16/100, #2 50/56/52/89, #3 49/67/47/100, #4 64/59/66/91, #5 56/68/52/80. Backups: Kjelsåsveien 162 52/35/54/100, Strandvegen 81 32/29/34/81.
+- New low warnings on 2026-11-07 afternoon: quick-clay awareness area for #1, #2, #4 and both backups; flood awareness area for #2 and both backups.
 - NVE mapping coverage (`nve_kartlagt`) on 2026-11-07: #3, #4 and #5 are outside both NVE's quick-clay and flood mapping ("Ikke kartlagt her"). #1 is inside the quick-clay mapping but outside the flood mapping. #2 and Strandvegen 81 are inside both.
 - Storm surge (Sverre's `stormflo`) on 2026-11-07: none of the 5 addresses or the backups is in a storm-surge zone.
 - Busiest stop within 500 m (`transitDepartures`): #1 Sagene 1154, #2 Lillestrøm stasjon 363, #3 Sandvika stasjon 444, #4 Jegeråsen 161 (212 m), #5 Frognerseteren 76.
@@ -77,6 +78,6 @@ Radon checked against NGU's map service **`RadonUranAktsomhetWMS`**, layer `Rado
 
 ## How to use
 
-- **Profile / rating:** each address should show the expected result above. #4 should score best on hazards and noise.
+- **Profile / rating:** each address should show the expected result above. #4 and #5 should score best on hazards (#5 Naturfare 100; #4 92 since 2026-11-07 afternoon because of its quick-clay awareness area) and #4 on noise (Miljø 100).
 - **AI summary:** read the summary for each address. It must mention the hazard for #1–#3 and must **not** invent hazards for #4 and #5.
 - **Demo:** #1 against #4 makes a clear contrast.

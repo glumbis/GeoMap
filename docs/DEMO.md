@@ -12,11 +12,11 @@ Two homes, both in Bærum/Oslo, both near a bus and a school. On paper they look
 
 | Role | Address | Id | What it shows |
 |---|---|---|---|
-| Start: the calm case | Grevlingåsen 17, 1362 Hosle | `3201-1574-17` | Overall **67**, held down a little by one warning: høy radonaktsomhet (Grunn og geologi 33, the weakest category). Naturfare 100: no rockfall, debris-slide, avalanche or storm-surge area, no noise zone. NVE has not mapped quick clay or flood here, so both show "Ikke kartlagt her" (neutral, not scored). Busiest stop within 500 m: Jegeråsen, 212 m, 161 departures a weekday. School 256 m, kindergarten 226 m. Perspectives: Bo her 64, Bygge her 65, Familie 67, Pendler 91. |
-| Contrast: the hidden risk | Arendalsgata 22, 0463 Oslo | `0301-10223-22` | Overall **13**, held down by three serious warnings: quick-clay zone with faregrad **høy** (NVE), meget høy radonaktsomhet and road noise 65–70 dB. Also marine clay and a polluted-ground site 17 m away. Naturfare 24. Nearest stop 31 m, kindergarten 40 m, school 146 m. Busiest stop within 500 m: Sagene, 1154 departures. Perspectives: Bo her 13, Bygge her 15, Familie 13, **Pendler 100**. |
-| Backup / extra | Nedre Rælingsveg 148, 2005 Rælingen | `3224-8900-148` | Overall 49. Two warnings: 200-year flood zone and red road noise zone. Perspectives: Bo her 46, Bygge her 62, Familie 46, Pendler 89. |
+| Start: the calm case | Grevlingåsen 17, 1362 Hosle | `3201-1574-17` | Overall **60**, capped by one warning: høy radonaktsomhet (Grunn og geologi 31, the weakest category). One smaller warning ("Merk"): it lies in NVE's coarse **aktsomhetsområde for kvikkleireskred**, so the ground should be checked before building; NGU says "Ofte marin leire". It is *not* in a quick-clay hazard zone: NVE has made no hazard-zone map for quick clay or flood here, so both show "Ikke kartlagt her" (neutral, not scored). Naturfare 92: no flood-awareness, rockfall, debris-slide, avalanche or storm-surge area; no road, rail or aircraft noise zone. Busiest stop within 500 m: Jegeråsen, 212 m, 161 departures a weekday. School 256 m, kindergarten 226 m, Kiwi Hosle 519 m. Neighbourhood: Hosle nord 06, 220 people. Perspectives: Bo her 64, Bygge her 59, Familie 66, Pendler 91. |
+| Contrast: the hidden risk | Arendalsgata 22, 0463 Oslo | `0301-10223-22` | Overall **14**, held down by three serious warnings: quick-clay zone "Myraløkka" with faregrad **høy** (NVE), meget høy radonaktsomhet and road noise 65–70 dB. Smaller warnings: marine clay ("Svært ofte marin leire"), quick-clay awareness area, a polluted-ground site 17 m away. Naturfare 24. Nearest stop 31 m, kindergarten 40 m, school 146 m, Extra Bjølsen 92 m, pharmacy 167 m. Busiest stop within 500 m: Sagene, 1154 departures. Perspectives: Bo her 15, Bygge her 15, Familie 16, **Pendler 100**. |
+| Backup / extra | Nedre Rælingsveg 148, 2005 Rælingen | `3224-8900-148` | Overall 51. Two serious warnings: 200-year flood zone and red road noise zone; smaller: flood and quick-clay awareness areas. Perspectives: Bo her 50, Bygge her 56, Familie 52, Pendler 89. |
 
-Numbers above are from the profile on 2026-11-07, after Lukas's soft caps and perspective scores. Check them again before the demo (see checklist): they change when data or the rating changes.
+Numbers above are from the profile on 2026-11-07 (afternoon), after Sverre's new datasets (quick-clay and flood awareness, marine clay, rail and aircraft noise, shops, pharmacies, doctors, grunnkrets population) and Lukas's perspective weights. Check them again before the demo (see checklist): they change when data or the rating changes.
 
 ## Pitch (about 3 minutes)
 
@@ -32,7 +32,7 @@ Times are a guide. Bold = what you click or show.
 
 **0:45–1:30 — Det rolige eksempelet: Grevlingåsen 17**
 **Type "Grevlingåsen 17", pick the one in 1362 Hosle.** There is also a Grevlingåsen 17 in 1386 Asker: don't pick that one.
-> Her er et vanlig hus på Hosle i Bærum. Samlet karakter 67. Det ligger ikke i aktsomhetsområder for skred og ikke i støysone. Kvikkleire og flom har NVE ikke kartlagt her, og det står rett ut på siden. Den eneste advarselen er høy aktsomhet for radon. Nærmeste skole er 256 meter unna i luftlinje, og fra Jegeråsen, 212 meter unna, går det 161 avganger på en vanlig hverdag.
+> Her er et vanlig hus på Hosle i Bærum. Samlet karakter 60. Det ligger ikke i støysone, og ikke i aktsomhetsområder for flom eller steinsprang. Faresoner for kvikkleire har NVE ikke laget her, og det står rett ut på siden. Men NVE sitt grovere aktsomhetskart sier at kvikkleireskred er mulig i området, så grunnen bør sjekkes før man bygger. Den viktigste advarselen er høy aktsomhet for radon. Skolen er 256 meter unna, og fra Jegeråsen, 212 meter unna, går det 161 avganger på en hverdag.
 **Point at the category cards, then open one data point to show its source and explanation.**
 > Alt vi viser har en kilde. Og vi forklarer hva det betyr for den som bor der.
 
@@ -41,13 +41,13 @@ Times are a guide. Bold = what you click or show.
 > Så ser vi en adresse på Sagene i Oslo. Enda nærmere buss og skole. Men øverst ser du advarsler, den alvorligste først: eiendommen ligger i en faresone for kvikkleireskred med høy faregrad, fra NVE. I tillegg meget høy aktsomhet for radon, veistøy på 65–70 dB og et registrert sted med mulig forurenset grunn i nærheten.
 **Point at the warnings and the low Naturfare score, then at the red quick-clay zone around the pin on the map (screenshot 5).**
 **Point at the score and the warnings listed under it.**
-> Samlet karakter faller fra 67 til 13, og naturfare fra 100 til 24. Og siden sier hvorfor: kvikkleiren, radon og støy holder karakteren nede. Den alvorligste risikoen står alltid først, og den kan ikke gjemmes i et snitt.
+> Samlet karakter faller fra 60 til 14, og naturfare fra 92 til 24. Og siden sier hvorfor: kvikkleiren, radon og støy holder karakteren nede. Den alvorligste risikoen står alltid først, og den kan ikke gjemmes i et snitt.
 > Og Arendalsgata er ikke alene: over 4 200 adresser i Oslo og Akershus ligger i en faresone for kvikkleireskred med høy eller middels faregrad, 433 av dem med høy faregrad.
 
 Where the number comes from (Sverre, 2026-11-07): all 362 241 street addresses in Oslo + Akershus (Kartverket, Matrikkelen Adresse) checked against our `nve_kvikkleire` table, each address counted once under its worst faregrad: 433 høy + 3 842 middels = 4 275, about 1 in 85. Say "adresser", never "boliger" or "hus".
 
-**Only if the perspective cards are on the page (Erik, `PLAN.md` item 8):** point at them on Arendalsgata and add:
-> Og svaret avhenger av hvem du er. For en pendler får adressen 100. For å bo her får den 13.
+**Optional (the "Hva betyr dette for deg?" tabs are on the page):** on Arendalsgata, click the **Pendler** tab, then **Bo her**, and add:
+> Og svaret avhenger av hvem du er. For en pendler får adressen 100. For å bo her får den 15.
 
 **2:15–2:40 — Ærlighet om data**
 **Open Miljø on Grevlingåsen: "Veistøy (strategisk støykart)" shows "Ikke tilgjengelig" (screenshot 3).**
@@ -66,21 +66,21 @@ What the pitch needs, and who it depends on. Update this as things land.
 
 | Needed for the pitch | Status 2026-11-07 (checked in the app) | Owner |
 |---|---|---|
-| Profile data for both addresses (quick clay, flood, noise, polluted ground, stops, schools, kindergartens, trails, SSB) | Works | Sverre, Even, Lukas |
+| Profile data for both addresses (quick clay incl. awareness areas and marine clay, flood incl. awareness areas, road/rail/aircraft noise, polluted ground, stops, schools, kindergartens, shops, pharmacies, doctors, trails, grunnkrets population, SSB) | Works (36 data points) | Sverre, Even, Lukas |
 | Start page with address search | Works. Search shows two Grevlingåsen 17: pick 1362 Hosle | Erik |
 | Address page: warnings, category cards, data points with source | Works | Erik |
 | "Ikke tilgjengelig" for missing data | Works (e.g. "Veistøy (strategisk støykart)" under Miljø on Grevlingåsen) | Erik |
 | Quick-clay zone visible on the map | Works: quick-clay and flood zones on the address map, on by default, with a "Kartlag" panel | Erik |
-| Overall rating (a number) | Works: Grevlingåsen 67, Arendalsgata 13 (soft caps: a capped score is scaled into the cap, see `docs/PROFILE.md`) | Lukas |
-| Perspective scores (Bo her, Bygge her, Familie, Pendler) | In the profile. Not on the page yet | Erik |
+| Overall rating (a number) | Works: Grevlingåsen 60, Arendalsgata 14 (soft caps: a capped score is scaled into the cap, see `docs/PROFILE.md`) | Lukas |
+| Perspective scores (Bo her, Bygge her, Familie, Pendler) | Works: "Hva betyr dette for deg?" tabs under the warnings, with "Hva trekker ned" | Erik |
 | Explanations under each data point | Works: main text and the matching "Når ..." text from `docs/TEXTS.md` | Lukas |
-| AI summary | Works. Checked with the key on 2026-11-07: Arendalsgata names the quick clay first, Grevlingåsen invents nothing and says NVE has not mapped quick clay or flood there. Without the key the card shows the fact sentences | Erik, Lukas |
+| AI summary | Works. Rechecked with the key on 2026-11-07 afternoon (new data means new summaries): Arendalsgata names the quick-clay zone first; Grevlingåsen invents nothing, names the quick-clay awareness area, radon and marine clay, and says NVE has no hazard-zone map for quick clay or flood there. It now sits below the "Hva betyr dette for deg?" tabs. Without the key the card shows the fact sentences | Erik, Lukas |
 | "Område" card | Works: shows "Kun fakta" (information only, no score) | Lukas, Erik |
 | Map tiles | Take 3–5 seconds to appear the first time. Open both pages before presenting | — |
 
 For the 2:15 part, open Miljø on Grevlingåsen: the strategic noise map shows "Ikke tilgjengelig".
 
-Timing: the spoken text is about 315 words (about 325 with the perspective line), about 2:25 at a calm pace, which leaves about 45 seconds for typing and clicks. The two address parts are the tightest (about 85 words in 45 seconds): keep talking while the page loads. If time runs short, drop the perspective line first, then the "4 200 adresser" line.
+Timing: the spoken text is about 330 words (about 340 with the perspective line), about 2:30 at a calm pace, which leaves about 30–40 seconds for typing and clicks. The two address parts are the tightest (Grevlingåsen is about 95 words in 45 seconds): keep talking while the page loads. If time runs short, drop the perspective line first, then the "4 200 adresser" line.
 
 ## Questions the judges may ask
 
@@ -92,7 +92,7 @@ Short answers in Norwegian, ready to say. Agree on the business-model answer as 
 **Hvor ferske er dataene?**
 > Vi henter dem direkte fra NVE, NGU, Kartverket, Entur og de andre, og kan bygge databasen på nytt med én kommando. Hver kilde har sin egen oppdateringstakt, og vi viser hvilken kilde hvert tall kommer fra.
 
-Note: there is no automatic refresh yet. Rebuilding is `npm run setup` (about 4 minutes).
+Note: there is no automatic refresh yet. Rebuilding is `npm run setup` (was about 4 minutes; the afternoon datasets add several more, see the checklist).
 
 **Hvordan regner dere ut karakteren?**
 > Hver kategori får en karakter fra datapunktene. Alvorlige advarsler setter et tak, så en kvikkleiresone kan ikke jevnes ut av at det er kort vei til bussen. Og vi viser alltid hvorfor: hvilke advarsler som holder karakteren nede.
@@ -106,7 +106,7 @@ Most høy by municipality: Lillestrøm 122, Ullensaker 80, Nannestad 67, Oslo 53
 > AI-en får bare faktasetningene vi har laget fra dataene, og skal bare bruke dem. Vi har sjekket sammendraget for alle testadressene. Hvis AI-en ikke svarer, viser vi faktasetningene i stedet.
 
 **Hvorfor ikke bare bruke Norgeskart eller NVE sine kart?**
-> De kartene er gode, men hvert av dem viser ett tema, og de er laget for fagfolk. Omnium samler nitten datasett for én adresse, forklarer hva de betyr, og sier ærlig fra når et område ikke er kartlagt.
+> De kartene er gode, men hvert av dem viser ett tema, og de er laget for fagfolk. Omnium samler rundt tretti datasett for én adresse, forklarer hva de betyr, og sier ærlig fra når et område ikke er kartlagt.
 
 **Hva skal til for å dekke hele Norge?**
 > De fleste kildene våre er nasjonale. I dag klipper vi dem til Oslo og Akershus. For hele landet er det mest et spørsmål om mer data og en kraftigere server, ikke ny kode.
@@ -130,7 +130,7 @@ Note: Haiku costs about $0.0005 per address (`PLAN.md`), cached in the database.
 ## Checklist before presenting
 
 **The day before**
-- [ ] Pull `main` on the demo laptop and run `npm run setup` (fresh database with every dataset). Tested from a fresh clone on 2026-11-07: about 4 minutes and ~500 MB of downloads, no errors. Stop `npm run dev` first.
+- [ ] Pull `main` on the demo laptop and run `npm run setup` (fresh database with every dataset). Tested from a fresh clone on 2026-11-07: about 4 minutes and ~500 MB of downloads, no errors. Sverre's afternoon datasets add time (flood awareness and marine clay alone took 5.5 minutes on his PC; the full setup is not re-timed), so allow 15 minutes. Stop `npm run dev` first.
 - [ ] Open both demo addresses and check the numbers in "The two addresses" table. Update the pitch if they changed.
 - [ ] Read the AI summary for both addresses (if it works). It must mention the quick clay for Arendalsgata and invent nothing for Grevlingåsen.
 - [ ] Take the screenshots (below) as a backup.
@@ -156,12 +156,12 @@ Note: Haiku costs about $0.0005 per address (`PLAN.md`), cached in the database.
 Saved in `docs/demo/` at 1440×900. Retake them after big changes (headless Edge works: `msedge --headless=new --window-size=1440,900 --virtual-time-budget=15000 --screenshot=<file> <url>`).
 
 1. `1-start.png`: the start page with the empty address field. **Taken.**
-2. `2-grevlingasen.png`: the Grevlingåsen 17 page, top part (no warnings, scores). **Taken** (score 67, editorial theme).
-3. `3-data-point.png`: the Miljø card opened on Grevlingåsen, with explanations, sources and one "Ikke tilgjengelig". **Taken.** It also covers 6.
-4. `4-arendalsgata.png`: the Arendalsgata 22 page with the quick-clay warning at the top. **Taken** (score 13, quick-clay zone, AI summary).
-5. `5-map.png`: the map with the quick-clay zone around Arendalsgata. **Taken.**
+2. `2-grevlingasen.png`: the Grevlingåsen 17 page, top part: score 60, the radon and quick-clay-awareness warnings, and the "Hva betyr dette for deg?" tabs. **Taken.**
+3. `3-data-point.png`: the Miljø card opened on Grevlingåsen (road, rail and aircraft noise, polluted ground), with explanations, sources and one "Ikke tilgjengelig". **Taken.** It also covers 6.
+4. `4-arendalsgata.png`: the Arendalsgata 22 page with the quick-clay warning at the top, score 14 and the perspective tabs. **Taken.**
+5. `5-map.png`: the same page with the Kartlag panel open, so the legend explains the red quick-clay zone around the pin. **Taken.**
 6. `6-missing.png`: a data point shown as "Ikke tilgjengelig". Covered by 3.
 
-All five retaken on 2026-11-07 after Erik's editorial theme. Retake 2 and 4 again once Erik's perspective cards are on the page.
+All five retaken on 2026-11-07 afternoon by Sverre (new data and scores, Erik's new start page and perspective tabs), with Edge driven by `playwright-core`, waiting 12 s per page.
 
 Tip: headless Edge with `--virtual-time-budget` sometimes captures the map before the hazard layers load. Driving Edge over `--remote-debugging-port` and waiting about 12 seconds per page works every time. Check that the URL is the port Vite printed: if another dev server holds 5173, you get an error page instead.
