@@ -31,15 +31,15 @@ Times are a guide. Bold = what you click or show.
 **Show the start page.** One big address field.
 
 **0:45–1:30 — Det rolige eksempelet: Grevlingåsen 17**
-**Type "Grevlingåsen 17", pick it.**
+**Type "Grevlingåsen 17", pick the one in 1362 Hosle.** There is also a Grevlingåsen 17 in 1386 Asker: don't pick that one.
 > Her er et vanlig hus på Hosle i Bærum. Ingen advarsler. Det ligger ikke i noen kartlagt faresone for kvikkleire, ikke i flomsone og ikke i støysone. Bussen er 82 meter unna, skolen 256 meter.
 **Point at the category cards, then open one data point to show its source and explanation.**
 > Alt vi viser har en kilde. Og vi forklarer hva det betyr for den som bor der.
 
 **1:30–2:15 — Kontrasten: Arendalsgata 22**
 **Go back, type "Arendalsgata 22", pick it.**
-> Så en leilighet på Sagene i Oslo. Like nær buss og skole. Men øverst ser du en advarsel: eiendommen ligger i en faresone for kvikkleireskred med høy faregrad, fra NVE.
-**Point at the warning and the low Naturfare score, then at the zone on the map.**
+> Så en leilighet på Sagene i Oslo. Like nær buss og skole. Men øverst ser du advarsler, den alvorligste først: eiendommen ligger i en faresone for kvikkleireskred med høy faregrad, fra NVE. I tillegg veistøy på 65–70 dB og forurenset grunn registrert i nærheten.
+**Point at the warnings and the low Naturfare score.** (Once Erik adds the quick-clay layer to the map, also point at the zone around the pin.)
 > Karakteren for naturfare faller fra 100 til 30. Den alvorligste risikoen står alltid først, og den kan ikke gjemmes i et snitt.
 
 **2:15–2:40 — Ærlighet om data**
@@ -55,16 +55,17 @@ If the AI summary works on the day, show it on the Arendalsgata page at 1:30 and
 
 What the pitch needs, and who it depends on. Update this as things land.
 
-| Needed for the pitch | Status 2026-11-07 | Owner |
+| Needed for the pitch | Status 2026-11-07 (checked in the app) | Owner |
 |---|---|---|
-| Profile data for both addresses (quick clay, flood, noise, stops, schools, kindergartens, SSB) | Works | Sverre, Even, Lukas |
-| Start page with address search | Not built yet (web app is only the map) | Erik |
-| Address page: warnings, category cards, data points with source | Not built yet | Erik |
-| Quick-clay zone visible on the map | Data at `/api/nve_kvikkleire`, no map layer yet | Erik |
-| "Ikke tilgjengelig" for missing data | In the profile, not shown yet | Erik |
-| Overall rating (a number) | Not yet: "insufficient data" until ground data (radon, løsmasser) is loaded | Sverre, Lukas |
-| Explanations under each data point | Texts in `docs/TEXTS.md`, not in the profile yet | Lukas |
-| AI summary | Endpoint works; needs `ANTHROPIC_API_KEY` and the rules in `docs/FACTS.md` | Lukas |
+| Profile data for both addresses (quick clay, flood, noise, polluted ground, stops, schools, kindergartens, trails, SSB) | Works | Sverre, Even, Lukas |
+| Start page with address search | Works. Search shows two Grevlingåsen 17: pick 1362 Hosle | Erik |
+| Address page: warnings, category cards, data points with source | Works | Erik |
+| "Ikke tilgjengelig" for missing data | Works (e.g. Steinsprang under Naturfare) | Erik |
+| Quick-clay zone visible on the map | Not yet: data at `/api/nve_kvikkleire`, no map layer | Erik |
+| Overall rating (a number) | Not yet: "Kan ikke vurderes" until ground data (radon, løsmasser) is loaded | Sverre, Lukas |
+| Explanations under each data point | Not shown yet: texts in `docs/TEXTS.md`, not in the profile | Lukas |
+| AI summary | Not on the page yet. Endpoint uses `docs/FACTS.md`; needs `ANTHROPIC_API_KEY` | Lukas, Erik |
+| Map tiles | Take 3–5 seconds to appear the first time. Open both pages before presenting | — |
 
 If the overall rating still says "insufficient data" on the day, that is fine: use it in the 2:15 part as the example of honesty.
 
@@ -91,13 +92,13 @@ If the overall rating still says "insufficient data" on the day, that is fine: u
 
 ## Screenshots
 
-Take these once the address page works, and save them in `docs/demo/` (create the folder) with these names:
+Saved in `docs/demo/` at 1440×900. Retake them after big changes (headless Edge works: `msedge --headless=new --window-size=1440,900 --virtual-time-budget=15000 --screenshot=<file> <url>`).
 
-1. `1-start.png`: the start page with the empty address field.
-2. `2-grevlingasen.png`: the Grevlingåsen 17 page, top part (no warnings, scores).
+1. `1-start.png`: the start page with the empty address field. **Taken.**
+2. `2-grevlingasen.png`: the Grevlingåsen 17 page, top part (no warnings, scores). **Taken.**
 3. `3-data-point.png`: one data point opened, showing its source and explanation.
-4. `4-arendalsgata.png`: the Arendalsgata 22 page with the quick-clay warning at the top.
+4. `4-arendalsgata.png`: the Arendalsgata 22 page with the quick-clay warning at the top. **Taken.**
 5. `5-map.png`: the map with the quick-clay zone around Arendalsgata.
 6. `6-missing.png`: a data point shown as "Ikke tilgjengelig".
 
-Not taken yet: on 2026-11-07 the web app only shows the map.
+Not taken yet: 3 and 6 need a click (open a card), so take them by hand. 5 needs the quick-clay map layer.
