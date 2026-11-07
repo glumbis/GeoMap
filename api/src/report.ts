@@ -2,6 +2,7 @@
 // Built only from the address profile and summary (no data of its own), plus hazard zones for the map.
 // The one API response that is not JSON (AGENTS.md -> "API conventions").
 import { readFileSync } from "node:fs";
+import { compareWithArea, type Area, type AreaComparison } from "./area.ts";
 import { DATA_POINTS, type Severity } from "./datapoints.ts";
 import { query } from "./db.ts";
 import { htmlToPdf } from "./pdf.ts";
@@ -147,12 +148,57 @@ function scoreBadge(r: Rating): string {
   return `<span class="badge muted">${esc(ratingWord(r))}</span>`;
 }
 
+// ---------- Compared to the area (api/src/area.ts): histogram of the other addresses' scores ----------
+
+/** 10 bars (0-9 ... 90-100), coloured like scores; the address's own score as a line, the median as a tick. */
+function histogram(area: Area, score: number | null): string {
+  const W = 300, H = 74, gap = 2, bw = W / 10;
+  const max = Math.max(...area.histogram, 1);
+  const bars = area.histogram.map((n, i) => {
+    const h = n ? Math.max((n / max) * H, 1.5) : 0;
+    return `<rect x="${(i * bw + gap / 2).toFixed(1)}" y="${(H - h).toFixed(1)}" width="${(bw - gap).toFixed(1)}" height="${h.toFixed(1)}" fill="${scoreColour(i * 10 + 5)}" fill-opacity="0.55"/>`;
+  }).join("");
+  const x = (v: number) => ((Math.min(v, 99.9) / 100) * W).toFixed(1);
+  const median = `<line x1="${x(area.medianScore)}" x2="${x(area.medianScore)}" y1="${H}" y2="${H + 5}" stroke="${C.muted}" stroke-width="1.5"/>`;
+  const me = score != null
+    ? `<line x1="${x(score)}" x2="${x(score)}" y1="0" y2="${H + 5}" stroke="${C.orange}" stroke-width="2.5"/><text x="${x(score)}" y="-3" text-anchor="middle" font-size="9" font-weight="600" fill="${C.ink}">${score}</text>`
+    : "";
+  const ticks = [0, 50, 100].map((v) => `<text x="${v === 100 ? W : x(v)}" y="${H + 15}" text-anchor="${v === 0 ? "start" : v === 100 ? "end" : "middle"}" font-size="7.5" fill="${C.muted}">${v}</text>`).join("");
+  return `<svg class="hist" viewBox="0 -12 ${W} ${H + 30}" width="100%" role="img" aria-label="Fordeling av poeng i ${esc(area.name)}">
+    <line x1="0" x2="${W}" y1="${H}" y2="${H}" stroke="${C.ink}" stroke-width="1"/>${bars}${median}${me}${ticks}</svg>`;
+}
+
+function areaBlock(kind: string, area: Area, score: number | null): string {
+  const n = area.addresses.toLocaleString("nb-NO");
+  const where = `${n} adresser i ${kind} ${esc(area.name)}`;
+  const pc = area.percentile;
+  const line = pc == null ? `${where}.`
+    : pc < 3 ? `Lavere enn nesten alle de ${where}.`
+    : pc > 97 ? `Høyere enn nesten alle de ${where}.`
+    : `Bedre enn ca. <b>${pc} %</b> av ${where}.`;
+  return `<div class="area"><p class="area-head"><span class="label">${kind === "grunnkretsen" ? "Grunnkrets" : "Kommune"}</span><br><b>${esc(area.name)}</b></p>
+    ${histogram(area, score)}
+    <p class="area-line">${line} Median ${area.medianScore}.</p></div>`;
+}
+
+function areaSection(cmp: AreaComparison | undefined): string {
+  const head = `<h3>Sammenlignet med området</h3>`;
+  if (!cmp || (!cmp.grunnkrets && !cmp.kommune)) {
+    return `${head}<p class="note">Sammenligning med området er ikke tilgjengelig: poengene for de andre adressene er ikke beregnet ennå.</p>`;
+  }
+  const blocks = [cmp.grunnkrets && areaBlock("grunnkretsen", cmp.grunnkrets, cmp.score), cmp.kommune && areaBlock("kommunen", cmp.kommune, cmp.score)].filter(Boolean).join("");
+  const when = DATE.format(new Date(`${cmp.computedAt}Z`));
+  return `${head}<p class="lead">Hvor adressen ligger mot andre gateadresser i samme grunnkrets og kommune, regnet med de samme reglene.</p>
+  <div class="areas">${blocks}</div>
+  <p class="note"><span class="swatch" style="background:${C.orange}"></span>Denne adressen · <span class="swatch tick"></span>Median.${cmp.score == null ? ` Adressen har ingen samlet poengsum (${esc(cmp.reason ?? "")}), så den er ikke plassert.` : ""} Poengene for de andre adressene er beregnet ${esc(when)}.</p>`;
+}
+
 // ---------- The document ----------
 
 const KM = new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 1 });
 const DATE = new Intl.DateTimeFormat("nb-NO", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Oslo" });
 
-function render(p: Profile, s: Summary, zones: Zone[]): string {
+function render(p: Profile, s: Summary, zones: Zone[], area?: AreaComparison): string {
   const a = p.address;
   const sourceOf = new Map(p.sources.map((x) => [x.id, x]));
   const r = p.rating;
@@ -278,6 +324,7 @@ function render(p: Profile, s: Summary, zones: Zone[]): string {
     </div>`;
   }).join("")}</div>
 
+  ${areaSection(area)}
 </section>
 
 <!-- ============ 3. Hazards ============ -->
@@ -461,6 +508,15 @@ i.hollow { border: 1px solid ${C.unknown}; background: transparent !important; }
 .dp-src { margin: .8mm 0 0 6mm; color: ${C.muted}; font-size: 7pt; }
 .missing .dp-label, .missing .dp-value { color: ${C.unknown}; }
 
+/* compared to the area */
+.areas { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; }
+.area { break-inside: avoid; }
+.area-head { margin-bottom: 3mm; }
+.hist { display: block; overflow: visible; }
+.area-line { font-size: 8.5pt; margin-top: 1mm; }
+.swatch { display: inline-block; width: 3mm; height: 1mm; vertical-align: middle; margin-right: 1mm; }
+.swatch.tick { width: 1px; height: 2.5mm; background: ${C.muted}; }
+
 /* questions */
 .qgroup { margin-bottom: 4mm; break-inside: avoid; }
 .qtopic { border-bottom: 1px solid ${C.ink}; padding-bottom: 1mm; margin-bottom: 1.5mm; }
@@ -477,8 +533,11 @@ const FOOTER = `<div style="width:100%;font:7pt 'Segoe UI',sans-serif;color:${C.
 async function reportHtml(id: string) {
   const [profile, summary] = await Promise.all([buildProfile(id), buildSummary(id)]);
   const a = profile.address;
-  const zones = await hazardZones(frame(a.lng, a.lat, 15, 672, 400));
-  return { html: render(profile, summary, zones), addressId: a.id, title: `${a.text}, ${a.postcode} ${titleCase(a.place)}` };
+  const [zones, area] = await Promise.all([
+    hazardZones(frame(a.lng, a.lat, 15, 672, 400)),
+    compareWithArea(profile).catch((err) => { console.error("report: area comparison failed:", (err as Error).message); return undefined; }),
+  ]);
+  return { html: render(profile, summary, zones, area), addressId: a.id, title: `${a.text}, ${a.postcode} ${titleCase(a.place)}` };
 }
 
 /** The report as a PDF. Throws the same 400/404/503 errors as the profile. */
