@@ -48,6 +48,19 @@ Terms for all Kartverket free data: CC BY 4.0, credit "© Kartverket". Details i
   - Columns: `id`, `name`, `flomsoneId`, `gjentaksintervall` (years), `lowPoint` (lavpunkt: below flood level, not directly connected to the river), `statusDate`, `source`, `geom`.
   - Checked: test address #2 is in the 200-year zone `fs002_37` and not in the 10-year zone. Backup Strandvegen 81 is in both the 20- and 200-year zone (confirmed against NVE). #1, #3, #4 and #5 are in no zone.
   - Licence NLOD, credit "NVE". Only mapped rivers: outside a zone can mean "not mapped".
+- **NGU Radon aktsomhet, version 2 (Sept 2026)** → table `radon`, script `data/scripts/radon.ts`, API `/api/radon` (2026-11-07).
+  - Source: NGU OGC API Features `https://geo.ngu.no/api/features/radonaktsomhet` (GeoJSON, no key). Version 2 replaced the 2014 map and uses new classes: `lav`, `middels`, `høy`, `megetHøy`, `usikker`.
+  - 681 areas in Oslo + Akershus (204 meget høy, 195 høy, 147 lav, 135 middels). Outlines simplified to ~5 m.
+  - Columns: `id`, `name` (Lav/Middels/Høy/Meget høy/Usikker), `aktsomhet` (NGU code), `method`, `updated`, `source`, `geom`.
+  - Checked: #1 and #3 meget høy, #4 and #5 høy, #2 middels.
+  - Licence NLOD, credit "NGU / DSA". Susceptibility, not a measurement.
+- **NGU Løsmasser lokalt** → table `losmasser`, script `data/scripts/losmasser.ts`, API `/api/losmasser` (2026-11-07).
+  - Use **lokalt**, not detaljert or regionalt: NGU's coverage layer says neither of those has data for Oslo + Akershus (checked against the OGC API). Metadata: https://kartkatalog.geonorge.no/metadata/4d50a95c-e220-44c5-8bed-393c38fff6d4
+  - Source: NGU county downloads (Atom feed), Oslo + Akershus GeoPackage zips in EUREF89 lng/lat, read straight from the zip. Mostly 1:50 000.
+  - 30 589 polygons, de-duplicated across the county border. Outlines simplified to ~1 m.
+  - Columns: `id` (NGU lokalId), `name` (soil type), `losmassetype` (NGU code), `marineClay` (type 41: thick marine clay, where quick clay can occur), `scale`, `source`, `geom`.
+  - Checked: #1 thick marine clay (fits its quick clay zone), #2 river deposits, #3 weathered material, #4 fill, #5 bare rock.
+  - Licence NLOD, credit "NGU".
 
 - **Name:** Eiendom REST-API (property lookup)
   - Owner: Kartverket

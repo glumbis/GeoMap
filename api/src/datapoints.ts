@@ -117,27 +117,31 @@ export const DATA_POINTS: DataPoint[] = [
   // Ground & geology. Proposed tables from NGU (Sverre).
   {
     id: "soilType", label: "Løsmasser", category: "ground", source: "ngu-losmasser", importance: "critical",
-    table: "losmasser", find: { kind: "within" }, // proposed columns: jordart (text), marin_leire (boolean)
+    table: "losmasser", find: { kind: "within" }, // data/scripts/losmasser.ts (Sverre): name (soil type), losmassetype, marineClay
     read: (rows) => {
       if (!rows.length) return null; // map has holes: no polygon = no coverage, not "good"
       const r = rows[0];
-      const clay = r.marin_leire === true;
+      const clay = r.marineClay === true;
       return {
-        value: r.jordart, display: String(r.jordart), effect: clay ? "bad" : "neutral", score: clay ? 40 : 80,
+        value: r.name, display: String(r.name), effect: clay ? "bad" : "neutral", score: clay ? 40 : 80,
         ...(clay && { warning: { severity: "low" as const, text: "Marin leire i grunnen" } }),
       };
     },
   },
   {
     id: "radon", label: "Radon", category: "ground", source: "ngu-radon", importance: "critical",
-    table: "radon", find: { kind: "within" }, // proposed column: aktsomhet ('høy' | 'moderat til lav' | 'usikker')
+    table: "radon", find: { kind: "within" }, // data/scripts/radon.ts (Sverre): aktsomhet ('lav' | 'middels' | 'høy' | 'megetHøy' | 'usikker'), NGU version 2 (2026)
     read: (rows) => {
       if (!rows.length) return null;
-      const a = String(rows[0].aktsomhet).toLowerCase();
-      if (a.startsWith("høy")) {
+      const a = String(rows[0].aktsomhet);
+      if (a === "megetHøy") {
+        return { value: a, display: "Meget høy aktsomhet", effect: "bad", score: 15, warning: { severity: "medium", text: "Meget høy radonaktsomhet" } };
+      }
+      if (a === "høy") {
         return { value: a, display: "Høy aktsomhet", effect: "bad", score: 30, warning: { severity: "medium", text: "Høy radonaktsomhet" } };
       }
-      if (a.startsWith("moderat")) return { value: a, display: "Moderat til lav aktsomhet", effect: "good", score: 90 };
+      if (a === "middels") return { value: a, display: "Middels aktsomhet", effect: "neutral", score: 65 };
+      if (a === "lav") return { value: a, display: "Lav aktsomhet", effect: "good", score: 90 };
       return null; // 'usikker' = the source can't say
     },
   },
