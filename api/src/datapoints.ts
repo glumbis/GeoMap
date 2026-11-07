@@ -228,6 +228,19 @@ function stepped(v: number, steps: [number, number][], rest: number): Pick<Readi
 /** Grid points (100 m apart) in a 500 m circle: π · 500² / 100². The share of them in nature is the nature share. */
 const GRID_POINTS_500M = (Math.PI * 500 ** 2) / 100 ** 2;
 
+/**
+ * Distance steps [max metres, score] for the everyday services. Exported so the report's services chart
+ * (api/src/report.ts, "Nærmiljø") can shade the distance that still gives full score.
+ */
+export const NEAREST_STEPS = {
+  transitStop: [[300, 100], [600, 75], [1000, 50], [2000, 20]],
+  school: [[500, 100], [1000, 80], [2000, 50], [5000, 20]],
+  kindergarten: [[400, 100], [800, 80], [1500, 50], [3000, 20]],
+  groceryStore: [[400, 100], [800, 80], [1500, 50], [3000, 20]],
+  pharmacy: [[800, 100], [1500, 80], [3000, 50], [5000, 20]],
+  doctor: [[800, 100], [1500, 80], [3000, 50], [5000, 20]],
+} satisfies Record<string, [number, number][]>;
+
 // ---- The list ------------------------------------------------------------------------------
 
 export const DATA_POINTS: DataPoint[] = [
@@ -612,7 +625,7 @@ export const DATA_POINTS: DataPoint[] = [
   {
     id: "transitStop", label: "Nærmeste holdeplass", category: "location", source: "entur-stopp", importance: "normal",
     table: "stops", find: { kind: "nearest", maxM: 2000 },
-    read: nearestScore([[300, 100], [600, 75], [1000, 50], [2000, 20]]),
+    read: nearestScore(NEAREST_STEPS.transitStop),
   },
   {
     // data/scripts/stops.ts (Even): departures and lines per stop on one weekday (departuresDate).
@@ -675,7 +688,7 @@ export const DATA_POINTS: DataPoint[] = [
   {
     id: "school", label: "Nærmeste grunnskole", category: "location", source: "udir-skoler", importance: "normal",
     table: "schools", find: { kind: "nearest", maxM: 5000, where: "isPrimary" },
-    read: nearestScore([[500, 100], [1000, 80], [2000, 50], [5000, 20]]),
+    read: nearestScore(NEAREST_STEPS.school),
   },
   {
     // data/scripts/skole_mobbing.ts (Even): skole_mobbing, one row per grunnskole in `schools` (same nearest school as `school`).
@@ -697,23 +710,23 @@ export const DATA_POINTS: DataPoint[] = [
   {
     id: "kindergarten", label: "Nærmeste barnehage", category: "location", source: "udir-barnehager", importance: "normal",
     table: "kindergartens", find: { kind: "nearest", maxM: 3000 },
-    read: nearestScore([[400, 100], [800, 80], [1500, 50], [3000, 20]]),
+    read: nearestScore(NEAREST_STEPS.kindergarten),
   },
   // data/scripts/tjenester.ts (Sverre): OpenStreetMap, kind 'dagligvare' | 'apotek' | 'lege' (GP / legekontor).
   {
     id: "groceryStore", label: "Nærmeste dagligvarebutikk", category: "location", source: "osm", importance: "normal",
     table: "tjenester", find: { kind: "nearest", maxM: 3000, where: "kind = 'dagligvare'" },
-    read: nearestScore([[400, 100], [800, 80], [1500, 50], [3000, 20]]),
+    read: nearestScore(NEAREST_STEPS.groceryStore),
   },
   {
     id: "pharmacy", label: "Nærmeste apotek", category: "location", source: "osm", importance: "normal",
     table: "tjenester", find: { kind: "nearest", maxM: 5000, where: "kind = 'apotek'" },
-    read: nearestScore([[800, 100], [1500, 80], [3000, 50], [5000, 20]]),
+    read: nearestScore(NEAREST_STEPS.pharmacy),
   },
   {
     id: "doctor", label: "Nærmeste legekontor", category: "location", source: "osm", importance: "normal",
     table: "tjenester", find: { kind: "nearest", maxM: 5000, where: "kind = 'lege'" },
-    read: nearestScore([[800, 100], [1500, 80], [3000, 50], [5000, 20]]),
+    read: nearestScore(NEAREST_STEPS.doctor),
   },
   {
     // data/scripts/dsb_beredskap.ts (Even): brannstasjoner, DSB fire stations and depots (name, fireService).

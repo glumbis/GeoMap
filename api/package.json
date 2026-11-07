@@ -6,7 +6,7 @@
     "dev": "node --watch --env-file-if-exists=../.env --import tsx src/index.ts",
     "start": "tsx --env-file-if-exists=../.env src/index.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test test/rating.test.ts test/texts.test.ts test/finn.test.ts",
+    "test": "node --import tsx --test test/rating.test.ts test/texts.test.ts test/finn.test.ts test/sun.test.ts",
     "test:addresses": "node --import tsx --test test/addresses.test.ts"
   },
   "dependencies": {
