@@ -33,6 +33,7 @@ Times are a guide. Bold = what you click or show.
 **0:45–1:30 — Det rolige eksempelet: Grevlingåsen 17**
 **Type "Grevlingåsen 17", pick the one in 1362 Hosle.** There is also a Grevlingåsen 17 in 1386 Asker: don't pick that one.
 > Her er et vanlig hus på Hosle i Bærum. Samlet karakter 60. Det ligger ikke i noen kartlagt faresone for kvikkleire, ikke i flomsone og ikke i støysone. Den eneste advarselen er høy aktsomhet for radon, som er vanlig rundt Oslo. Bussen er 82 meter unna, skolen 256 meter.
+Careful: the bus stop 82 m away has only 5 departures a day (`stops.departures`). Until the profile shows departures, don't call the bus connection good.
 **Point at the category cards, then open one data point to show its source and explanation.**
 > Alt vi viser har en kilde. Og vi forklarer hva det betyr for den som bor der.
 

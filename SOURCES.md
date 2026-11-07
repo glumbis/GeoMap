@@ -407,7 +407,8 @@ NGU datasets: https://www.ngu.no/geologiske-kart/datasett (download per county, 
   - Priority: high
   - Notes: GTFS `stops.txt` has name + lat/lon. Count departures per stop for a "transit quality" score.
   - **Loaded** (2026-11-07) as table `stops` by `data/scripts/stops.ts`, API `/api/stops`: 3975 stop places from the Journey Planner API (`https://api.entur.io/journey-planner/v3/graphql`, `stopPlacesByBbox`, needs only an `ET-Client-Name` header). All operators incl. Vy trains. Columns: name, modes, hasBus/hasTram/hasMetro/hasRail/hasWater, number of quays, kommunenummer.
-  - Not loaded yet: departures per stop. The Ruter GTFS zip is 50 MB (Ruter only, no Vy trains); the national one is 546 MB.
+  - **Departures loaded** (2026-11-07) into the same `stops` table: columns `departures` (trips that let people board, on one weekday), `lines` (distinct routes) and `departuresDate` (the next Tuesday after the ingest). From the GTFS zips of Ruter (`rb_rut`, 50 MB), Vy (`rb_vyg`, 66 MB) and Flytoget (`rb_flt`) at `https://storage.googleapis.com/marduk-production/outbound/gtfs/`, unzipped by the script itself. GTFS splits some stops by mode, so children are mapped to Entur's combined parent stop. 3504 of 3975 stops have departures; the rest are NULL (e.g. other operators, school-only stops).
+  - Examples (Tue 2026-11-10): Jernbanetorget 4467, Nationaltheatret 3888, Oslo S 807, Arendalsgata 929, Grevlingbakken 5.
 
 - **Name:** OpenStreetMap (shops, doctors, pharmacies, etc.)
   - Owner: OpenStreetMap contributors
