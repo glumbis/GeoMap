@@ -8,6 +8,7 @@
 // UI text (labels, display, warnings, reasons) is Norwegian bokmål.
 
 import type { Address } from "./address.ts";
+import { pickStation, windReading } from "./wind.ts";
 
 export type Effect = "good" | "neutral" | "bad";
 export type Severity = "high" | "medium" | "low";
@@ -140,6 +141,7 @@ export const SOURCES: Source[] = [
   { id: "ra-kulturminner", name: "Kulturminner - Lokaliteter, Enkeltminner og Sikringssoner", owner: "Riksantikvaren", url: "https://kartkatalog.geonorge.no/metadata/kulturminner-lokaliteter-enkeltminner-og-sikringssoner/c72906a0-2bc2-41d7-bea2-c92d368e3c49", licence: "NLOD 2.0" },
   { id: "ssb-inntekt-omrader", name: "Inntekt for husholdninger etter region (tabell 06944, delområde og bydel)", owner: "SSB", url: "https://www.ssb.no/statbank/table/06944", licence: "CC BY 4.0" },
   { id: "ssb-krim", name: "Anmeldte lovbrudd etter gjerningssted (SSB 08487; Oslo per bydel: Oslo kommune KRI002)", owner: "SSB / Oslo kommune", url: "https://www.ssb.no/statbank/table/08487", licence: "CC BY 4.0 / NLOD" },
+  { id: "met-vind", name: "Vindobservasjoner fra værstasjoner (vindretning og middelvind)", owner: "Meteorologisk institutt (MET Norway)", url: "https://thredds.met.no/thredds/catalog/met.no/observations/surface/catalog.html", licence: "CC BY 4.0" },
   { id: "ssb-kommune", name: "Statistikkbanken", owner: "SSB", url: "https://www.ssb.no/statbank", licence: "CC BY 4.0" },
 ];
 
@@ -518,6 +520,17 @@ export const DATA_POINTS: DataPoint[] = [
       rows.length
         ? { value: Math.round(Number(rows[0].distanceM)), unit: "m", display: `Registrert lokalitet ${metres(Number(rows[0].distanceM))} unna`, effect: "bad", score: 40, warning: { severity: "low", text: "Forurenset grunn registrert i nærheten" } }
         : { value: null, display: "Ingen registrert innen 100 m", effect: "good" },
+  },
+  {
+    // data/scripts/vindroser.ts (Sverre): wind rose of the nearest MET station within 25 km (hilltop stations only
+    // within 3 km, api/src/wind.ts pickStation), hourly 2016 onwards. Info only, never scored: a station kilometres
+    // away says little about one plot. The report draws the rose.
+    id: "wind", label: "Vind (hovedvindretning)", category: "environment", source: "met-vind", importance: "normal",
+    table: "vindroser", find: { kind: "around", radiusM: 25000 },
+    read: (rows) => {
+      const w = pickStation(rows);
+      return w ? windReading(w) : null; // no usable station within 25 km: not covered
+    },
   },
 
   // Location. Points, nearest within a distance.

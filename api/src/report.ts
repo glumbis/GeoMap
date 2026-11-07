@@ -6,9 +6,10 @@ import { compareWithArea, type Area, type AreaComparison } from "./area.ts";
 import { DATA_POINTS, type Severity } from "./datapoints.ts";
 import { query } from "./db.ts";
 import { htmlToPdf } from "./pdf.ts";
-import { buildProfile, type MissingDataPoint, type PresentDataPoint, type Profile } from "./profile.ts";
+import { buildProfile, findRows, type MissingDataPoint, type PresentDataPoint, type Profile } from "./profile.ts";
 import type { Rating } from "./rating.ts";
 import { buildSummary, type Summary } from "./summary.ts";
+import { BANDS, SECTORS, directionText, pickStation, sectorName, stationText, summarise, windMeaning, type WindRose } from "./wind.ts";
 
 // Colours: copied from web/src/style.css (the web tokens can't reach a PDF). Keep in step with that file.
 const C = {
@@ -148,6 +149,81 @@ function scoreBadge(r: Rating): string {
   return `<span class="badge muted">${esc(ratingWord(r))}</span>`;
 }
 
+// ---------- Wind rose (api/src/wind.ts, MET Norway stations) ----------
+
+/** Wind speed bands, light -> dark, one hue (teal ramp, checked: monotone lightness, light end visible on white). */
+const WIND_RAMP = ["#8dc0bd", "#62a6a2", "#3a8b89", "#1c7376", "#0c5e68", "#063a42"];
+const pct1 = (x: number) => `${(Math.round(x * 1000) / 10).toString().replace(".", ",")} %`;
+
+/** Polar stacked bars: 16 sectors, bands stacked outwards, radius = share of all hours. Native <title> per segment. */
+function windRoseSvg(w: WindRose): string {
+  const R = 118, gapDeg = 1.2, half = 11.25 - gapDeg;
+  const shares = w.rose.map((s) => s.map((h) => h / w.hours));
+  const max = Math.max(...shares.map((s) => s.reduce((a, b) => a + b, 0)));
+  const step = max > 0.3 ? 0.1 : 0.05;
+  const top = Math.max(step, Math.ceil(max / step - 1e-9) * step);
+  const r = (share: number) => (share / top) * R;
+  const xy = (rad: number, deg: number): [number, number] => {
+    const a = (deg * Math.PI) / 180;
+    return [rad * Math.sin(a), -rad * Math.cos(a)];
+  };
+  const pt = (rad: number, deg: number) => xy(rad, deg).map((v) => v.toFixed(1)).join(" ");
+  const wedge = (r0: number, r1: number, mid: number) => {
+    const a0 = mid - half, a1 = mid + half;
+    return `M${pt(r0, a0)}L${pt(r1, a0)}A${r1.toFixed(1)} ${r1.toFixed(1)} 0 0 1 ${pt(r1, a1)}L${pt(r0, a1)}` +
+      (r0 > 0 ? `A${r0.toFixed(1)} ${r0.toFixed(1)} 0 0 0 ${pt(r0, a0)}Z` : "Z");
+  };
+  // Ring labels go along the quietest direction, half a sector off, so they sit between two direction labels.
+  const totals = shares.map((s) => s.reduce((a, b) => a + b, 0));
+  const quiet = totals.indexOf(Math.min(...totals));
+  const rings: string[] = [];
+  for (let i = 1; i * step <= top + 1e-9; i++) {
+    const v = i * step;
+    rings.push(`<circle r="${r(v).toFixed(1)}" fill="none" stroke="${C.line}" stroke-width="0.8"/>`);
+    const [x, y] = xy(r(v), quiet * 22.5 + 11.25);
+    rings.push(`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" dy="2.5" text-anchor="middle" class="ring-label">${Math.round(v * 100)} %</text>`);
+  }
+  const segments = shares.flatMap((bands, i) => {
+    let acc = 0;
+    return bands.map((share, b) => {
+      if (!share) return "";
+      const r0 = r(acc), r1 = r(acc + share);
+      acc += share;
+      return `<path d="${wedge(r0, r1, i * 22.5)}" fill="${WIND_RAMP[b]}" stroke="#fff" stroke-width="0.8"><title>${SECTORS[i]}, ${BANDS[b].label.toLowerCase()}: ${pct1(share)} av timene</title></path>`;
+    });
+  }).join("");
+  const labels = SECTORS.map((name, i) => {
+    const [x, y] = xy(R + 13, i * 22.5);
+    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" dy="3" text-anchor="middle" class="${i % 4 ? "dir" : "dir main"}">${name}</text>`;
+  }).join("");
+  return `<svg class="rose" viewBox="-150 -150 300 300" width="300" height="300" role="img" aria-label="Vindrose for ${esc(w.station)}: vindretning og vindstyrke i prosent av timene">
+    ${rings.join("")}<line x1="0" y1="${-R}" x2="0" y2="${R}" stroke="${C.line}" stroke-width="0.8"/><line x1="${-R}" y1="0" x2="${R}" y2="0" stroke="${C.line}" stroke-width="0.8"/>
+    ${segments}${labels}</svg>`;
+}
+
+function windSection(w: WindRose | undefined): string {
+  const head = `<p class="kicker">Del 3</p><h2>Vind</h2>`;
+  if (!w) return `${head}<p class="note">Ingen værstasjon fra Meteorologisk institutt med vindmålinger innen 25 km, så vi kan ikke vise vindrose for denne adressen.</p>`;
+  const s = summarise(w);
+  const m = windMeaning(s);
+  return `${head}
+  <p class="lead">Hvor vinden kommer fra og hvor sterk den er, time for time. ${esc(stationText(w))}.</p>
+  <div class="wind">
+    <div>${windRoseSvg(w)}
+      <ul class="wind-legend">${BANDS.map((b, i) => `<li><i style="background:${WIND_RAMP[i]}"></i>${esc(b.label)} <span>${esc(b.range)}</span></li>`).join("")}</ul>
+    </div>
+    <div class="wind-facts">
+      <p><span class="label">Mest vind fra</span><br><b>${esc(directionText(s))}</b><br><small>${pct1(s.shares[s.main])} av timene fra ${esc(sectorName(s.main))}${s.second != null ? `, ${pct1(s.shares[s.second])} fra ${esc(sectorName(s.second))}` : ""}</small></p>
+      <p><span class="label">Frisk bris eller mer (8 m/s +)</span><br><b>${pct1(s.strongShare)}</b> av timene</p>
+      <p><span class="label">Stille (under 0,3 m/s)</span><br><b>${pct1(s.calmShare)}</b> av timene</p>
+      <h3 class="mini">Hva betyr det?</h3>
+      <p><b>Å bo her:</b> ${esc(m.living)}</p>
+      <p><b>Å bygge her:</b> ${esc(m.building)}</p>
+    </div>
+  </div>
+  <p class="note">Vindrosen viser hvor vinden blåser <i>fra</i>. Hver stolpe er en retning, lengden er andelen av alle timer ${esc(w.periodFrom.slice(0, 4))}–${esc(w.periodTo.slice(0, 4))} (${w.hours.toLocaleString("nb-NO")} timer, én måling per time), og fargene er vindstyrke. Målt 10 m over bakken på stasjonen; vinden ved huset kan avvike på grunn av terreng, skog og bygninger. Kilde: Meteorologisk institutt (CC BY 4.0).</p>`;
+}
+
 // ---------- Compared to the area (api/src/area.ts): histogram of the other addresses' scores ----------
 
 /** 10 bars (0-9 ... 90-100), coloured like scores; the address's own score as a line, the median as a tick. */
@@ -198,7 +274,7 @@ function areaSection(cmp: AreaComparison | undefined): string {
 const KM = new Intl.NumberFormat("nb-NO", { maximumFractionDigits: 1 });
 const DATE = new Intl.DateTimeFormat("nb-NO", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Oslo" });
 
-function render(p: Profile, s: Summary, zones: Zone[], area?: AreaComparison): string {
+function render(p: Profile, s: Summary, zones: Zone[], area?: AreaComparison, wind?: WindRose): string {
   const a = p.address;
   const sourceOf = new Map(p.sources.map((x) => [x.id, x]));
   const r = p.rating;
@@ -340,9 +416,14 @@ function render(p: Profile, s: Summary, zones: Zone[], area?: AreaComparison): s
   <p class="note">Et funn kommer alltid fra et datapunkt med kilde, aldri fra AI. Alvorlige funn begrenser poengsummen, slik at én stor risiko ikke kan veies opp av gode forhold ellers.</p>
 </section>
 
+<!-- ============ 3b. Wind ============ -->
+<section class="page">
+  ${windSection(wind)}
+</section>
+
 <!-- ============ 4. Categories ============ -->
 <section class="page">
-  <p class="kicker">Del 3</p><h2>Detaljer per kategori</h2>
+  <p class="kicker">Del 4</p><h2>Detaljer per kategori</h2>
   ${p.categories.map((c) => `<div class="cat">
     <div class="cat-head"><h3>${esc(c.name)}</h3>${scoreBadge(c.rating)}</div>
     <p class="cat-sub">${c.rating.status === "ok" ? esc(ratingWord(c.rating)) : esc(c.rating.reason ?? "")} · ${c.dataPoints.length} av ${c.dataPoints.length + c.missing.length} datapunkter</p>
@@ -352,7 +433,7 @@ function render(p: Profile, s: Summary, zones: Zone[], area?: AreaComparison): s
 
 <!-- ============ 5. Questions ============ -->
 <section class="page">
-  <p class="kicker">Del 4</p><h2>Spørsmål å stille</h2>
+  <p class="kicker">Del 5</p><h2>Spørsmål å stille</h2>
   <p class="lead">Før visning eller bud: spørsmål til selger, megler eller kommunen, ut fra funnene i rapporten.</p>
   ${qs.length ? qs.map((q) => `<div class="qgroup"><p class="qtopic"><b>${esc(q.topic)}</b> · ${esc(q.finding)}</p><ul class="checks">${q.items.map((i) => `<li><span class="box"></span>${esc(i)}</li>`).join("")}</ul></div>`).join("")
     : `<p class="note">Ingen funn i dataene som gir egne spørsmål.</p>`}
@@ -361,7 +442,7 @@ function render(p: Profile, s: Summary, zones: Zone[], area?: AreaComparison): s
 
 <!-- ============ 6. About ============ -->
 <section class="page">
-  <p class="kicker">Del 5</p><h2>Om rapporten</h2>
+  <p class="kicker">Del 6</p><h2>Om rapporten</h2>
   <h3>Slik regner vi</h3>
   <p>Hver kategori får 0–100 poeng ut fra datapunktene vi har. Samlet vurdering er et vektet snitt av kategoriene som kan vurderes. Alvorlige funn setter et tak: poengsummen skaleres inn under taket (poeng × tak / 100), slik at én alvorlig risiko aldri kan veies opp av gode forhold ellers. Data vi mangler, teller aldri som godt.</p>
   <p>Poengsummen sier hva offentlige data vi har, forteller om stedet. Den er ikke en sikkerhetsvurdering, et prissignal eller et løfte om at en risiko ikke finnes.</p>
@@ -508,6 +589,19 @@ i.hollow { border: 1px solid ${C.unknown}; background: transparent !important; }
 .dp-src { margin: .8mm 0 0 6mm; color: ${C.muted}; font-size: 7pt; }
 .missing .dp-label, .missing .dp-value { color: ${C.unknown}; }
 
+/* wind */
+.wind { display: grid; grid-template-columns: 300px 1fr; gap: 8mm; align-items: start; margin-top: 2mm; }
+.rose { display: block; overflow: visible; }
+.rose .dir { font-size: 7.5px; fill: ${C.muted}; }
+.rose .dir.main { font-size: 9px; font-weight: 600; fill: ${C.ink}; }
+.rose .ring-label { font-size: 6.5px; fill: ${C.muted}; paint-order: stroke; stroke: #fff; stroke-width: 2.5px; }
+.wind-legend { list-style: none; padding: 0; margin: 3mm 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 1mm 4mm; font-size: 7.5pt; }
+.wind-legend i { display: inline-block; width: 3mm; height: 3mm; border-radius: 1px; margin-right: 1.5mm; vertical-align: -0.4mm; }
+.wind-legend span { color: ${C.muted}; }
+.wind-facts p { border-top: 1px solid ${C.line}; padding-top: 2mm; margin-bottom: 3mm; }
+.wind-facts p:first-child { border-top: 0; padding-top: 0; }
+.wind-facts h3.mini { margin-top: 4mm; }
+
 /* compared to the area */
 .areas { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; }
 .area { break-inside: avoid; }
@@ -530,14 +624,23 @@ const HEADER = (address: string) => `<div style="width:100%;font:7pt 'Segoe UI',
 const FOOTER = `<div style="width:100%;font:7pt 'Segoe UI',sans-serif;color:${C.muted};padding:0 16mm;display:flex;justify-content:space-between">
   <span>Offentlige data. Ikke en tilstandsrapport eller takst.</span><span>Side <span class="pageNumber"></span> av <span class="totalPages"></span></span></div>`;
 
+/** The nearest station's rose, only when the profile has the wind data point (same station as on the address page). */
+async function windRose(p: Profile): Promise<WindRose | undefined> {
+  const dp = DATA_POINTS.find((d) => d.id === "wind");
+  const present = p.categories.some((c) => c.dataPoints.some((d) => d.id === "wind"));
+  if (!dp || !present) return undefined;
+  return pickStation(await findRows(dp.table, dp.find, p.address.lng, p.address.lat)) ?? undefined;
+}
+
 async function reportHtml(id: string) {
   const [profile, summary] = await Promise.all([buildProfile(id), buildSummary(id)]);
   const a = profile.address;
-  const [zones, area] = await Promise.all([
+  const [zones, area, wind] = await Promise.all([
     hazardZones(frame(a.lng, a.lat, 15, 672, 400)),
     compareWithArea(profile).catch((err) => { console.error("report: area comparison failed:", (err as Error).message); return undefined; }),
+    windRose(profile).catch((err) => { console.error("report: wind rose failed:", (err as Error).message); return undefined; }),
   ]);
-  return { html: render(profile, summary, zones, area), addressId: a.id, title: `${a.text}, ${a.postcode} ${titleCase(a.place)}` };
+  return { html: render(profile, summary, zones, area, wind), addressId: a.id, title: `${a.text}, ${a.postcode} ${titleCase(a.place)}` };
 }
 
 /** The report as a PDF. Throws the same 400/404/503 errors as the profile. */

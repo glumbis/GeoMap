@@ -58,7 +58,8 @@ export interface Profile {
 // Metres need a projected CRS: EPSG:25833 (UTM 33N) covers Oslo + Akershus. Data is stored as lng, lat.
 const UTM = (g: string) => `ST_Transform(${g}, 'EPSG:4326', 'EPSG:25833', always_xy := true)`;
 
-async function findRows(table: string, find: Find, lng: number, lat: number): Promise<Row[]> {
+/** Rows of `table` for a point, as a data point's `find` asks (also used by the report for the wind rose). */
+export async function findRows(table: string, find: Find, lng: number, lat: number): Promise<Row[]> {
   const extra = find.where ? ` AND (${find.where})` : "";
   if (find.kind === "within") {
     return query(`SELECT * EXCLUDE (geom) FROM ${table} WHERE ST_Intersects(geom, ST_Point($1, $2))${extra} LIMIT 50`, [lng, lat]);
