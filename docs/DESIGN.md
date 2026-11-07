@@ -30,7 +30,7 @@ The start page should feel like the logo: a round window onto a soft, living map
 - **Background:** a full-screen map of Oslo that drifts slowly in a loop (not interactive, one loop every 2 minutes). For smooth motion the map is drawn once, larger than the screen, and slid with a CSS transform; never move the map itself every frame (that stutters). It is faded into the paper colour toward the middle, so the map shows around the edges and the content sits on calm paper. With "reduce motion" turned on in the OS, the map stands still.
 - **Centred, top to bottom:**
   - The logo (`/logo.png`, blended into the page with `mix-blend-mode: multiply`).
-  - A rolling line of things you can check: "Sjekk" + a phrase that rolls up like a slot machine every ~2.4 s, in the brand gradient: "radon i grunnen", "støy fra veien", "kvikkleire under huset", "flomfare", "nærmeste skole", "nærmeste barnehage", "bussen og trikken", "forurenset grunn", "turstier og skiløyper", "steinsprang". Only phrases we have or plan to have data for. Screen readers get the full list once; no rolling with "reduce motion".
+  - A line saying who Omnium is for and what they get: "For " + audience + ": " + what, e.g. "For byggere: grunnforhold og løsmasser før du graver". 16 phrases (boligkjøpere, boligeiere, byggere, utbyggere, arkitekter, eiendomsmeglere, takstmenn, banker, forsikring, kommuneplanleggere, barnefamilier, leietakere, graveentreprenører, borettslag, journalister, studenter), each max ~55 characters and only about data we have or plan to have (no prices, no permits). The audience word is teal italic serif. The line fades to the next phrase every 3 s (200 ms fade, one line only). Screen readers get the full list once; with "reduce motion" the line stands still. CSS in `web/src/app/start.css`. The start page is left-aligned like a masthead, with the map fading in from the right.
   - **One big search field** (40 rem wide). Placeholder: "Skriv inn en adresse".
   - One short line under the field: "Alt offentlig tilgjengelig om en eiendom i Oslo og Akershus".
 - Autocomplete as you type, from Geonorge `https://ws.geonorge.no/adresser/v1/sok?sok=<text>&fuzzy=true&treffPerSide=50`.
@@ -46,7 +46,7 @@ The start page should feel like the logo: a round window onto a soft, living map
 - **Top bar** (full width, 4 rem): small logo mark (click it to go back to the start page) and a compact search field.
 - **Left column** (30 rem, about 480 px on a 1920 screen; scrolls on its own), top to bottom:
   - **Address**, large.
-  - **Overall rating:** a big number with a ring around it that echoes the logo ring, a word (Svak / Middels / God / Svært god) and "basert på X av Y datapunkter".
+  - **Overall rating:** a big serif number with "/100" on a heavy rule (no ring), a word (Svak / Middels / God / Svært god, or the cap reason when the score is capped) and "basert på X av Y datapunkter".
   - **Cap note** when a serious finding capped the score: "Begrenset til 40 på grunn av kvikkleire".
   - **Weakest category**, always shown next to the overall score (see `suggestions.md`): "Svakest: Grunnforhold 31".
   - When the profile can't be rated: "Kan ikke vurderes" with the reason. Never a number.
@@ -65,17 +65,17 @@ The start page should feel like the logo: a round window onto a soft, living map
 
 ## Style
 
-**Modern, calm, warm.** Think of a good Scandinavian product: soft paper background, deep navy text, one warm accent colour. No dark heavy chrome, no grey admin-panel look.
+**Editorial, calm, trustworthy.** Think Yr, NRK or Kartverket: a reference document, not a SaaS template. Newsprint paper, ink text, ruled sections instead of floating cards, one warm accent colour. The theme lives in `web/src/theme.css` (loaded after `style.css`).
 
 - **Colours:** use the CSS variables in `web/src/style.css` only. Never hard-code a colour.
   - Navy/teal for structure (headings, buttons, links).
   - Orange (`--orange`) is the accent: the pin, the focused search field, the one main action. Use it sparingly.
-  - The brand gradient (`--brand-gradient`, orange → teal → navy, like the logo ring) for the rating ring and at most one other highlight.
+  - No gradients in the UI (`--brand-gradient: none`). The logo keeps its own gradient.
   - Scores: `--good`, `--warn`, `--bad`. Missing data: `--unknown`. Never show missing data as green.
-- **Type:** Outfit (loaded in `web/index.html`). Address 32–40 px, rating number 56+ px. Body text 16 px. Short lines.
-- **Shapes:** rounded corners (`--radius`, 16 px), soft shadows (`--shadow`), thin lines (`--line`). Cards on white (`--surface`) on paper.
+- **Type:** Source Serif 4 for the address, headings, rating number and summary text; IBM Plex Sans for everything else (both loaded in `web/index.html`). Tabular numbers everywhere. Address 40 px, rating number 80 px. Body text 16 px. Short lines.
+- **Shapes:** square corners (`--radius`, 2 px), no shadows, thin lines (`--line`) between items and heavy ink rules (`--rule`) above sections. Few cards: sections are separated by rules on paper.
 - **Space:** generous. When in doubt, more space and less stuff.
-- **Motion:** small and fast (150–250 ms). The rating ring can fill once on load. Nothing bounces.
+- **Motion:** small and fast (150–250 ms). Nothing bounces.
 - **Language:** all UI text in Norwegian (bokmål), plain words, no jargon. Code, comments and docs stay in English.
 - **Accessibility:** text contrast at least 4.5:1, visible focus ring (orange), everything usable with the keyboard, colour is never the only signal (add an icon or word).
 

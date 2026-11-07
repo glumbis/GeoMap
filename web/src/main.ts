@@ -4,6 +4,7 @@
 // Code for the pages lives in src/app/. Map layers go in src/features/ (loaded by src/app/map.ts).
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./style.css";
+import "./theme.css";
 import { renderStart } from "./app/start";
 import { renderAddress } from "./app/address";
 
