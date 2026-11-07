@@ -96,6 +96,17 @@ Rules for every sentence:
 
 Note: the noise map has no data on municipal roads. Oslo is marked "no coverage" in the profile (then the point is listed under "Missing data"). Elsewhere, the "no warning" sentence must keep "riks- eller fylkesvei" so it stays true.
 
+**`roadNoiseStrategic` (Veistøy, strategisk støykart)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| warning, value ≥ 65 | Adressen har beregnet veistøy på {display} i det strategiske støykartet ({src}). | 2 |
+| warning, value 55–64 | Adressen har beregnet veistøy på {display} i det strategiske støykartet ({src}). | 3 |
+| no warning, value ≥ 55 | Adressen har beregnet veistøy på {display} i det strategiske støykartet ({src}). | 4 |
+| value 50–54 | Adressen har beregnet veistøy på {display} i det strategiske støykartet ({src}). | 6 |
+
+It only warns in Oslo. Outside Oslo, `roadNoise` already gives the warning: don't write two warning sentences about the same noise. When it is missing, it goes under "Missing data" (no zone = unknown, never "stille").
+
 **`pollutedGround` (Forurenset grunn)**
 
 | When | Sentence | Rank |
@@ -183,8 +194,8 @@ From `docs/TEST_ADDRESSES.md`. After a change here or in `summary.ts`, the facts
 
 | # | Address | Must be in the facts | Must not be in the facts |
 |---|---|---|---|
-| 1 | Arendalsgata 22 | Kvikkleire, høy faregrad (rank 1), once NVE data is loaded | Any noise zone |
-| 2 | Nedre Rælingsveg 148 | 200-årsflom (rank 2), once loaded. Rød støysone (rank 2) | — |
+| 1 | Arendalsgata 22 | Kvikkleire, høy faregrad (rank 1). Veistøy 65–70 dB from the strategic map (rank 2) | Any T-1442 noise zone (no coverage in Oslo) |
+| 2 | Nedre Rælingsveg 148 | 200-årsflom (rank 2). Rød støysone (rank 2) | A second noise warning (strategic map does not warn outside Oslo) |
 | 3 | Gamle Drammensvei 207 | Rød støysone (rank 2) | Kvikkleire, flom |
 | 4 | Grevlingåsen 17 | "ikke i en kartlagt" for quick clay and flood, no noise zone (rank 5) | Any warning |
 | 5 | Holmenkollveien 196 | No warnings. Frognerseteren as nearest stop | Kvikkleire, flom, støy |

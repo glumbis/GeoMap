@@ -9,11 +9,11 @@ The id is the address id from `docs/PROFILE.md` (`<kommunenummer>-<adressekode>-
 
 | # | Case | Address | Id | Kommune (nr) | Gnr/Bnr | lat | lng | Expected result | Checked against |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | Quick clay | Arendalsgata 22, 0463 Oslo | `0301-10223-22` | Oslo (0301) | 221/19 | 59.937586 | 10.758173 | Inside quick clay hazard zone "Myraløkka", faregrad **Høy**, risiko 5 | NVE `SkredKvikkleire2` layer 0 (KvikkleireFaregrad) |
+| 1 | Quick clay | Arendalsgata 22, 0463 Oslo | `0301-10223-22` | Oslo (0301) | 221/19 | 59.937586 | 10.758173 | Inside quick clay hazard zone "Myraløkka", faregrad **Høy**, risiko 5. Strategic noise map: **65–70 dB** (checked 2026-11-07) | NVE `SkredKvikkleire2` layer 0 (KvikkleireFaregrad) |
 | 2 | Flood zone | Nedre Rælingsveg 148, 2005 Rælingen | `3224-8900-148` | Rælingen (3224) | 104/771 | 59.949070 | 11.045545 | Inside **200-year** flood zone (flomsone `fs002_37`), not inside 10-year zone. Also inside a **red** road noise zone (checked 2026-11-07) | NVE `Flomsoner2` layer 17 (Flomsone_200arsflom) |
 | 3 | Noisy road | Gamle Drammensvei 207, 1337 Sandvika | `3201-1101-207` | Bærum (3201) | 7/61 | 59.892180 | 10.534069 | **Red** road noise zone (Lden > 65 dB), next to E18 | Statens vegvesen WMS `norstoy_1_0`, layer `Stoyvarselkart` |
 | 4 | Quiet suburb | Grevlingåsen 17, 1362 Hosle | `3201-1574-17` | Bærum (3201) | 21/309 | 59.939649 | 10.590461 | **No** quick clay zone, no 200-year flood zone, no road noise zone | All three services above |
-| 5 | Ski area | Holmenkollveien 196, 0791 Oslo | `0301-13070-196` | Oslo (0301) | 34/16 | 59.977219 | 10.676161 | Next to Frognerseteren / Nordmarka ski tracks. **No** quick clay, flood or road noise zone | All three services above |
+| 5 | Ski area | Holmenkollveien 196, 0791 Oslo | `0301-13070-196` | Oslo (0301) | 34/16 | 59.977219 | 10.676161 | Next to Frognerseteren / Nordmarka ski tracks. **No** quick clay, flood or road noise zone. Strategic noise map: 50–55 dB, below the yellow level (checked 2026-11-07) | All three services above |
 
 ## Backups
 
@@ -33,6 +33,7 @@ The id is the address id from `docs/PROFILE.md` (`<kommunenummer>-<adressekode>-
 
 - Ski tracks at #5 were not checked against Turrutebasen.
 - Radon, soil type (løsmasser), polluted ground, rockfall and avalanche were not checked for any address.
+- Strategic noise map (`stoy_strategisk`, 2021) on 2026-11-07: #2 65–70 dB, #3 70–75 dB, #4 no zone (unknown), backup Kjelsåsveien 162 55–60 dB.
 - The road noise map (`Stoyvarselkart`) only covers national and county roads and has no data inside central Oslo. That is why the noisy-road case is in Bærum.
 
 ## How to use

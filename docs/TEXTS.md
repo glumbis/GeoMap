@@ -48,6 +48,13 @@ How to use this file:
 - **Når gul sone (55–65 dB):** Støyen er merkbar, og kommunen vurderer støy særskilt når det skal bygges nytt.
 - **Når ikke i støysone:** Kartet viser bare støy fra riks- og fylkesveier, ikke fra kommunale veier, tog, trikk eller fly. I sentrum av Oslo har kartet ingen data.
 
+### `roadNoiseStrategic` — Veistøy (strategisk støykart)
+**Forklaring:** Kartet viser beregnet støy fra veitrafikk i 2021, også fra kommunale veier, som et snitt over døgnet der kveld og natt teller mer. Tallet er et intervall på 5 dB, for eksempel 60–65 dB.
+- **Når 65 dB eller mer:** Støyen er på nivå med rød støysone, der området regnes som lite egnet for boliger.
+- **Når 55–65 dB:** Støyen er merkbar, på nivå med gul støysone.
+- **Når 50–55 dB:** Det er noe trafikkstøy, men under nivået for gul sone.
+- Uten treff vet vi ikke om det er stille eller om stedet ikke er kartlagt, så da vises det som ikke tilgjengelig.
+
 ### `pollutedGround` — Forurenset grunn
 **Forklaring:** Miljødirektoratet registrerer steder der grunnen er eller kan være forurenset, for eksempel gamle fyllinger, industritomter og skytebaner.
 - **Når registrert i nærheten:** At et sted er registrert, betyr ikke alltid at det er farlig. Det har mest å si hvis man skal grave, bygge eller dyrke i jorda.

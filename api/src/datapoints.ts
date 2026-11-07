@@ -84,6 +84,7 @@ export const SOURCES: Source[] = [
   { id: "ngu-losmasser", name: "Løsmasser", owner: "NGU", url: "https://kartkatalog.geonorge.no/metadata/loesmasser-regionalt/e5847c27-0c30-44b6-9198-a797c177fa20", licence: "NLOD 2.0" },
   { id: "ngu-radon", name: "Radon aktsomhet", owner: "NGU", url: "https://kartkatalog.geonorge.no/metadata/radon-aktsomhet/dc0605f3-2301-4abe-a91f-6da42464c281", licence: "NLOD 2.0" },
   { id: "svv-stoy", name: "Støykartlegging veg", owner: "Statens vegvesen", url: "https://kartkatalog.geonorge.no/metadata/stoeykartlegging-veg-etter-t-1442/d6db9f39-9725-4630-909e-5e62f09a0766", licence: "NLOD 2.0" },
+  { id: "svv-stoy-strategisk", name: "Strategisk støykartlegging veg", owner: "Statens vegvesen", url: "https://kartkatalog.geonorge.no/metadata/stoeykart-strategisk-stykartlegging-stydirektivet/93a154a7-47d5-47b8-bdda-f156d92386cc", licence: "NLOD 2.0" },
   { id: "mdir-grunnforurensning", name: "Forurenset grunn", owner: "Miljødirektoratet", url: "https://kartkatalog.geonorge.no/metadata/forurenset-grunn/e48e71ac-16fc-4e47-9e7f-c0a4a4bbfad0", licence: "NLOD 2.0" },
   { id: "entur-stopp", name: "Holdeplasser", owner: "Entur", url: "https://developer.entur.org/stops-and-timetable-data", licence: "NLOD 2.0" },
   { id: "udir-skoler", name: "Grunnskoler", owner: "Utdanningsdirektoratet", url: "https://kartkatalog.geonorge.no/metadata/grunnskoler/db4b872f-264d-434c-9574-57232f1e90d2", licence: "NLOD 2.0" },
@@ -204,6 +205,27 @@ export const DATA_POINTS: DataPoint[] = [
       return red
         ? { value: "rød", display: "Rød støysone (over 65 dB)", effect: "bad", score: 10, warning: { severity: "medium", text: "Rød støysone fra vei" } }
         : { value: "gul", display: "Gul støysone (55–65 dB)", effect: "bad", score: 50, warning: { severity: "low", text: "Gul støysone fra vei" } };
+    },
+  },
+  {
+    // data/scripts/stoy_strategisk.ts (Even): lden = lower bound of a 5 dB band (50, 55, ..., 75 = 75+), situation 2021.
+    // Covers Oslo incl. municipal roads; elsewhere only near big roads. No outline of what was mapped,
+    // so no zone = unknown (below 50 dB or not mapped), never "quiet".
+    // Warns only in Oslo: elsewhere roadNoise (T-1442) already warns, and one noise warning is enough.
+    id: "roadNoiseStrategic", label: "Veistøy (strategisk støykart)", category: "environment", source: "svv-stoy-strategisk", importance: "normal",
+    table: "stoy_strategisk", find: { kind: "within" },
+    read: (rows, address) => {
+      if (!rows.length) return null;
+      const lden = Math.max(...rows.map((r) => Number(r.lden)));
+      const band = lden >= 75 ? "over 75 dB" : `${lden}–${lden + 5} dB`;
+      const year = rows[0].year ? ` (${rows[0].year})` : "";
+      const score = lden >= 75 ? 0 : lden >= 70 ? 10 : lden >= 65 ? 20 : lden >= 60 ? 50 : lden >= 55 ? 70 : 90;
+      const oslo = address.municipalityNumber === "0301";
+      const warning =
+        oslo && lden >= 65 ? { severity: "medium" as const, text: `Veistøy ${band}` }
+        : oslo && lden >= 55 ? { severity: "low" as const, text: `Veistøy ${band}` }
+        : undefined;
+      return { value: lden, unit: "dB", display: `${band}${year}`, effect: lden >= 55 ? "bad" : "good", score, ...(warning && { warning }) };
     },
   },
   {
