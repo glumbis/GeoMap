@@ -138,7 +138,10 @@ function crimeReading(rows: Row[], type: "total" | "violence"): Reading | null {
   const airport = isAirport ? ", inkl. Gardermoen" : "";
   const reading: Reading = { value: Number(v), unit: "per 1000 innbyggere", display: `${decimal(Number(v))} per 1000 innbyggere (${rows[0].period})${country}${airport}`, effect: "neutral" };
   // Ullensaker's total is mostly airport cases (smuggling, customs), not life in the municipality: shown, not scored.
-  if (norway == null || Number(norway) <= 0 || (isAirport && type === "total")) return reading;
+  // Oslo (0301): one number for 700 000 people says nothing about the bydel, and would score every Oslo address the same.
+  // Shown, not scored, until we have crime per bydel (SSB 08487 has none).
+  const isOslo = rows[0].kommunenummer === "0301";
+  if (norway == null || Number(norway) <= 0 || isOslo || (isAirport && type === "total")) return reading;
   const ratio = Number(v) / Number(norway);
   const score = CRIME_STEPS.find(([max]) => ratio <= max)?.[1] ?? 15;
   return { ...reading, effect: score >= 70 ? "good" : "bad", score };
