@@ -3,7 +3,7 @@
 // The one API response that is not JSON (AGENTS.md -> "API conventions").
 import { readFileSync } from "node:fs";
 import { compareWithArea, type Area, type AreaComparison } from "./area.ts";
-import { DATA_POINTS, type Severity } from "./datapoints.ts";
+import { DATA_POINTS, NEAREST_STEPS, type Severity } from "./datapoints.ts";
 import { query } from "./db.ts";
 import { htmlToPdf } from "./pdf.ts";
 import { buildProfile, findRows, type MissingDataPoint, type PresentDataPoint, type Profile } from "./profile.ts";
@@ -202,7 +202,7 @@ function windRoseSvg(w: WindRose): string {
 }
 
 function windSection(w: WindRose | undefined): string {
-  const head = `<p class="kicker">Del 3</p><h2>Vind</h2>`;
+  const head = `<p class="kicker">Del 4</p><h2>Vind</h2>`;
   if (!w) return `${head}<p class="note">Ingen værstasjon fra Meteorologisk institutt med vindmålinger innen 25 km, så vi kan ikke vise vindrose for denne adressen.</p>`;
   const s = summarise(w);
   const m = windMeaning(s);
@@ -222,6 +222,81 @@ function windSection(w: WindRose | undefined): string {
     </div>
   </div>
   <p class="note">Vindrosen viser hvor vinden blåser <i>fra</i>. Hver stolpe er en retning, lengden er andelen av alle timer ${esc(w.periodFrom.slice(0, 4))}–${esc(w.periodTo.slice(0, 4))} (${w.hours.toLocaleString("nb-NO")} timer, én måling per time), og fargene er vindstyrke. Målt 10 m over bakken på stasjonen; vinden ved huset kan avvike på grunn av terreng, skog og bygninger. Kilde: Meteorologisk institutt (CC BY 4.0).</p>`;
+}
+
+// ---------- Nearby services: distance to the nearest of each, on one shared metre axis ----------
+
+const SERVICES: { id: keyof typeof NEAREST_STEPS; label: string }[] = [
+  { id: "transitStop", label: "Holdeplass" }, { id: "groceryStore", label: "Dagligvare" }, { id: "kindergarten", label: "Barnehage" },
+  { id: "school", label: "Grunnskole" }, { id: "doctor", label: "Legekontor" }, { id: "pharmacy", label: "Apotek" },
+];
+/** Walking speed for "min å gå": 5 km/h, on the straight line (real paths are longer). */
+const WALK_M_PER_MIN = 5000 / 60;
+const walkMin = (m: number) => Math.max(1, Math.round(m / WALK_M_PER_MIN));
+const metresText = (m: number) => (m < 1000 ? `${Math.round(m / 10) * 10} m` : `${KM.format(m / 1000)} km`);
+
+interface ServiceRow { label: string; m?: number; name?: string; none?: string; full: number }
+
+function serviceRows(p: Profile): ServiceRow[] {
+  const points = new Map(p.categories.flatMap((c) => c.dataPoints).map((d) => [d.id, d]));
+  const missing = new Map(p.categories.flatMap((c) => c.missing).map((d) => [d.id, d]));
+  return SERVICES.flatMap(({ id, label }): ServiceRow[] => {
+    const full = NEAREST_STEPS[id][0][0];
+    const d = points.get(id);
+    if (d) {
+      if (typeof d.value !== "number") return [{ label, full, none: d.display }];
+      const name = /\((.*)\)$/.exec(d.display)?.[1];
+      return [{ label, full, m: d.value, ...(name && { name }) }];
+    }
+    const m = missing.get(id);
+    return m ? [{ label, full, none: `Ikke tilgjengelig · ${MISSING[m.reason]}` }] : [];
+  });
+}
+
+/** Horizontal bars, one hue; a light band per row marks the distance that still gives full score for that service. */
+function servicesSvg(rows: ServiceRow[]): string {
+  const LW = 170, PW = 340, VW = 162, RH = 42, W = LW + PW + VW, top = 4;
+  const far = Math.max(1000, ...rows.map((r) => r.m ?? 0), ...rows.map((r) => r.full));
+  const cap = 3000;
+  const max = Math.min(cap, Math.ceil(far / 500) * 500);
+  const step = max > 2000 ? 1000 : 500;
+  const x = (m: number) => LW + (Math.min(m, max) / max) * PW;
+  const H = top + rows.length * RH;
+  const grid = Array.from({ length: max / step + 1 }, (_, i) => i * step).map((v) =>
+    `<line x1="${x(v).toFixed(1)}" x2="${x(v).toFixed(1)}" y1="${top}" y2="${H}" stroke="${C.line}" stroke-width="0.8"/>` +
+    `<text x="${x(v).toFixed(1)}" y="${H + 13}" text-anchor="${v === 0 ? "start" : v === max ? "end" : "middle"}" class="tick">${v === 0 ? "0" : metresText(v)}</text>`).join("");
+  const body = rows.map((r, i) => {
+    const y = top + i * RH, mid = y + RH / 2;
+    const band = `<rect x="${LW}" y="${y + 6}" width="${(x(r.full) - LW).toFixed(1)}" height="${RH - 12}" fill="${C.good}" fill-opacity="0.13"/>`;
+    const label = `<text x="0" y="${r.name ? mid - 2 : mid + 4}" class="svc">${esc(r.label)}</text>` +
+      (r.name ? `<text x="0" y="${mid + 11}" class="svc-name">${esc(r.name.length > 32 ? `${r.name.slice(0, 31)}…` : r.name)}</text>` : "");
+    const rule = `<line x1="0" x2="${W}" y1="${y + RH}" y2="${y + RH}" stroke="${C.line}" stroke-width="0.8"/>`;
+    if (r.m == null) {
+      return `${rule}${band}${label}<text x="${LW + 6}" y="${mid + 3.5}" class="svc-none">${esc(r.none ?? "")}</text>`;
+    }
+    const w = Math.max(x(r.m) - LW, 2), over = r.m > max;
+    const bar = `<path d="M${LW} ${mid - 5}h${(w - 2).toFixed(1)}a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-${(w - 2).toFixed(1)}z" fill="${C.navy}"><title>${esc(r.label)}: ${metresText(r.m)} i luftlinje, ca. ${walkMin(r.m)} min å gå</title></path>` +
+      (over ? `<path d="M${LW + PW + 3} ${mid - 5}l6 5l-6 5z" fill="${C.navy}"/>` : "");
+    const value = `<text x="${LW + PW + 16}" y="${mid - 1}" class="svc-m">${metresText(r.m)}</text><text x="${LW + PW + 16}" y="${mid + 12}" class="svc-walk">ca. ${walkMin(r.m)} min å gå</text>`;
+    return `${rule}${band}${label}${bar}${value}`;
+  }).join("");
+  return `<svg class="services" viewBox="0 0 ${W} ${H + 18}" width="100%" role="img" aria-label="Avstand i luftlinje til nærmeste holdeplass, butikk, barnehage, skole, lege og apotek">${grid}${body}</svg>`;
+}
+
+function servicesSection(p: Profile): string {
+  const head = `<p class="kicker">Del 3</p><h2>Nærmiljø</h2><h3>Hverdagen rundt adressen</h3>`;
+  const rows = serviceRows(p);
+  if (!rows.length) return `${head}<p class="note">Ingen tjenestedata for denne adressen.</p>`;
+  const found = rows.filter((r) => r.m != null);
+  const near = found.filter((r) => r.m! <= 800); // about 10 minutes on foot
+  const lead = found.length
+    ? `${near.length} av ${rows.length} er innen ca. 10 minutters gange (800 m i luftlinje).${near.length && near.length < found.length ? ` Lengst unna: ${found.reduce((a, b) => (b.m! > a.m! ? b : a)).label.toLowerCase()}.` : ""}`
+    : "Ingen av tjenestene er funnet i nærheten.";
+  return `${head}
+  <p class="lead">Avstand til nærmeste holdeplass, dagligvarebutikk, barnehage, grunnskole, legekontor og apotek. ${esc(lead)}</p>
+  ${servicesSvg(rows)}
+  <p class="legend"><i style="background:${C.navy}"></i>Avstand i luftlinje <i style="background:${C.good};opacity:.3"></i>Så nær at det gir full poengsum for tjenesten</p>
+  <p class="note">Gangtid er regnet med 5 km/t på luftlinjen; den faktiske gangveien er som regel lengre. Lengre enn ${metresText(3000)} vises med pil. Kilder: Entur (holdeplasser), Utdanningsdirektoratet (skoler og barnehager), OpenStreetMap-bidragsytere (butikk, apotek, lege; ODbL).</p>`;
 }
 
 // ---------- Compared to the area (api/src/area.ts): histogram of the other addresses' scores ----------
@@ -416,14 +491,19 @@ function render(p: Profile, s: Summary, zones: Zone[], area?: AreaComparison, wi
   <p class="note">Et funn kommer alltid fra et datapunkt med kilde, aldri fra AI. Alvorlige funn begrenser poengsummen, slik at én stor risiko ikke kan veies opp av gode forhold ellers.</p>
 </section>
 
-<!-- ============ 3b. Wind ============ -->
+<!-- ============ 3b. Nearby services ============ -->
+<section class="page">
+  ${servicesSection(p)}
+</section>
+
+<!-- ============ 3c. Wind ============ -->
 <section class="page">
   ${windSection(wind)}
 </section>
 
 <!-- ============ 4. Categories ============ -->
 <section class="page">
-  <p class="kicker">Del 4</p><h2>Detaljer per kategori</h2>
+  <p class="kicker">Del 5</p><h2>Detaljer per kategori</h2>
   ${p.categories.map((c) => `<div class="cat">
     <div class="cat-head"><h3>${esc(c.name)}</h3>${scoreBadge(c.rating)}</div>
     <p class="cat-sub">${c.rating.status === "ok" ? esc(ratingWord(c.rating)) : esc(c.rating.reason ?? "")} · ${c.dataPoints.length} av ${c.dataPoints.length + c.missing.length} datapunkter</p>
@@ -433,7 +513,7 @@ function render(p: Profile, s: Summary, zones: Zone[], area?: AreaComparison, wi
 
 <!-- ============ 5. Questions ============ -->
 <section class="page">
-  <p class="kicker">Del 5</p><h2>Spørsmål å stille</h2>
+  <p class="kicker">Del 6</p><h2>Spørsmål å stille</h2>
   <p class="lead">Før visning eller bud: spørsmål til selger, megler eller kommunen, ut fra funnene i rapporten.</p>
   ${qs.length ? qs.map((q) => `<div class="qgroup"><p class="qtopic"><b>${esc(q.topic)}</b> · ${esc(q.finding)}</p><ul class="checks">${q.items.map((i) => `<li><span class="box"></span>${esc(i)}</li>`).join("")}</ul></div>`).join("")
     : `<p class="note">Ingen funn i dataene som gir egne spørsmål.</p>`}
@@ -442,7 +522,7 @@ function render(p: Profile, s: Summary, zones: Zone[], area?: AreaComparison, wi
 
 <!-- ============ 6. About ============ -->
 <section class="page">
-  <p class="kicker">Del 6</p><h2>Om rapporten</h2>
+  <p class="kicker">Del 7</p><h2>Om rapporten</h2>
   <h3>Slik regner vi</h3>
   <p>Hver kategori får 0–100 poeng ut fra datapunktene vi har. Samlet vurdering er et vektet snitt av kategoriene som kan vurderes. Alvorlige funn setter et tak: poengsummen skaleres inn under taket (poeng × tak / 100), slik at én alvorlig risiko aldri kan veies opp av gode forhold ellers. Data vi mangler, teller aldri som godt.</p>
   <p>Poengsummen sier hva offentlige data vi har, forteller om stedet. Den er ikke en sikkerhetsvurdering, et prissignal eller et løfte om at en risiko ikke finnes.</p>
@@ -601,6 +681,15 @@ i.hollow { border: 1px solid ${C.unknown}; background: transparent !important; }
 .wind-facts p { border-top: 1px solid ${C.line}; padding-top: 2mm; margin-bottom: 3mm; }
 .wind-facts p:first-child { border-top: 0; padding-top: 0; }
 .wind-facts h3.mini { margin-top: 4mm; }
+
+/* nearby services */
+.services { display: block; overflow: visible; margin-top: 2mm; }
+.services .svc { font-size: 11px; font-weight: 600; fill: ${C.ink}; }
+.services .svc-name { font-size: 9px; fill: ${C.muted}; }
+.services .svc-m { font-size: 11px; font-weight: 600; fill: ${C.ink}; }
+.services .svc-walk { font-size: 9px; fill: ${C.muted}; }
+.services .svc-none { font-size: 9.5px; font-style: italic; fill: ${C.muted}; }
+.services .tick { font-size: 8.5px; fill: ${C.muted}; }
 
 /* compared to the area */
 .areas { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; }
