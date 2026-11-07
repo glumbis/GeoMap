@@ -91,7 +91,8 @@ function ring(score?: number) {
 
 function overall(r: Rating) {
   const ok = r.status === "ok" && r.score != null;
-  const cov = `basert på ${r.coverage.present} av ${r.coverage.expected} datapunkter`;
+  const capped = ok && !!r.cappedBy?.length;
+  const cov =`basert på ${r.coverage.present} av ${r.coverage.expected} datapunkter`;
   const weakest = r.weakestCategory && (!ok || r.weakestCategory.score < r.score!) ? r.weakestCategory : undefined;
   return h(
     "div",
@@ -100,10 +101,18 @@ function overall(r: Rating) {
     h(
       "div",
       { class: "overall-text" },
-      h("div", { class: "overall-word" }, ok ? scoreWord(r.score!) : "Kan ikke vurderes"),
+      // A capped score never gets a word like "God" (docs/PROFILE.md): the worst cap reason takes its place.
+      h("div", { class: "overall-word" }, !ok ? "Kan ikke vurderes" : capped ? r.cappedBy![0].text : scoreWord(r.score!)),
       !ok && r.reason ? h("p", { class: "overall-reason" }, r.reason) : null,
       weakest ? h("p", { class: "overall-weakest" }, "Svakest: ", h("strong", {}, `${weakest.name} ${weakest.score}`)) : null,
-      ok && r.cappedBy?.length ? h("p", { class: "overall-cap" }, `Begrenset til ${r.score} på grunn av: ${r.cappedBy.map((c) => c.text).join("; ")}`) : null,
+      capped
+        ? h(
+            "p",
+            { class: "overall-cap" },
+            `Begrenset til ${r.score} på grunn av dette` +
+              (r.cappedBy!.length > 1 ? `, og: ${r.cappedBy!.slice(1).map((c) => c.text).join("; ")}` : ""),
+          )
+        : null,
       h("p", { class: "overall-coverage" }, cov),
     ),
   );
@@ -173,7 +182,10 @@ function dataPointRow(d: DataPoint, p: Profile) {
   return h(
     "li",
     { class: "dp", id: `dp-${d.id}` },
-    h("span", { class: `dot dot--${d.effect}`, title: d.effect }),
+    // "Ikke kartlagt her" is not data saying safe: same grey as missing data, never green.
+    d.value === "ikkeKartlagt"
+      ? h("span", { class: "dot", style: "background: var(--unknown)", title: "ikke kartlagt" })
+      : h("span", { class: `dot dot--${d.effect}`, title: d.effect }),
     h(
       "div",
       { class: "dp-body" },
