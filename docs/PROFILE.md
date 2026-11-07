@@ -12,6 +12,18 @@ Lukas owns the final field names and numbers. Change this file first, then the c
 4. **Never guess a score.** A score uses only data we actually have. If too much important data is missing, there is no score, only a plain-language reason why we can't rate.
 5. **Everything has a source.** Every data point, missing or not, names its source. Every warning points to a real data point.
 
+## Address id
+
+Every address has one id, used in the URL (`/a/<id>` in the web app, `/api/address/<id>/...` in the API):
+
+`<kommunenummer>-<adressekode>-<nummer><bokstav>`, for example `0301-10223-22` (Arendalsgata 22, Oslo) or `0301-13729-64A` (Kirkeveien 64A).
+
+- All four parts come from a Geonorge `adresser/v1/sok` result: `kommunenummer`, `adressekode`, `nummer`, `bokstav`.
+- `kommunenummer` is 4 digits. `adressekode` and `nummer` are written without leading zeros. `bokstav` is upper case, and left out when empty.
+- The API looks it up again with `adresser/v1/sok?kommunenummer=..&adressekode=..&nummer=..` and matches `bokstav` exactly.
+- Only street addresses (`objtype` `Vegadresse`). Search in the web app should filter out other types.
+- Errors: a badly formed id gives 400 `bad_request`, an unknown address 404 `not_found`, Geonorge down 503 `unavailable`.
+
 ## What a profile contains
 
 - **Version:** a version number for this standard, raised on breaking changes.
@@ -67,6 +79,38 @@ Each category has:
 
 The reason always names what is missing, for example that ground and hazard data are missing for this address.
 
+## Field names (version 1)
+
+The code is the source of truth (`api/src/profile.ts`, `api/src/rating.ts`, `api/src/datapoints.ts`). Example (shortened):
+
+```json
+{
+  "version": 1,
+  "address": { "id": "0301-10223-22", "text": "Arendalsgata 22", "postcode": "0463", "place": "OSLO",
+               "municipality": "OSLO", "municipalityNumber": "0301", "gnr": 221, "bnr": 19, "lng": 10.758173, "lat": 59.9375855 },
+  "rating": { "status": "ok", "score": 40, "coverage": { "present": 13, "expected": 13, "criticalMissing": 0 },
+              "cappedBy": [{ "dataPointId": "quickClay", "cap": 40, "text": "Faresone for kvikkleireskred, faregrad høy" }],
+              "weakestCategory": { "id": "hazards", "name": "Naturfare", "score": 30 } },
+  "warnings": [{ "severity": "high", "text": "Faresone for kvikkleireskred, faregrad høy", "dataPointId": "quickClay", "categoryId": "hazards" }],
+  "categories": [{
+    "id": "hazards", "name": "Naturfare", "weight": 25, "required": true,
+    "rating": { "status": "ok", "score": 30, "coverage": { "present": 2, "expected": 3, "criticalMissing": 0 } },
+    "dataPoints": [{ "id": "quickClay", "label": "Kvikkleire faresone", "value": "høy", "display": "I faresone \"Myraløkka\", faregrad høy",
+                     "importance": "critical", "effect": "bad", "score": 0, "source": "nve-kvikkleire",
+                     "warning": { "severity": "high", "text": "Faresone for kvikkleireskred, faregrad høy" } }],
+    "missing": [{ "id": "rockfall", "label": "Steinsprang", "importance": "normal", "source": "nve-steinsprang", "reason": "notLoaded" }]
+  }],
+  "sources": [{ "id": "nve-kvikkleire", "name": "Faresoner kvikkleire", "owner": "NVE", "url": "https://...", "licence": "NLOD 2.0" }]
+}
+```
+
+- `rating.status`: `ok` | `insufficientData` | `unavailable`. `score` only when `ok`, `reason` only when not.
+- `cappedBy`: warnings that pulled the score down. `weakestCategory`: overall only, whenever at least one category is rated.
+- A data point's `source` is a source `id` from `sources`. `unit`, `score`, `warning` and `explanation` are optional.
+- `missing[].reason`: `noCoverage` | `sourceUnavailable` | `notLoaded`.
+- Severity caps: a `high` warning caps its category at 30 and the overall at 40; `medium` caps both at 60; `low` gives no cap.
+- Data point without `score`: `good` counts 100, `bad` counts 0, `neutral` is not scored.
+
 ## Rules for anyone reading the profile (web app, agents, scripts, AI summary)
 
 - **Treat categories as a list.** Never depend on a fixed set or a fixed position. An unknown category gets the standard card.
@@ -78,7 +122,7 @@ The reason always names what is missing, for example that ground and hazard data
 
 ## Adding a category or data point
 
-1. Add it in `api/`: give it a stable id, a weight, and mark each data point critical or normal.
+1. Add it in `api/src/datapoints.ts`: one entry in `DATA_POINTS` per data point (a category is one entry in `CATEGORIES`, with a weight). Give it a stable id and mark it critical or normal.
 2. Add its source.
 3. Nothing changes in `web/`: the web app shows any category that follows this standard.
 4. If you change a field's name or meaning, update this file and the version, and tell the team.

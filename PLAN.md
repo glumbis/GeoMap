@@ -64,13 +64,12 @@ Each role lists: what you own, your tasks in order, and when a task is done.
 **Owns:** `api/src/index.ts`, `api/src/db.ts`, `api/src/geojson.ts`, `api/src/routes/address.ts`, `api/src/rating.ts`, `api/src/summary.ts`, `docs/PROFILE.md`, `PLAN.md`, `AGENTS.md`.
 
 1. ~~Scaffold the stack and push it.~~ Done.
-2. **Decide the address id** and write it into `docs/PROFILE.md`. Suggestion: `<kommunenummer>-<adressekode>-<nummer><bokstav>` from the Geonorge address search (unique, readable, and you can look it up again with `adresser/v1/sok?kommunenummer=..&adressekode=..&nummer=..&bokstav=..`). Tell Erik.
-   *Done when:* Erik knows what to put in the URL.
-3. **Profile endpoint, first version:** `GET /api/address/:id/profile` in `api/src/routes/address.ts`. Look up the address point, then for every loaded table ask "what is at or near this point?". Return the shape from `docs/PROFILE.md`, even if only the municipality is filled in. Everything not loaded yet goes in "missing" with reason "not loaded".
-   *Done when:* the 5 test addresses in `docs/TEST_ADDRESSES.md` return valid profiles, and Erik can build against it.
-4. **Make adding data points easy for Sverre and Even:** one small list (in `address.ts` or its own file) where each data point is one entry: id, label, category, table, how to query it, critical or normal. Adding a dataset to the profile should mean adding one entry.
+2. ~~**Decide the address id**~~ Done: `<kommunenummer>-<adressekode>-<nummer><bokstav>`, see "Address id" in `docs/PROFILE.md`. Erik's tasks below say how to build it.
+3. ~~**Profile endpoint, first version:** `GET /api/address/:id/profile`~~ Done (`api/src/profile.ts`, `api/src/routes/address.ts`). All 5 test addresses return valid profiles; everything not ingested yet is listed as `notLoaded`.
+4. ~~**Data-point list for Sverre and Even**~~ Done: `api/src/datapoints.ts`. One entry per data point: id, label, category, source, critical/normal, table, how to find it (`within`, `nearest`, `count`) and a `read()` that turns rows into a value, score and warning.
 5. **Rating model** in `api/src/rating.ts`: category scores, overall score, severity caps and "worst category first" (see `suggestions.md`), "insufficient data" rules from `docs/PROFILE.md`.
    *Done when:* test address #1 (quick clay) scores clearly worse than #4 (quiet suburb), and every score explains why.
+   First version is in. On fake rows: #1-like scores 40 (capped by quick clay), #4-like 92. Re-check with real data once Sverre's NVE and NGU tables land. Until then every address says "insufficient data", which is correct.
 6. **AI summary:** `GET /api/address/:id/summary` (see "AI summary" above). Use Even's fact-sentence rules. Cache in table `summaries`.
    *Done when:* the summary for all 5 test addresses mentions every real hazard and invents nothing.
 7. **All the time:** review what lands on `main`, unblock people, and cut scope when time runs short.
@@ -79,7 +78,7 @@ Each role lists: what you own, your tasks in order, and when a task is done.
 
 **Owns:** `data/scripts/` (except files Even creates), dataset routes in `api/src/routes/<dataset>.ts`.
 
-1. **Agree the table shape with Lukas** (first hour): every table has `geom` (EPSG:4326), `name`, `source`, plus the columns the profile needs (e.g. `faregrad` for hazard zones).
+1. **Agree the table shape with Lukas** (first hour): every table has `geom` (EPSG:4326), `name`, `source`, plus the columns the profile needs (e.g. `faregrad` for hazard zones). Proposed table and column names are already in `api/src/datapoints.ts` (`kvikkleire.faregrad`, `flomsoner.gjentaksintervall`, `steinsprang`, `losmasser.jordart`, `radon.aktsomhet`, `veistoy.stoysone`, ...). Use them, or change the entry to match your table.
 2. **NVE hazard zones first** (quick clay, flood, landslide/rockfall/avalanche). These make the demo. Test addresses #1 and #2 must fall inside the right zones.
 3. **NGU ground data:** soil type (løsmasser), radon risk, bedrock.
 4. **Addresses and buildings** (Kartverket), if the profile needs them beyond the Geonorge address API.
@@ -92,9 +91,11 @@ Each role lists: what you own, your tasks in order, and when a task is done.
 **Owns:** everything in `web/`, and `docs/DESIGN.md`.
 
 1. **Read `docs/DESIGN.md`** and adjust it if you disagree. It is yours. The brand colours are already in `web/src/style.css`.
-2. **Start page:** blank paper page, logo, one big address search field with autocomplete (Geonorge `adresser/v1/sok`). Picking an address goes to `/a/<id>`.
+2. **Start page:** blank paper page, logo, one big address search field with autocomplete (Geonorge `adresser/v1/sok`, keep only `objtype` `Vegadresse`). Picking an address goes to `/a/<id>`.
+   Build the id from the search hit: `` `${kommunenummer}-${adressekode}-${nummer}${bokstav.toUpperCase()}` ``, e.g. `0301-10223-22` (Arendalsgata 22) or `0301-13729-64A` (Kirkeveien 64A). Details: "Address id" in `docs/PROFILE.md`.
    *Done when:* you can find each of the 5 test addresses by typing part of it, with mouse or keyboard, on desktop and on a phone-sized screen.
 3. **Address page skeleton:** fetch `/api/address/<id>/profile` and show the summary block and category cards. Render whatever categories the profile contains; never hard-code the list.
+   The endpoint works now: try `http://localhost:5173/api/address/0301-10223-22/profile`. Field names and an example: "Field names" in `docs/PROFILE.md`. Until hazard data is ingested, the overall `rating.status` is `insufficientData` with a `reason`: show the reason, never a number.
 4. **Map:** make the Kartverket basemap match the logo (see "The map" in `docs/DESIGN.md`), the orange pin, layer toggles grouped by category. Restyle the controls.
 5. **Details:** expandable data points with explanation and source, "Ikke tilgjengelig" for missing data, "AI-generert" label on the summary, loading and error states.
 6. **Polish for the demo:** the 5 test addresses look great on a laptop and a phone.

@@ -1,0 +1,122 @@
+// Builds the address profile (docs/PROFILE.md). Used by GET /api/address/:id/profile, and later by the AI summary.
+import { lookupAddress, type Address } from "./address.ts";
+import { CATEGORIES, DATA_POINTS, SOURCES, type DataPoint, type Find, type Reading, type Row, type Severity } from "./datapoints.ts";
+import { query } from "./db.ts";
+import { rateCategory, rateOverall, type MissingPoint, type Rating, type Scored } from "./rating.ts";
+
+export const PROFILE_VERSION = 1;
+
+type MissingReason = "noCoverage" | "sourceUnavailable" | "notLoaded";
+
+export interface PresentDataPoint extends Reading {
+  id: string;
+  label: string;
+  importance: "critical" | "normal";
+  source: string;
+}
+
+export interface MissingDataPoint {
+  id: string;
+  label: string;
+  importance: "critical" | "normal";
+  source: string;
+  reason: MissingReason;
+}
+
+export interface Profile {
+  version: number;
+  address: Address;
+  rating: Rating;
+  warnings: { severity: Severity; text: string; dataPointId: string; categoryId: string }[];
+  categories: {
+    id: string;
+    name: string;
+    weight: number;
+    required: boolean;
+    rating: Rating;
+    dataPoints: PresentDataPoint[];
+    missing: MissingDataPoint[];
+  }[];
+  sources: typeof SOURCES;
+}
+
+// Metres need a projected CRS: EPSG:25833 (UTM 33N) covers Oslo + Akershus. Data is stored as lng, lat.
+const UTM = (g: string) => `ST_Transform(${g}, 'EPSG:4326', 'EPSG:25833', always_xy := true)`;
+
+async function findRows(table: string, find: Find, lng: number, lat: number): Promise<Row[]> {
+  if (find.kind === "within") {
+    return query(`SELECT * EXCLUDE (geom) FROM ${table} WHERE ST_Intersects(geom, ST_Point($1, $2)) LIMIT 50`, [lng, lat]);
+  }
+  const r = find.kind === "nearest" ? find.maxM : find.radiusM;
+  // Cheap bbox prefilter in degrees, then exact distance in metres.
+  const dLat = r / 111_320;
+  const dLng = r / (111_320 * Math.cos((lat * Math.PI) / 180));
+  const near = `
+    SELECT * EXCLUDE (geom), ST_Distance(${UTM("geom")}, ${UTM("ST_Point($1, $2)")}) AS distanceM FROM ${table}
+    WHERE ST_Intersects(geom, ST_MakeEnvelope($3, $4, $5, $6))`;
+  const params = [lng, lat, lng - dLng, lat - dLat, lng + dLng, lat + dLat, r];
+  if (find.kind === "nearest") {
+    return query(`SELECT * FROM (${near}) WHERE distanceM <= $7 ORDER BY distanceM LIMIT 1`, params);
+  }
+  return query(`SELECT count(*)::INTEGER AS count FROM (${near}) WHERE distanceM <= $7`, params);
+}
+
+export async function buildProfile(id: string): Promise<Profile> {
+  const address = await lookupAddress(id);
+  const loaded = new Set((await query<{ t: string }>("SELECT table_name AS t FROM duckdb_tables()")).map((r) => r.t));
+
+  const results: { dp: DataPoint; reading?: Reading; reason?: MissingReason }[] = [];
+  for (const dp of DATA_POINTS) {
+    if (!/^[a-z0-9_]+$/.test(dp.table)) throw new Error(`bad table name in data point ${dp.id}: ${dp.table}`);
+    if (!loaded.has(dp.table)) {
+      results.push({ dp, reason: "notLoaded" });
+      continue;
+    }
+    try {
+      const reading = dp.read(await findRows(dp.table, dp.find, address.lng, address.lat));
+      results.push(reading ? { dp, reading } : { dp, reason: "noCoverage" });
+    } catch (err) {
+      // A broken entry must not break the whole profile. Show it as missing and log why.
+      console.error(`data point ${dp.id} (${dp.table}) failed:`, err);
+      results.push({ dp, reason: "sourceUnavailable" });
+    }
+  }
+
+  const categories = CATEGORIES.map((category) => {
+    const mine = results.filter((r) => r.dp.category === category.id);
+    const dataPoints: PresentDataPoint[] = [];
+    const missing: MissingDataPoint[] = [];
+    for (const { dp, reading, reason } of mine) {
+      const base = { id: dp.id, label: dp.label, importance: dp.importance, source: dp.source };
+      if (reading) dataPoints.push({ ...base, ...reading });
+      else missing.push({ ...base, reason: reason! });
+    }
+    const present: Scored[] = mine.filter((r) => r.reading).map((r) => ({ id: r.dp.id, label: r.dp.label, importance: r.dp.importance, reading: r.reading! }));
+    const missingPoints: MissingPoint[] = missing.map(({ id, label, importance }) => ({ id, label, importance }));
+    return { category, present, rating: rateCategory(present, missingPoints), dataPoints, missing };
+  });
+
+  const order: Severity[] = ["high", "medium", "low"];
+  const warnings = categories
+    .flatMap((c) => c.dataPoints.filter((p) => p.warning).map((p) => ({ ...p.warning!, dataPointId: p.id, categoryId: c.category.id })))
+    .sort((a, b) => order.indexOf(a.severity) - order.indexOf(b.severity));
+
+  const usedSources = new Set(["geonorge-adresser", ...DATA_POINTS.map((d) => d.source)]);
+
+  return {
+    version: PROFILE_VERSION,
+    address,
+    rating: rateOverall(categories),
+    warnings,
+    categories: categories.map((c) => ({
+      id: c.category.id,
+      name: c.category.name,
+      weight: c.category.weight,
+      required: c.category.required,
+      rating: c.rating,
+      dataPoints: c.dataPoints,
+      missing: c.missing,
+    })),
+    sources: SOURCES.filter((s) => usedSources.has(s.id)),
+  };
+}

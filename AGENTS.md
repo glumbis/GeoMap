@@ -36,12 +36,13 @@ npm run dev                 # API on :3000 + web on http://localhost:5173 (open 
 - `npm run typecheck` checks api + web. `npm run build` builds the web app to `web/dist/`.
 - Stop `npm run dev` before running an ingest: DuckDB lets only one process write the file.
 - AI summaries need `ANTHROPIC_API_KEY` in `.env` (copy `.env.example`). Everything else runs without keys.
-- Check the API: `http://localhost:5173/api/health` lists loaded tables.
+- Check the API: `http://localhost:5173/api/health` lists loaded tables. Address profile: `http://localhost:5173/api/address/0301-10223-22/profile`.
 - In the browser console (dev only), `map` is the MapLibre map.
 
 ## Add things (no shared file to edit)
 - **Dataset:** `data/scripts/<name>.ts` (copy `kommuner.ts`). Helpers in `data/scripts/lib.ts`: `download`, `getJson`, `rawPath`. Use `conn` from `api/src/db.ts`. Clip to Oslo + Akershus with `WHERE ST_Intersects(geom, (SELECT ST_Union_Agg(geom) FROM kommuner))`.
 - **Endpoint:** `api/src/routes/<name>.ts` exporting a Hono app is auto-mounted at `/api/<name>`. For a map layer, one line: `export default new Hono().get("/", (c) => layer(c, "<table>"));` (`api/src/geojson.ts` handles bbox, q, limit and GeoJSON). Throw `HTTPException` for JSON errors.
+- **Data point in the address profile:** one entry in `DATA_POINTS` in `api/src/datapoints.ts` (and its source in `SOURCES`). Rating and web app pick it up.
 - **Map feature:** `web/src/features/<name>.ts` exporting `default function (map: Map)` is auto-loaded after the map loads (copy `kommuner.ts`).
 
 ## Stack
@@ -67,6 +68,8 @@ api/                 backend
   src/routes/        one file per dataset/endpoint
   src/db.ts          shared DuckDB connection (opens data/geomap.duckdb), query() helper
   src/geojson.ts     layer(): standard bbox/q/limit GeoJSON endpoint for a table
+  src/datapoints.ts  categories, sources and data points of the address profile (one entry each)
+  src/profile.ts     builds the address profile (rating.ts scores it, address.ts looks up ids)
 docs/
   PROFILE.md         standard for the address profile (read before touching rating, profile or the address panel)
   DESIGN.md          look, page flow, map style (read before touching anything people see)
