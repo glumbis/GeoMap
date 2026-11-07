@@ -159,12 +159,24 @@ export const SOURCES: Source[] = [
   { id: "dsb-tilfluktsrom", name: "Tilfluktsrom - Offentlige", owner: "DSB", url: "https://kartkatalog.geonorge.no/metadata/dbae9aae-10e7-4b75-8d67-7f0e8828f3d8", licence: "NLOD 1.0" },
   { id: "dsb-brannstasjoner", name: "Brannstasjoner", owner: "DSB", url: "https://kartkatalog.geonorge.no/metadata/0ccce81d-a72e-46ca-8bd9-57b362376485", licence: "NLOD 1.0" },
   { id: "nibio-ar50", name: "Arealressurskart AR50", owner: "NIBIO", url: "https://kartkatalog.geonorge.no/metadata/4bc2d1e0-f693-4bf2-820d-c11830d849a3", licence: "NLOD 1.0" },
+  { id: "ngu-nadag", name: "Nasjonal database for grunnundersøkelser (NADAG)", owner: "NGU", url: "https://geo.ngu.no/api/features/grunnundersokelser_utvidet", licence: "NLOD 2.0" },
+  { id: "kartverket-hoydedata", name: "Høydedata (terrengmodell DTM 1 m)", owner: "Kartverket", url: "https://ws.geonorge.no/hoydedata/v1/", licence: "CC BY 4.0" },
+  { id: "kartverket-bygning", name: "Matrikkelen - Bygningspunkt", owner: "Kartverket", url: "https://kartkatalog.geonorge.no/metadata/24d7e9d1-87f6-45a0-b38e-3447f8d7f9a1", licence: "CC BY 4.0" },
+  { id: "ssb-utvikling", name: "Befolkningsframskrivinger (14288), boligbygging (05940), eierstatus (14891), fastlegelister (12005)", owner: "SSB", url: "https://www.ssb.no/statbank", licence: "CC BY 4.0" },
   { id: "udir-elevundersokelsen", name: "Elevundersøkelsen, mobbing på skolen", owner: "Utdanningsdirektoratet", url: "https://www.udir.no/tall-og-forskning/statistikk/statistikk-grunnskole/elevundersokelsen/", licence: "NLOD 2.0" },
 ];
 
 // ---- Helpers for common shapes -------------------------------------------------------------
 
 const metres = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1).replace(".", ",")} km`);
+/** A number in Norwegian style ("1 234,5"), at most `digits` decimals. */
+const nbNum = (v: unknown, digits = 0) => Number(v).toLocaleString("nb-NO", { maximumFractionDigits: digits });
+/** Info-only "nearest place" reading: "450 m unna (name)", or `none` (neutral) when nothing is within reach. */
+function nearestPlace(rows: Row[], none: string): Reading {
+  const r = rows[0];
+  if (!r) return { value: null, display: none, effect: "neutral" };
+  return { value: Math.round(Number(r.distanceM)), unit: "m", display: `${metres(Number(r.distanceM))} unna (${r.name})`, effect: "neutral" };
+}
 
 const decimal = (n: number) => String(Math.round(n * 10) / 10).replace(".", ",");
 
@@ -474,6 +486,48 @@ export const DATA_POINTS: DataPoint[] = [
     },
   },
   {
+    // data/scripts/ngu_nadag.ts (Even): nadag, NADAG boreholes; depthToRock = drilled depth to bedrock (m).
+    // Nearest borehole within 150 m that reached rock. Info only: never scored.
+    id: "depthToBedrock", label: "Dybde til fjell (nærmeste grunnboring)", category: "ground", source: "ngu-nadag", importance: "normal",
+    table: "nadag", find: { kind: "nearest", maxM: 150, where: "depthToRock IS NOT NULL" },
+    read: (rows) => {
+      const r = rows[0];
+      if (!r) return null;
+      const depth = Number(r.depthToRock).toLocaleString("nb-NO", { maximumFractionDigits: 1 });
+      const when = r.year != null ? `, ${r.year}` : "";
+      return { value: Number(r.depthToRock), unit: "m", display: `${depth} m ved en boring ${metres(Number(r.distanceM))} unna${when}`, effect: "neutral" };
+    },
+  },
+  {
+    // data/scripts/ngu_nadag.ts (Even): nadag, quickClay = 'Sikker' | 'Antatt' | 'Usikker' | 'IkkeVurdert' | NULL.
+    // Boreholes within 250 m, and how many found quick clay (sure or assumed). Info only: never scored.
+    id: "quickClayBoreholes", label: "Kvikkleire i grunnboringer innen 250 m", category: "hazards", source: "ngu-nadag", importance: "normal",
+    table: "nadag", find: { kind: "around", radiusM: 250 },
+    read: (rows) => {
+      if (!rows.length) return null;
+      const found = rows.filter((r) => r.quickClay === "Sikker" || r.quickClay === "Antatt");
+      const n = rows.length;
+      const all = `${n}${n === 500 ? "+" : ""} ${n === 1 ? "grunnboring" : "grunnboringer"}`;
+      if (!found.length) return { value: 0, display: `Ikke påvist i ${all}`, effect: "neutral" };
+      return {
+        value: found.length, unit: "boringer",
+        display: `Påvist i ${found.length} av ${all}, nærmeste ${metres(Number(found[0].distanceM))} unna`, effect: "neutral",
+      };
+    },
+  },
+  {
+    // data/scripts/matrikkel_hoyder.ts (Even): bygning_hoyder, ground height (NN2000) at each dwelling building.
+    // Nearest dwelling within 75 m. Info only: never scored.
+    id: "elevation", label: "Høyde over havet", category: "ground", source: "kartverket-hoydedata", importance: "normal",
+    table: "bygning_hoyder", find: { kind: "nearest", maxM: 75 },
+    read: (rows) => {
+      const r = rows[0];
+      if (!r) return null;
+      const h = Math.round(Number(r.heightM));
+      return { value: h, unit: "moh.", display: `${h} m over havet`, effect: "neutral" };
+    },
+  },
+  {
     // data/scripts/nve_skredhendelser.ts (Even): skredhendelser, slide events NVE has registered (release point),
     // typeName ("Leirskred", "Steinsprang (under ~100 m3)", "Utglidning av veg", ...), year (NULL when unknown).
     // Count within 500 m and the nearest one. Info only: never scored (the database is far from complete).
@@ -577,6 +631,19 @@ export const DATA_POINTS: DataPoint[] = [
     },
   },
   {
+    // data/scripts/nibio_lauvskog.ts (Even): lauvskog, 100 m grid points in AR50 deciduous or mixed forest.
+    // Share of the 500 m circle, for pollen allergy (birch, alder, hazel). Info only: never scored.
+    id: "deciduousForest", label: "Lauvskog innen 500 m (pollen)", category: "environment", source: "nibio-ar50", importance: "normal",
+    table: "lauvskog", find: { kind: "around", radiusM: 500 },
+    read: (rows) => {
+      const pct = Math.min(100, Math.round((rows.length / GRID_POINTS_500M) * 100));
+      if (!pct) return { value: 0, unit: "%", display: "Ingen lauv- eller blandingsskog i kartet innen 500 m", effect: "neutral" };
+      const lauv = rows.filter((r) => r.treeType === "lauvskog").length;
+      const mostly = lauv >= rows.length / 2 ? "mest lauvskog" : "mest blandingsskog";
+      return { value: pct, unit: "%", display: `${pct} % lauv- eller blandingsskog (${mostly})`, effect: "neutral" };
+    },
+  },
+  {
     // data/scripts/nve_kraftlinjer.ts (Even): kraftlinjer, NVE overhead lines, level 'transmisjonsnett' | 'regionalnett', voltageKv.
     // The local distribution grid (up to 22 kV) is not in the source.
     // Scored: under 50 m 25, 100 m 45, 250 m 70, further 90, none within 1 km 100.
@@ -631,6 +698,17 @@ export const DATA_POINTS: DataPoint[] = [
         value: n, unit: "avganger", display: `${n} avganger, ${lines} ${lines === 1 ? "linje" : "linjer"}${where}`,
         effect: score >= 50 ? "good" : "bad", score,
       };
+    },
+  },
+  {
+    // data/scripts/stops.ts (Even): stops with hasRail / hasMetro. Nearest train or metro station within 3 km. Info only.
+    id: "railStation", label: "Nærmeste tog- eller T-banestasjon", category: "location", source: "entur-stopp", importance: "normal",
+    table: "stops", find: { kind: "nearest", maxM: 3000, where: "hasRail OR hasMetro" },
+    read: (rows) => {
+      const r = rows[0];
+      if (!r) return { value: null, display: "Ingen innen 3 km", effect: "neutral" };
+      const kind = r.hasRail && r.hasMetro ? "tog og T-bane" : r.hasRail ? "tog" : "T-bane";
+      return { value: Math.round(Number(r.distanceM)), unit: "m", display: `${metres(Number(r.distanceM))} (${r.name}, ${kind})`, effect: "neutral" };
     },
   },
   {
@@ -695,6 +773,16 @@ export const DATA_POINTS: DataPoint[] = [
     },
   },
   {
+    // data/scripts/schools.ts (Even): schools with isUpperSecondary. Nearest videregående within 10 km. Info only.
+    id: "upperSecondary", label: "Nærmeste videregående skole", category: "location", source: "udir-skoler", importance: "normal",
+    table: "schools", find: { kind: "nearest", maxM: 10000, where: "isUpperSecondary" },
+    read: (rows) => {
+      const r = rows[0];
+      if (!r) return { value: null, display: "Ingen innen 10 km", effect: "neutral" };
+      return { value: Math.round(Number(r.distanceM)), unit: "m", display: `${metres(Number(r.distanceM))} (${r.name})`, effect: "neutral" };
+    },
+  },
+  {
     id: "kindergarten", label: "Nærmeste barnehage", category: "location", source: "udir-barnehager", importance: "normal",
     table: "kindergartens", find: { kind: "nearest", maxM: 3000 },
     read: nearestScore([[400, 100], [800, 80], [1500, 50], [3000, 20]]),
@@ -714,6 +802,48 @@ export const DATA_POINTS: DataPoint[] = [
     id: "doctor", label: "Nærmeste legekontor", category: "location", source: "osm", importance: "normal",
     table: "tjenester", find: { kind: "nearest", maxM: 5000, where: "kind = 'lege'" },
     read: nearestScore([[800, 100], [1500, 80], [3000, 50], [5000, 20]]),
+  },
+  // data/scripts/osm_hverdag.ts (Even): hverdag (OSM points, kind) and sykkelveier (OSM cycleways). Info only: never scored.
+  {
+    id: "hospital", label: "Nærmeste sykehus", category: "location", source: "osm", importance: "normal",
+    table: "hverdag", find: { kind: "nearest", maxM: 30000, where: "kind = 'sykehus'" },
+    read: (rows) => nearestPlace(rows, "Ingen innen 30 km"),
+  },
+  {
+    id: "emergencyClinic", label: "Nærmeste legevakt", category: "location", source: "osm", importance: "normal",
+    table: "hverdag", find: { kind: "nearest", maxM: 30000, where: "kind = 'legevakt'" },
+    read: (rows) => nearestPlace(rows, "Ingen registrert innen 30 km"),
+  },
+  {
+    id: "evCharging", label: "Nærmeste ladestasjon for elbil", category: "location", source: "osm", importance: "normal",
+    table: "hverdag", find: { kind: "nearest", maxM: 5000, where: "kind = 'lading'" },
+    read: (rows) => nearestPlace(rows, "Ingen registrert innen 5 km"),
+  },
+  {
+    id: "library", label: "Nærmeste bibliotek", category: "location", source: "osm", importance: "normal",
+    table: "hverdag", find: { kind: "nearest", maxM: 10000, where: "kind = 'bibliotek'" },
+    read: (rows) => nearestPlace(rows, "Ingen innen 10 km"),
+  },
+  {
+    // Cafés, restaurants, bars and pubs within 500 m: a rough measure of street life.
+    id: "cafes", label: "Kafeer og restauranter innen 500 m", category: "location", source: "osm", importance: "normal",
+    table: "hverdag", find: { kind: "around", radiusM: 500, where: "kind = 'servering'" },
+    read: (rows) => {
+      const n = rows.length;
+      if (!n) return { value: 0, display: "Ingen registrert innen 500 m", effect: "neutral" };
+      return { value: n, unit: "steder", display: `${n}${n === 500 ? "+" : ""} kafeer, restauranter og barer (nærmeste ${metres(Number(rows[0].distanceM))})`, effect: "neutral" };
+    },
+  },
+  {
+    id: "cycleway", label: "Nærmeste sykkelvei", category: "location", source: "osm", importance: "normal",
+    table: "sykkelveier", find: { kind: "nearest", maxM: 2000 },
+    read: (rows) => {
+      const r = rows[0];
+      if (!r) return { value: null, display: "Ingen registrert innen 2 km", effect: "neutral" };
+      const what = r.shared ? "gang- og sykkelvei" : "sykkelvei";
+      const name = r.name !== "Sykkelvei" ? ` (${r.name})` : "";
+      return { value: Math.round(Number(r.distanceM)), unit: "m", display: `${metres(Number(r.distanceM))} til ${what}${name}`, effect: "neutral" };
+    },
   },
   {
     // data/scripts/dsb_beredskap.ts (Even): brannstasjoner, DSB fire stations and depots (name, fireService).
@@ -837,6 +967,20 @@ export const DATA_POINTS: DataPoint[] = [
   // Area. kommuner: data/scripts/kommuner.ts. ssb_kommuner: data/scripts/ssb.ts (Even), one row per municipality with its geom.
   // Stats are information, not judgement: neutral, not scored. Exception: crime, scored against Norway's rate.
   {
+    // data/scripts/matrikkel_bygninger.ts (Even): bygninger, dwelling buildings (NS 3457 type 111–159) with units.
+    // The nearest dwelling building within 40 m of the address point. Info only: never scored.
+    id: "buildingType", label: "Bygningstype", category: "area", source: "kartverket-bygning", importance: "normal",
+    table: "bygninger", find: { kind: "nearest", maxM: 40 },
+    read: (rows) => {
+      const r = rows[0];
+      if (!r) return null;
+      const u = Number(r.units);
+      const units = u > 1 ? `, ${u} boenheter` : "";
+      const heritage = r.heritage ? ", registrert som kulturminne" : "";
+      return { value: String(r.typeName), display: `${r.typeName}${units}${heritage}`, effect: "neutral" };
+    },
+  },
+  {
     id: "municipality", label: "Kommune", category: "area", source: "kartverket-kommuner", importance: "normal",
     table: "kommuner", find: { kind: "within" },
     read: (rows) => (rows.length ? { value: rows[0].kommunenummer, display: `${rows[0].name} (${rows[0].fylkesnavn})`, effect: "neutral" } : null),
@@ -945,6 +1089,92 @@ export const DATA_POINTS: DataPoint[] = [
       const average = r.taxAverage != null ? `. Snitt ${Number(r.taxAverage).toLocaleString("nb-NO")} kr per bolig (${r.taxAverageYear})` : "";
       const s = r.taxAverage != null ? stepped(Number(r.taxAverage), [[2000, 75], [4000, 60]], 45) : ({ score: 60, effect: "good" } as const);
       return { value: true, display: `Ja i ${r.name}: ${rate}${deduction} (${r.taxYear})${average}`, ...s };
+    },
+  },
+  {
+    // data/scripts/ssb_utvikling.ts (Even): kommune_utvikling, SSB 14288 main alternative: population now and in 10 years.
+    id: "populationGrowth", label: "Befolkningsvekst i kommunen (framskrevet)", category: "area", source: "ssb-utvikling", importance: "normal",
+    table: "kommune_utvikling", find: { kind: "within" },
+    read: (rows) => {
+      const r = rows[0];
+      if (r?.popNow == null || r.popIn10 == null) return null;
+      const pct = ((Number(r.popIn10) - Number(r.popNow)) / Number(r.popNow)) * 100;
+      const sign = pct > 0 ? "+" : "";
+      return {
+        value: Math.round(pct * 10) / 10, unit: "%",
+        display: `${sign}${nbNum(pct, 1)} % fra ${r.popYear} til ${r.popYearIn10} (${nbNum(r.popNow)} til ${nbNum(r.popIn10)})`, effect: "neutral",
+      };
+    },
+  },
+  {
+    // kommune_utvikling: housing starts per year (SSB 05940), average over the last 2 years, per 1000 inhabitants.
+    id: "housingStarts", label: "Boligbygging i kommunen", category: "area", source: "ssb-utvikling", importance: "normal",
+    table: "kommune_utvikling", find: { kind: "within" },
+    read: (rows) => {
+      const r = rows[0];
+      if (r?.housingStartsPerYear == null) return null;
+      const per1000 = r.popNow ? ` (${nbNum((Number(r.housingStartsPerYear) / Number(r.popNow)) * 1000, 1)} per 1000 innbyggere)` : "";
+      return { value: Number(r.housingStartsPerYear), unit: "boliger/år", display: `${nbNum(r.housingStartsPerYear)} nye boliger i året${per1000}, ${r.housingStartsYears}`, effect: "neutral" };
+    },
+  },
+  {
+    // kommune_utvikling: households by tenure (SSB 14891), percent, latest year.
+    id: "tenure", label: "Eier eller leier (husholdninger i kommunen)", category: "area", source: "ssb-utvikling", importance: "normal",
+    table: "kommune_utvikling", find: { kind: "within" },
+    read: (rows) => {
+      const r = rows[0];
+      if (r?.renterPct == null) return null;
+      const p = (v: unknown) => `${nbNum(v)} %`;
+      return { value: Number(r.renterPct), unit: "% leier", display: `${p(r.ownerPct)} selveier, ${p(r.cooperativePct)} borettslag eller aksje, ${p(r.renterPct)} leier (${r.tenureYear})`, effect: "neutral" };
+    },
+  },
+  {
+    // kommune_utvikling: GP lists (SSB KOSTRA 12005): share of patients on a list without a doctor, open lists.
+    id: "gpCapacity", label: "Fastleger i kommunen", category: "area", source: "ssb-utvikling", importance: "normal",
+    table: "kommune_utvikling", find: { kind: "within" },
+    read: (rows) => {
+      const r = rows[0];
+      if (r?.gpNoDoctorPct == null && r?.gpOpenLists == null) return null;
+      const parts = [
+        r.gpOpenLists != null ? `${r.gpOpenLists} åpne fastlegelister` : null,
+        r.gpNoDoctorPct != null ? `${nbNum(r.gpNoDoctorPct, 1)} % av innbyggerne på liste uten fast lege` : null,
+      ].filter(Boolean);
+      return { value: r.gpOpenLists != null ? Number(r.gpOpenLists) : null, unit: "åpne lister", display: `${parts.join(", ")} (${r.gpYear})`, effect: "neutral" };
+    },
+  },
+  {
+    // ssb_kommuner (data/scripts/ssb.ts): age groups, housing types and higher education per kommune.
+    id: "ageProfile", label: "Aldersfordeling i kommunen", category: "area", source: "ssb-kommune", importance: "normal",
+    table: "ssb_kommuner", find: { kind: "within" },
+    read: (rows) => {
+      const r = rows[0];
+      if (r?.agePct0to17 == null) return null;
+      return {
+        value: Number(r.agePct0to17), unit: "% barn",
+        display: `${nbNum(r.agePct0to17, 1)} % barn (0–17), ${nbNum(r.agePct18to66, 1)} % 18–66 år, ${nbNum(r.agePct67plus, 1)} % 67 år og eldre (${r.ageYear})`, effect: "neutral",
+      };
+    },
+  },
+  {
+    id: "housingMix", label: "Boligtyper i kommunen", category: "area", source: "ssb-kommune", importance: "normal",
+    table: "ssb_kommuner", find: { kind: "within" },
+    read: (rows) => {
+      const r = rows[0];
+      if (r?.housingPctApartment == null) return null;
+      return {
+        value: Number(r.housingPctApartment), unit: "% blokk",
+        display: `${nbNum(r.housingPctDetached)} % enebolig, ${nbNum(r.housingPctSemiDetached)} % tomannsbolig, ${nbNum(r.housingPctTerraced)} % rekkehus, ${nbNum(r.housingPctApartment)} % blokk (${r.housingYear})`,
+        effect: "neutral",
+      };
+    },
+  },
+  {
+    id: "educationHigher", label: "Høyere utdanning i kommunen", category: "area", source: "ssb-kommune", importance: "normal",
+    table: "ssb_kommuner", find: { kind: "within" },
+    read: (rows) => {
+      const r = rows[0];
+      if (r?.educationPctHigher == null) return null;
+      return { value: Number(r.educationPctHigher), unit: "%", display: `${nbNum(r.educationPctHigher, 1)} % av innbyggerne over 16 år har universitet eller høyskole (${r.educationYear})`, effect: "neutral" };
     },
   },
   {

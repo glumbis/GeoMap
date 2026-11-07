@@ -40,6 +40,13 @@ How to use this file:
 - **Når ingen brønn i nærheten:** Det er ikke registrert noen energibrønn innen 500 meter. Det betyr ikke at det ikke går an å bore her, for ikke alle brønner er registrert.
 - Dybden til fjell kan endre seg mye over korte avstander, så den kan være en annen akkurat på denne tomten.
 
+### `depthToBedrock` — Dybde til fjell (nærmeste grunnboring)
+**Forklaring:** Hvor dypt det var ned til fjell i nærmeste grunnboring innen 150 meter som nådde fjell, fra Nasjonal database for grunnundersøkelser (NADAG) hos NGU. Dybden sier noe om hvordan et hus kan fundamenteres, og om det er dyrt å grave eller bore for kjeller eller energibrønn.
+- Fjellet kan ligge på en helt annen dybde bare noen meter unna. En geotekniker må vurdere grunnen før man bygger.
+
+### `elevation` — Høyde over havet
+**Forklaring:** Terrengets høyde over havet ved boligen, fra Kartverkets terrengmodell. Lave områder nær sjøen kan få problemer med stormflo og havnivåstigning, og lavpunkter kan samle overvann ved kraftig regn.
+
 ## Naturfare
 
 ### `quickClay` — Kvikkleire faresone
@@ -89,6 +96,10 @@ How to use this file:
 **Forklaring:** Skred som NVE har registrert innen 500 meter i luftlinje, for eksempel leirskred, kvikkleireskred, steinsprang og utglidning av vei, med hva slags skred det nærmeste var og når det gikk. Et skred i nærheten sier at grunnen eller fjellet her har rast ut før.
 - Registeret er langt fra komplett: mange eldre og små skred er aldri registrert, og noen er plassert omtrentlig. At ingen skred er registrert, betyr ikke at det aldri har gått skred her.
 
+### `quickClayBoreholes` — Kvikkleire i grunnboringer innen 250 m
+**Forklaring:** Hvor mange grunnboringer i NADAG innen 250 meter som har påvist kvikkleire, sikkert eller antatt, av alle registrerte boringer i området. En boring som har funnet kvikkleire, sier at det finnes kvikkleire i grunnen der, også utenfor NVE sine faresoner.
+- Mange eldre boringer er ikke vurdert for kvikkleire, og grunnen kan variere mye over korte avstander. At ingen boring har påvist kvikkleire, betyr ikke at det ikke finnes.
+
 ## Miljø
 
 ### `roadNoise` — Veistøy
@@ -130,6 +141,10 @@ How to use this file:
 ### `trafficVolume` — Mest trafikkerte vei innen 100 m
 **Forklaring:** Gjennomsnittlig antall kjøretøy i døgnet (ÅDT) i begge retninger på den mest trafikkerte veien innen 100 meter i luftlinje, fra Statens vegvesen. Mye trafikk kan bety mer støy, støv og eksos, og at veien er vanskeligere å krysse.
 - Statens vegvesen har tall for europa-, riks- og fylkesveier og noen kommunale veier, men ikke for de fleste små boliggater. Det kan derfor gå en vei med lite trafikk nærmere enn den som vises.
+
+### `deciduousForest` — Lauvskog innen 500 m (pollen)
+**Forklaring:** Andelen av området innen 500 meter som er lauvskog eller blandingsskog i NIBIO sitt arealressurskart. Bjørk, or og hassel i lauvskogen gir mye pollen om våren, så tallet kan være nyttig for den som er allergisk.
+- Kartet er grovt: bjørker i hager, parker og langs gater er ikke med, og de kan gi like mye pollen. Pollenvarselet fra Norges Astma- og Allergiforbund viser når pollensesongen er i gang.
 
 ## Beliggenhet
 
@@ -181,6 +196,30 @@ How to use this file:
 ### `shelter` — Nærmeste offentlige tilfluktsrom
 **Forklaring:** Avstanden i luftlinje til nærmeste offentlige tilfluktsrom, med hvor mange personer det har plass til. Tilfluktsrom skal beskytte befolkningen ved krig og andre alvorlige hendelser.
 - Mange boliger, skoler og arbeidsplasser har egne private tilfluktsrom, som ikke er med her. Kommunen kan svare på hvilket tilfluktsrom som gjelder for adressen.
+
+### `railStation` — Nærmeste tog- eller T-banestasjon
+**Forklaring:** Avstanden i luftlinje til nærmeste stasjon for tog eller T-bane, fra Entur. Tog og T-bane går ofte oftere og raskere enn buss, og er mindre utsatt for kø.
+
+### `upperSecondary` — Nærmeste videregående skole
+**Forklaring:** Avstanden i luftlinje til nærmeste videregående skole. Elever søker seg til videregående i hele fylket, så det er ikke sikkert dette er skolen eleven går på.
+
+### `hospital` — Nærmeste sykehus
+**Forklaring:** Avstanden i luftlinje til nærmeste sykehus, hentet fra OpenStreetMap. Hvilket sykehus du hører til, bestemmes av bostedet ditt, og det er ikke alltid det nærmeste.
+
+### `emergencyClinic` — Nærmeste legevakt
+**Forklaring:** Avstanden i luftlinje til nærmeste legevakt, hentet fra OpenStreetMap. Kommunen bestemmer hvilken legevakt du skal bruke. Ring 116 117 for legevakt, og 113 ved fare for liv.
+
+### `evCharging` — Nærmeste ladestasjon for elbil
+**Forklaring:** Avstanden i luftlinje til nærmeste offentlige ladestasjon for elbil, hentet fra OpenStreetMap. Mange nye ladere mangler i kartet, og lading hjemme eller i borettslaget er ikke med.
+
+### `library` — Nærmeste bibliotek
+**Forklaring:** Avstanden i luftlinje til nærmeste bibliotek, hentet fra OpenStreetMap. Folkebibliotekene er gratis og har ofte arrangementer for barn og voksne.
+
+### `cafes` — Kafeer og restauranter innen 500 m
+**Forklaring:** Antall kafeer, restauranter, barer og puber innen 500 meter i luftlinje, hentet fra OpenStreetMap. Tallet sier noe om hvor mye liv det er i gatene rundt: mange steder betyr ofte mer folk og noe mer støy om kvelden.
+
+### `cycleway` — Nærmeste sykkelvei
+**Forklaring:** Avstanden i luftlinje til nærmeste egne sykkelvei eller gang- og sykkelvei, hentet fra OpenStreetMap. Sykkelfelt malt i kjørebanen er ikke med.
 
 ## Natur og friluft
 
@@ -263,17 +302,29 @@ How to use this file:
 - **Når uavklart vernestatus:** Kulturminnet er registrert, men det er ikke avgjort hvilket vern det har. Kulturminnemyndighetene kan avklare det før man bygger eller graver.
 - **Når ingen registrert:** Det er ikke registrert kulturminner med vern innen 50 meter. Det kan likevel finnes kulturminner som ikke er registrert, særlig under bakken.
 
----
+### `buildingType` — Bygningstype
+**Forklaring:** Hva slags boligbygning som står nærmest adressepunktet, og hvor mange boenheter som er registrert i den, fra Matrikkelen hos Kartverket. Det skiller for eksempel en enebolig fra en blokk med mange leiligheter.
+- Adressepunktet kan ligge nærmere naboens hus enn ditt. Matrikkelen kan også ha feil eller gamle opplysninger.
 
-## Ready for data points not added yet
+### `populationGrowth` — Befolkningsvekst i kommunen (framskrevet)
+**Forklaring:** Hvor mye SSB regner med at folketallet i kommunen endrer seg de neste ti årene, i hovedalternativet. En kommune som vokser, bygger ofte nye skoler, barnehager og boliger; en som krymper, kan legge ned tilbud.
+- Framskrivinger er usikre, særlig for små kommuner.
 
-The `ssb_kommuner` table also has these numbers (see `SOURCES.md`). If they become data points, use these texts.
+### `housingStarts` — Boligbygging i kommunen
+**Forklaring:** Hvor mange nye boliger kommunen ga igangsettingstillatelse til i året, i snitt de to siste årene, og per 1000 innbyggere. Mye bygging betyr nye naboer og anleggsarbeid, men også flere boliger å velge mellom.
 
-### Aldersfordeling (`agePct0to17`, `agePct18to66`, `agePct67plus`)
-**Forklaring:** Andelen av innbyggerne i kommunen som er barn (0–17 år), i arbeidsfør alder (18–66 år) og eldre (67 år og over).
+### `tenure` — Eier eller leier (husholdninger i kommunen)
+**Forklaring:** Hvor stor andel av husholdningene i kommunen som eier boligen selv, eier gjennom borettslag eller aksjeselskap, eller leier. Mange som leier, betyr ofte flere som flytter inn og ut.
 
-### Boligtyper (`housingPct*`)
+### `gpCapacity` — Fastleger i kommunen
+**Forklaring:** Hvor mange fastlegelister i kommunen som har ledig plass, og hvor stor andel av innbyggerne som står på en liste uten fast lege. Det sier noe om hvor lett det er å få fastlege når man flytter dit.
+- Ledige plasser endrer seg fra uke til uke. Helsenorge.no viser hvilke leger som har plass akkurat nå.
+
+### `ageProfile` — Aldersfordeling i kommunen
+**Forklaring:** Andelen av innbyggerne i kommunen som er barn (0–17 år), i arbeidsfør alder (18–66 år) og eldre (67 år og over). Tallet for nabolaget står i "Aldersfordeling i nabolaget".
+
+### `housingMix` — Boligtyper i kommunen
 **Forklaring:** Hvor stor andel av boligene i kommunen som er eneboliger, tomannsboliger, rekkehus eller leiligheter i blokk.
 
-### Utdanning (`educationPctHigher`)
-**Forklaring:** Andelen av innbyggere over 16 år i kommunen som har fullført universitet eller høyskole.
+### `educationHigher` — Høyere utdanning i kommunen
+**Forklaring:** Andelen av innbyggerne over 16 år i kommunen som har fullført universitet eller høyskole.

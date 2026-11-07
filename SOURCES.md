@@ -676,6 +676,19 @@ Endpoints marked "responds" were called on 2026-11-07; licences still need a che
 
 Not usable now: **NILU luftkvalitet** (`api.nilu.no` returned 401 on 2026-11-07: needs a key now).
 
+### Third round (2026-11-07 evening)
+Built in one go (Even). Scripts in `data/scripts/`, data points in `api/src/datapoints.ts`, all info only.
+
+- **OpenStreetMap everyday places** (Overpass, ODbL): `osm_hverdag.ts` → `hverdag` (sykehus, legevakt, lading, bibliotek, servering) and `sykkelveier` (highway=cycleway). Data points `hospital`, `emergencyClinic`, `evCharging`, `library`, `cafes`, `cycleway`.
+- **SSB kommune development** (CC BY 4.0): `ssb_utvikling.ts` → `kommune_utvikling` from 14288 (population projection), 05940 (housing starts, last 2 years: Akershus got new kommune numbers in 2024), 14891 (tenure), 12005 (GP lists). Data points `populationGrowth`, `housingStarts`, `tenure`, `gpCapacity`.
+- **Matrikkelen - Bygningspunkt** (Kartverket, CC BY 4.0): `matrikkel_bygninger.ts` → `bygninger` (dwellings only, NS 3457 types 111–159, with units from `bruksenhet`). Data point `buildingType`.
+- **Høydedata** (Kartverket `hoydedata/v1/punkt`, 50 points per call): `matrikkel_hoyder.ts` → `bygning_hoyder`, ground height at every dwelling. Data point `elevation`. No profile code change needed.
+- **NADAG** (NGU OGC API Features `grunnundersokelser_utvidet`, collection `geotekniskborehull`, ~270 000 boreholes, 1000 per page): `ngu_nadag.ts` → `nadag` with depth to rock and quick-clay finding. Data points `depthToBedrock`, `quickClayBoreholes`.
+- **AR50 tree types** (NIBIO): `nibio_ar50.ts` now keeps `treeType`; `nibio_lauvskog.ts` → `lauvskog` (100 m grid in deciduous/mixed forest). Data point `deciduousForest` (pollen allergy).
+- **Existing tables, new data points:** `railStation` (stops with rail/metro), `upperSecondary` (schools, VGS), `ageProfile`, `housingMix`, `educationHigher` (`ssb_kommuner`).
+
+Checked, not usable now: **InSAR Norge** (no documented open API, only the map app's internal one), **Udir grunnskolepoeng** (the open Udir API only has Elevundersøkelsen), **Fjernvarme** (Geonorge has no Oslo/Akershus areas), **Barnehagefakta** (API returns 500). Sun and horizon (PVGIS) is Sverre's.
+
 ### Checked, not usable now
 - **Reguleringsplaner** (zoning plans, DiBK): Norge digitalt-lisens, not open data. WMS picture only, cannot be stored or scored. https://kartkatalog.geonorge.no/metadata/reguleringsplaner/dac27348-5c2e-4a6a-9497-c4c792108cae
 - **Bredbåndsdekning** (Nkom): no open download found (Geonorge only has Agder).

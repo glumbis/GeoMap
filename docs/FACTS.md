@@ -93,6 +93,15 @@ Info only. Never say the depth holds for this plot, and never turn it into advic
 
 Example (Grevlingåsen 17): "NGU vurderer at det er ofte marin leire i grunnen her (NGU)." Never write "kvikkleire" in this sentence: marine clay is where quick clay is possible, not quick clay.
 
+**`depthToBedrock` (Dybde til fjell)** and **`elevation` (Høyde over havet)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| `depthToBedrock`, value is a number | En grunnboring {distance} fra adressen fant fjell {value} meter under bakken ({src}). | 6 |
+| `elevation`, value is a number | Terrenget ved boligen ligger {value} meter over havet ({src}). | 6 |
+
+`depthToBedrock` `{display}` is "6,2 m ved en boring 40 m unna, 2018": `{value}` is the first number, `{distance}` the "40 m" part. Never say how deep the rock is under the house itself.
+
 ### Natural hazards
 
 **`quickClay` (Kvikkleire faresone)**
@@ -194,6 +203,15 @@ Always "aktsomhetsområde", never "faresone": these are coarse maps of where som
 
 `{display}` is "3 registrerte skred, nærmeste 120 m unna (Leirskred, 1978)": `{value}` is the first number, `{distance}` the "120 m" part, `{type}` the slide type in brackets in lower case ("leirskred"), `{year}` " i {year}" when a year is in the brackets, else empty. Use "1 skred" for one. Never say the address is at risk because of it.
 
+**`quickClayBoreholes` (Kvikkleire i grunnboringer innen 250 m)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value > 0 | Kvikkleire er påvist i {value} av {total} registrerte grunnboringer innen 250 meter, den nærmeste {distance} unna ({src}). | 3 |
+| value 0 | No sentence: most boreholes were never checked for quick clay. | — |
+
+`{display}` is "Påvist i 2 av 37 grunnboringer, nærmeste 120 m unna": `{value}` is the first number, `{total}` the number after "av", `{distance}` the "120 m" part. Rank 3: it is direct evidence of quick clay in the ground nearby, even outside NVE's hazard zones.
+
 ### Environment
 
 **`roadNoise` (Veistøy)**
@@ -264,6 +282,13 @@ Road and aircraft noise are different sources, so an address can get one sentenc
 | value is empty | No sentence: most small streets have no traffic count, so "no road" would be wrong. | — |
 
 `{display}` is "7 270 kjøretøy i døgnet, 40 m unna (2025, 7 % tunge kjøretøy)": `{value}` is the first number, `{year}` the year in brackets. Never call a road "farlig" or "trygg".
+
+**`deciduousForest` (Lauvskog innen 500 m)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value > 0 | {value} prosent av området innen 500 meter er lauv- eller blandingsskog, som kan gi mye pollen fra bjørk og or om våren ({src}). | 6 |
+| value 0 | No sentence: garden and street trees are not in the map. | — |
 
 ### Location
 
@@ -366,6 +391,28 @@ Never call it "skolen adressen hører til": we do not know the school catchment.
 
 Example (Grevlingåsen 17): "Nærmeste dagligvarebutikk er Kiwi Hosle, 519 m unna i luftlinje (OpenStreetMap)." Never suggest that the nearest doctor is the address's fastlege.
 
+**Everyday places: `railStation`, `upperSecondary`, `hospital`, `emergencyClinic`, `evCharging`, `library`, `cycleway`**
+
+| When | Sentence | Rank |
+|---|---|---|
+| `railStation` | Nærmeste stasjon for {kind} er {name}, {distance} unna i luftlinje ({src}). | 6 |
+| `upperSecondary` | Nærmeste videregående skole er {name}, {distance} unna i luftlinje ({src}). | 6 |
+| `hospital` | Nærmeste sykehus er {name}, {distance} unna i luftlinje ({src}). | 6 |
+| `emergencyClinic` | Nærmeste legevakt er {name}, {distance} unna i luftlinje ({src}). | 6 |
+| `evCharging` | Nærmeste registrerte ladestasjon for elbil er {distance} unna i luftlinje ({src}). | 6 |
+| `library` | Nærmeste bibliotek er {name}, {distance} unna i luftlinje ({src}). | 6 |
+| `cycleway` | Det er {distance} i luftlinje til nærmeste {what} ({src}). | 6 |
+| any of them, value is empty | No sentence. | — |
+
+`{display}` is "450 m unna (Name)" (`railStation`: "450 m (Name, tog og T-bane)", `{kind}` the last part; `cycleway`: "120 m til gang- og sykkelvei", `{what}` the words after "til"). `{distance}` is the first part, `{name}` the text in brackets.
+
+**`cafes` (Kafeer og restauranter innen 500 m)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value > 0 | Det er {value} kafeer, restauranter og barer innen 500 meter i luftlinje ({src}). | 6 |
+| value 0 | Det er ikke registrert kafeer eller restauranter innen 500 meter ({src}). | 6 |
+
 ### Nature & leisure
 
 **`trails` (Nærmeste tursti eller skiløype)**
@@ -465,6 +512,21 @@ Use `{status}` exactly. Only write "fredet" when the status says so ("kommunalt 
 Crime (`crimeRate`, `violentCrime`): kommune `{display}` is "51,7 per 1000 innbyggere (2024–2025), landet 59,9"; Oslo bydel `{display}` is "81,7 per 1000 innbyggere i Sagene bydel (2024), Oslo 88, landet 59,9" (has " i … bydel"). `{value}` is the first number, `{area}` the "… bydel" text, `{period}` the year(s) in brackets, `{oslo}` and `{norway}` the numbers after "Oslo" and "landet". Sentrum `{display}` is "12 345 anmeldt i Sentrum bydel (2024), få bor der": `{count}` is the first number. `{src}` is Oslo kommune for a bydel, SSB for a kommune. When `{display}` ends with "inkl. Gardermoen" (Ullensaker), add: "Tallet tar med lovbrudd på Oslo lufthavn Gardermoen." Never call an area "trygt" or "utrygt": these are numbers for the whole municipality, not for the neighbourhood.
 
 Example (Arendalsgata 22): "Kommunen hadde 728 714 innbyggere i 2026 (SSB)." and "Medianinntekten etter skatt for husholdninger i kommunen var 635 200 kr i 2024 (SSB)."
+
+### More area facts
+
+| Data point | Sentence | Rank |
+|---|---|---|
+| `buildingType` | Bygningen nærmest adressen er registrert som {display} i Matrikkelen ({src}). | 6 |
+| `populationGrowth` | SSB regner med at folketallet i kommunen endrer seg med {display} ({src}). | 6 |
+| `housingStarts` | Kommunen ga i snitt igangsettingstillatelse til {display} ({src}). | 6 |
+| `tenure` | I kommunen er {display} ({src}). | 6 |
+| `gpCapacity` | I kommunen er det {display} ({src}). | 6 |
+| `ageProfile` | I kommunen er {display} ({src}). | 6 |
+| `housingMix` | Av boligene i kommunen er {display} ({src}). | 6 |
+| `educationHigher` | {display} ({src}). | 6 |
+
+Use `{display}` as given, in lower case where it starts a clause, and move the year in brackets to the end ("i 2025"). All of these are for the whole municipality: always say "i kommunen". `buildingType` is the building nearest the address point, not always this home.
 
 ## Missing data (rank 7)
 

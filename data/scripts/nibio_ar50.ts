@@ -1,7 +1,8 @@
 // Land cover (Arealressurskart AR50) for Oslo + Akershus, from NIBIO (NLOD, credit "NIBIO"). Owner: Even.
 // Needs the `kommuner` table. Coarse map (smallest area about 1.5 ha), FGDB per county in EPSG:4258 (≈ 4326 here).
 // The zip URLs are what NIBIO's order API (kartkatalog.nibio.no/api/v2/order) hands out; they are static files.
-// Matches the `nearestSea` data point in api/src/datapoints.ts (info only). How much nature is around an address is
+// Matches the `nearestSea` data point in api/src/datapoints.ts (info only); treeType feeds nibio_lauvskog.ts
+// (deciduous forest share for pollen allergy). How much nature is around an address is
 // Lukas's `greenArea` (Kartverket N50, data/scripts/arealdekke.ts); all land types are kept here for later use.
 import { conn, query } from "../../api/src/db.ts";
 import { download } from "./lib.ts";
@@ -16,7 +17,7 @@ const parts: string[] = [];
 for (const county of ["03", "32"]) {
   const zip = await download(`https://kart8.nibio.no/uttak_Download/ar50/${county}_4258_ar50_gdb.zip`, `ar50_${county}.zip`);
   // EPSG:4258 is axis-ordered lat, lng; ST_FlipCoordinates puts it back to lng, lat if GDAL kept that order (checked below).
-  parts.push(`SELECT arealtype::INTEGER AS typeCode, geo AS geom FROM ST_Read('/vsizip/${zip}/${county}_4258_ar50_gdb.gdb', layer := 'ar50')`);
+  parts.push(`SELECT arealtype::INTEGER AS typeCode, treslag::INTEGER AS treeCode, geo AS geom FROM ST_Read('/vsizip/${zip}/${county}_4258_ar50_gdb.gdb', layer := 'ar50')`);
 }
 
 // One row per AR50 polygon. typeName: Bebygd, Jordbruk, Skog, Åpen fastmark, Myr, Ferskvann, Hav, ...
@@ -26,10 +27,13 @@ await conn.run(`
   fixed AS (
     -- Oslo + Akershus: lng 9.5–12, lat 59–61. If x looks like a latitude, the axes came in flipped.
     -- ETRS89 and WGS84 differ by well under a metre here: relabel instead of transforming.
-    SELECT typeCode, ST_SetCRS(CASE WHEN ST_X(ST_Centroid(geom)) > 50 THEN ST_FlipCoordinates(geom) ELSE geom END, 'EPSG:4326') AS geom FROM raw
+    SELECT typeCode, treeCode, ST_SetCRS(CASE WHEN ST_X(ST_Centroid(geom)) > 50 THEN ST_FlipCoordinates(geom) ELSE geom END, 'EPSG:4326') AS geom FROM raw
   )
   SELECT row_number() OVER () AS id, ${typeName.replaceAll("arealtype", "typeCode")} AS name, typeCode,
-    ${typeName.replaceAll("arealtype", "typeCode")} AS typeName, 'NIBIO' AS source, ST_MakeValid(geom) AS geom
+    ${typeName.replaceAll("arealtype", "typeCode")} AS typeName,
+    -- Tree type for forest (AR5/AR50 treslag): 31 barskog, 32 lauvskog, 33 blandingsskog, 39 ikke tresatt.
+    CASE treeCode WHEN 31 THEN 'barskog' WHEN 32 THEN 'lauvskog' WHEN 33 THEN 'blandingsskog' END AS treeType,
+    'NIBIO' AS source, ST_MakeValid(geom) AS geom
   FROM fixed
   WHERE ST_Intersects(geom, (SELECT ST_Union_Agg(geom) FROM kommuner))
 `);
