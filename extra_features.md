@@ -51,6 +51,7 @@ A downloadable report about one address, like a condition report ("tilstandsrapp
 ## 2. Compare addresses
 
 Pick 2–3 addresses and see them side by side: overall score, category scores, perspectives, warnings. Buyers rarely look at one home alone, so this is where they spend time. Built only from existing profiles; mostly web work (Erik). Can also be a section in the report.
+**Status:** two addresses side by side is built (`/compare/<idA>/<idB>`, `web/src/app/compare.ts`). Still open: a third address, and a "Sammenlign" link from the address page.
 
 ## 3. Visning checklist ("Spør megleren")
 
@@ -85,3 +86,29 @@ Save addresses and get a mail when something changes: NVE updates a hazard map, 
 - **API** for estate agents, banks and insurers: the same profile JSON, with a key and a usage price.
 - **Widget** an agent can put on a listing: score, top warnings, link to the full Omnium page.
 - Business pays, private users keep the free version. Check the licence of every source first (most are NLOD / CC BY, which allow commercial use with attribution).
+
+---
+
+## Small polish from the user tests (Erik)
+
+Not bugs: small ideas from the simulated user tests and the design review of the web app. The free print version of idea 1 ("Skriv ut" on the address page) and the per-audience tabs ("Hva betyr dette for deg?") are built.
+
+**Address page**
+- **Explain jumps between neighbours.** A pin 15 m from a quick-clay address can score 59 against 13. Show "Utenfor faresone, ca. X m fra nærmeste sone" in the pin popup and on the address page.
+- **Hazard checklist strip** under the score: one chip per hazard with ✓ / ✕ / ? (? in grey for not mapped or missing).
+- **Key-numbers row:** 4 tabular figures, e.g. radon level, road noise in dB, metres to school and to the nearest stop.
+- **Cap explanation:** a small "Hvorfor?" next to the cap line, saying which warning sets the cap.
+- **One-line headline on each closed category card** (its worst data point), so you don't have to open cards to see the problem.
+- **Data-quality line:** "19 av 20 datapunkter" opens a list of what is missing and why.
+- **Category score bars** with their weights, as a small chart.
+- **"Laster faresoner …" chip** while the hazard layers load, so the 2–3 s before the red zone appears doesn't look like "no hazard".
+- **Pin popup placement:** anchor the popup away from the nearest zone so it doesn't cover it.
+- **Kartlag discoverability:** when the panel is collapsed, make the "Kartlag ▸" chip easier to notice the first time.
+
+**Compare page**
+- **All Kartlag layers on the compare maps** (rockfall, radon, noise), not only quick clay and flood.
+- **Recent addresses** to pick side B from.
+- **Explain the weights** in the category table: a "?" that says why "Beliggenhet 100" and "Samlet 13" can sit side by side (caps and weights).
+
+**Start page**
+- **Example addresses** under the search field ("Prøv: Arendalsgata 22") for people who just want to look around.
