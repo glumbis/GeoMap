@@ -95,6 +95,7 @@ export const SOURCES: Source[] = [
   { id: "nve-steinsprang", name: "Aktsomhetsområder steinsprang", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/steinsprang-aktsomhetsomraader/02c6d51c-4e8c-4948-a620-dc046c8cb747", licence: "NLOD 2.0" },
   { id: "nve-jordflomskred", name: "Aktsomhetsområder jord- og flomskred", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/aktsomhetskart-for-jord-og-flomskred/30e1883e-70e9-4510-9e97-00edbdcddc02", licence: "NLOD 2.0" },
   { id: "nve-snoskred", name: "Aktsomhetskart snøskred (NAKSIN)", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/aktsomhetskart-for-snoeskred/54ada9d8-e6fc-48d6-82b0-5477166a4aaa", licence: "NLOD 2.0" },
+  { id: "kartverket-stormflo", name: "Stormflo og havnivå", owner: "Kartverket", url: "https://kartkatalog.geonorge.no/metadata/stormflo-og-havnivaa/fbb95c67-623f-430a-9fa5-9cfcea8366b3", licence: "CC BY 4.0" },
   { id: "ngu-losmasser", name: "Løsmasser", owner: "NGU", url: "https://kartkatalog.geonorge.no/metadata/loesmasser-regionalt/e5847c27-0c30-44b6-9198-a797c177fa20", licence: "NLOD 2.0" },
   { id: "ngu-radon", name: "Radon aktsomhet", owner: "NGU", url: "https://kartkatalog.geonorge.no/metadata/radon-aktsomhet/dc0605f3-2301-4abe-a91f-6da42464c281", licence: "NLOD 2.0" },
   { id: "ngu-berggrunn", name: "Berggrunn N50 / N250", owner: "NGU", url: "https://kartkatalog.geonorge.no/metadata/berggrunn-n50/a5c76d05-33bd-4a1d-b28b-81575092e468", licence: "NLOD 2.0" },
@@ -272,6 +273,31 @@ export const DATA_POINTS: DataPoint[] = [
         value: "utenSkog", display: "I aktsomhetsområde for snøskred bare uten skog", effect: "bad", score: 70,
         warning: { severity: "low", text: "Snøskred mulig hvis skogen over blir borte" },
         explanation: "Skogen i løsneområdet beskytter i dag. Hvis skogen hogges eller dør, kan snøskred nå hit.",
+      };
+    },
+  },
+  {
+    id: "stormSurge", label: "Stormflo", category: "hazards", source: "kartverket-stormflo", importance: "normal",
+    table: "stormflo", find: { kind: "within" }, // data/scripts/stormflo.ts (Sverre): years (20 | 200), climate ('nå' | '2100'), waterLevelCm
+    read: (rows) => {
+      if (!rows.length) return { value: false, display: "Ikke i stormflosone", effect: "good" };
+      const now = rows.filter((r) => r.climate === "nå");
+      const cm = (r: Record<string, unknown>) => `${(Number(r.waterLevelCm) / 100).toFixed(1).replace(".", ",")} m over havet (NN2000)`;
+      if (now.length) {
+        // Today's flooding: the most frequent storm surge that reaches the address.
+        const worst = now.reduce((a, b) => (Number(b.years) < Number(a.years) ? b : a));
+        const years = Number(worst.years);
+        return {
+          value: years, unit: "år", display: `I ${years}-årsstormflosone i dag (${cm(worst)})`, effect: "bad", score: years <= 20 ? 10 : 20,
+          warning: { severity: "medium", text: `Ligger i ${years}-årsstormflosone` },
+          explanation: "Ved stormflo stiger havet over vanlig høyvann. Området kan bli oversvømt fra sjøen.",
+        };
+      }
+      // Only flooded with the sea level expected in 2100.
+      return {
+        value: 2100, display: `I 200-årsstormflosone i år 2100 (${cm(rows[0])})`, effect: "bad", score: 60,
+        warning: { severity: "low", text: "Stormflo i år 2100 med havnivåstigning" },
+        explanation: "Ikke utsatt i dag, men med havnivåstigningen som er ventet innen 2100 kan en 200-årsstormflo nå hit.",
       };
     },
   },

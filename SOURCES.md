@@ -90,6 +90,13 @@ Terms for all Kartverket free data: CC BY 4.0, credit "© Kartverket". Details i
   - `alumShale` (96 polygons): NGU's legend says "alunskifer", or carbon-rich shale with stinkkalk (the classic alum shale beds). About 1.4% of transit stops lie on it.
   - Checked: #1 Kalkstein, #2 Glimmersgneis, #3 and #4 Leirskifer, #5 Syenitt (Grefsensyenitt). Real alum shale hit: Edelvoldveien 16, Asker (`3203-1386-16`). Real N250 hit: Storgata 18, Jessheim (`3209-12100-18`).
   - Licence NLOD, credit "NGU".
+- **Kartverket Stormflo og havnivå** (entry below) → table `stormflo`, script `data/scripts/stormflo.ts`, API `/api/stormflo` (2026-11-07).
+  - Source: Geonorge county downloads (FGDB in a zip, EPSG:25833), Oslo + Akershus. https://kartkatalog.geonorge.no/metadata/fbb95c67-623f-430a-9fa5-9cfcea8366b3
+  - Three scenarios from DSB's guidance (2024): 20-year storm surge today, 200-year today (homes = safety class F2), 200-year in 2100 with sea level rise. Left out: 1000-year, 2150 and "øvre estimat".
+  - Kartverket's polygons include the sea itself. Today's sea (mean high water) is cut away, so each row is only the land that floods. Outlines simplified to 1 m before the cut (ingest ~40 s).
+  - Columns: `id`, `name`, `years` (20 | 200), `climate` ('nå' | '2100'), `waterLevelCm` (above NN2000: 140–160 cm for 20-year, 160–190 for 200-year today, 220–240 in 2100), `source`, `geom`.
+  - Checked: no test address is in a zone. Real hits match Kartverket's ground height (hoydedata API): Drammensveien 281, Oslo (`0301-11290-281`, 20-year today, ground 1.51 m vs water 1.6 m); Frognerstranda 6 (`0301-12047-6`, 2100); Scheens vei 1, Bærum; Nessetveien 55, Nesodden.
+  - Licence CC BY 4.0, credit "© Kartverket".
 - Shared helpers in `data/scripts/lib.ts`: `studyBbox()`, `arcgisFeatures()` (pages any ArcGIS REST layer, e.g. NVE, as GeoJSON) and `readZipEntry()` (reads one file out of a downloaded zip).
 
 - **Name:** Eiendom REST-API (property lookup)
