@@ -36,6 +36,13 @@ Cultural heritage and monument. Couldnt find an easy download site or database, 
 ## Sverre
 Terms for all Kartverket free data: CC BY 4.0, credit "© Kartverket". Details in `SOURCES_SUMMARY.md`.
 
+**Loaded:**
+- **NVE Kvikkleire faresoner** (see Even's entry below for the source) → table `nve_kvikkleire`, script `data/scripts/nve_kvikkleire.ts`, API `/api/nve_kvikkleire` (2026-11-07).
+  - 628 current zones in Oslo + Akershus, one row per zone (NVE's split parts are merged).
+  - Columns: `id` (NVE skredomrid), `name`, `faregrad` (Lav/Middels/Høy/Ingen), `konsekvens`, `risikoklasse` (0–5), `kommune`, `reportUrl`, `source`, `geom`.
+  - Checked: test address #1 is in "Myraløkka" (Høy, risikoklasse 5), backup Kjelsåsveien 162 is in "Kjelsås" (Middels), and #2–#5 are in no zone.
+  - Licence NLOD, credit "NVE". Only mapped zones: outside a zone can mean "not mapped".
+
 - **Name:** Eiendom REST-API (property lookup)
   - Owner: Kartverket
   - URL: https://api.kartverket.no/eiendom/v1/ (docs: https://ws.geonorge.no/eiendom/v1/)
