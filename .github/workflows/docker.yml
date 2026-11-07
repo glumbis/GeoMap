@@ -45,3 +45,9 @@ jobs:
           no-cache: ${{ inputs.fresh == true }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      # Tell Render to pull the new image. The hook URL is a repo secret (Render: service -> Settings -> Deploy Hook).
+      - name: Redeploy on Render
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        if: env.HOOK != ''
+        run: curl -fsS -X POST "$HOOK"

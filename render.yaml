@@ -1,0 +1,10 @@
+# Render blueprint: runs the published image (built by .github/workflows/docker.yml). See docs/DEPLOY.md.
+services:
+  - type: web
+    name: omnium
+    runtime: image
+    image:
+      url: ghcr.io/glumbis/geomap:latest
+    plan: free
+    region: frankfurt
+    healthCheckPath: /api/health
