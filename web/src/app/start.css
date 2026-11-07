@@ -1,6 +1,38 @@
 /* A simple, centred start page. Colours come from the shared brand tokens. */
 .page-start {
+  isolation: isolate;
   background: var(--surface);
+}
+.page-start::before,
+.page-start::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 48rem;
+  height: 38rem;
+  border: 1px solid color-mix(in srgb, var(--teal) 16%, transparent);
+  border-radius: 43% 57% 61% 39% / 48% 42% 58% 52%;
+  background: color-mix(in srgb, var(--teal) 3%, transparent);
+  box-shadow: 0 0 0 3rem color-mix(in srgb, var(--teal) 2%, transparent);
+  pointer-events: none;
+  animation: start-background-drift 24s ease-in-out infinite alternate;
+}
+.page-start::before {
+  top: -18rem;
+  left: -20rem;
+}
+.page-start::after {
+  bottom: -19rem;
+  right: -20rem;
+  border-color: color-mix(in srgb, var(--orange) 18%, transparent);
+  background: color-mix(in srgb, var(--orange) 3%, transparent);
+  box-shadow: 0 0 0 4rem color-mix(in srgb, var(--orange) 2%, transparent);
+  animation-delay: -12s;
+  animation-direction: alternate-reverse;
+}
+@keyframes start-background-drift {
+  from { transform: translate(0, 0) rotate(-12deg); }
+  to { transform: translate(5rem, 3rem) rotate(18deg); }
 }
 .page-start .start {
   width: 100%;
@@ -15,7 +47,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  background: var(--surface);
+  background: transparent;
 }
 .page-start .start-content {
   flex: none;
@@ -40,11 +72,30 @@
   margin: 0;
 }
 .page-start .start-logo .start-mark {
+  position: relative;
   display: block;
   flex: none;
   width: 3.5rem;
   height: 3.5rem;
   font-size: 1rem;
+}
+.page-start .start-mark::after {
+  content: "";
+  position: absolute;
+  inset: -0.25rem;
+  border-radius: 50%;
+  background: conic-gradient(var(--orange), var(--teal), var(--navy), var(--orange));
+  mask-image: radial-gradient(farthest-side, transparent calc(100% - 2px), var(--ink) calc(100% - 1.5px));
+  pointer-events: none;
+  animation: start-logo-outline-spin 1.6s linear infinite;
+  animation-play-state: paused;
+}
+.page-start .start-logo:hover .start-mark::after,
+.page-start .start-logo.is-searching .start-mark::after {
+  animation-play-state: running;
+}
+@keyframes start-logo-outline-spin {
+  to { transform: rotate(360deg); }
 }
 .page-start .start-mark img {
   display: block;
@@ -98,4 +149,11 @@
 }
 .page-start .start-btn:hover {
   background: var(--hover);
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-start::before,
+  .page-start::after,
+  .page-start .start-mark::after {
+    animation: none;
+  }
 }

@@ -13,6 +13,7 @@ export function renderStart(app: HTMLElement) {
   const search = createSearch({
     size: "large",
     autofocus: true,
+    onLoadingChange: (loading) => logo.classList.toggle("is-searching", loading),
     onPick: (hit) => navigate(`/a/${hit.id}`),
   });
 

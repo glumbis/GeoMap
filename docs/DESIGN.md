@@ -25,10 +25,10 @@ Three pages: the start page, the address page and the map page (`/kart`, full-wi
 
 ### 1. Start page (the first thing anyone sees)
 
-A minimal, centred page on a pure white background (`--surface`). No background map, lens, slogans or tagline.
+A minimal, centred page on a white background (`--surface`), with faint abstract rings drifting slowly around the edges. The central search area stays clear. No background map, lens, slogans or tagline.
 
 - One centred column, up to 40 rem wide, with generous space around it.
-- The logo mark sits next to the serif word mark "Omnium", centred above the search field. The logo is static.
+- The logo mark sits next to the serif word mark "Omnium", centred above the search field. A thin outline rotates while an address search is pending and when the logo is hovered. The central symbol and word stay still. The outline stops on completion, error or cancellation; reduced-motion settings disable the rotation and background movement.
 - One large address search field: "Skriv inn en adresse".
 - Autocomplete searches street addresses throughout Norway using Geonorge, showing at most eight suggestions with street, number, postcode and place. Profiles outside Oslo + Akershus explain the limited data coverage.
 - Results appear in normal document flow below the input, in a bounded scrolling list. They push the map link down and never overlap it. Arrow keys keep the selected result visible; Enter selects it and Escape closes the list.

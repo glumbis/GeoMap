@@ -51,7 +51,12 @@ async function search(text: string, signal: AbortSignal): Promise<Hit[]> {
     }));
 }
 
-export function createSearch(opts: { size: "large" | "compact"; onPick: (hit: Hit) => void; autofocus?: boolean }) {
+export function createSearch(opts: {
+  size: "large" | "compact";
+  onPick: (hit: Hit) => void;
+  autofocus?: boolean;
+  onLoadingChange?: (loading: boolean) => void;
+}) {
   const input = h("input", {
     type: "search",
     class: "search-input",
@@ -70,6 +75,23 @@ export function createSearch(opts: { size: "large" | "compact"; onPick: (hit: Hi
   let active = -1;
   let timer: number | undefined;
   let ctrl: AbortController | undefined;
+  let requestId = 0;
+  let loading = false;
+
+  function setLoading(value: boolean) {
+    input.setAttribute("aria-busy", String(value));
+    if (loading === value) return;
+    loading = value;
+    opts.onLoadingChange?.(value);
+  }
+
+  function cancelPending() {
+    requestId++;
+    clearTimeout(timer);
+    ctrl?.abort();
+    ctrl = undefined;
+    setLoading(false);
+  }
 
   function show(items: Hit[] | string) {
     list.replaceChildren();
@@ -99,6 +121,7 @@ export function createSearch(opts: { size: "large" | "compact"; onPick: (hit: Hi
   }
 
   function close() {
+    cancelPending();
     list.hidden = true;
     input.setAttribute("aria-expanded", "false");
     input.removeAttribute("aria-activedescendant");
@@ -116,24 +139,35 @@ export function createSearch(opts: { size: "large" | "compact"; onPick: (hit: Hi
 
   function pick(i: number) {
     const hit = hits[i];
-    if (!hit) return;
+    if (!hit || list.hidden) return;
     input.value = `${hit.text}, ${hit.place}`;
     close();
     opts.onPick(hit);
   }
 
   input.addEventListener("input", () => {
-    clearTimeout(timer);
+    close();
+    hits = [];
+    list.replaceChildren();
     const text = input.value.trim();
-    if (text.length < 2) return close();
+    if (text.length < 2) return;
+    const mine = requestId;
+    setLoading(true); // Include the debounce, so feedback starts as soon as a search is scheduled.
     timer = window.setTimeout(async () => {
-      ctrl?.abort();
       ctrl = new AbortController();
       try {
         const found = await search(text, ctrl.signal);
+        if (mine !== requestId || !root.isConnected) return;
         show(found.length ? found : "Ingen adresser passer");
       } catch (err) {
-        if ((err as Error).name !== "AbortError") show("Adressesøket svarer ikke. Prøv igjen.");
+        if (mine === requestId && root.isConnected && (err as Error).name !== "AbortError") {
+          show("Adressesøket svarer ikke. Prøv igjen.");
+        }
+      } finally {
+        if (mine === requestId) {
+          ctrl = undefined;
+          setLoading(false);
+        }
       }
     }, 150);
   });
