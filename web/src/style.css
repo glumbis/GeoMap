@@ -310,6 +310,28 @@ button {
   min-height: 0;
 }
 
+/* Phones and narrow windows (address page, /finn): one column, the map on top at 45% of the height, the column
+   scrolls below it. Never sideways. Desktop is unchanged. */
+@media (max-width: 47.99rem) {
+  .address-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 45vh minmax(0, 1fr);
+    grid-template-rows: 45dvh minmax(0, 1fr);
+  }
+  .address-layout > .map { order: -1; }
+  .address-layout > .panel {
+    min-width: 0;
+    padding: 1.25rem 1rem 2.5rem;
+    border-right: 0;
+    border-top: 1px solid var(--line);
+  }
+  .topbar { gap: 0.75rem; padding: 0 1rem; min-width: 0; }
+  .topbar > * { min-width: 0; }
+  .topbar .search--compact { width: auto; flex: 1; }
+  .topbar .topbar-logo { flex: none; min-width: 2.25rem; }
+  .topbar:has(.search--compact) .topbar-logo > span:last-child { display: none; } /* the mark alone, so the search gets the room */
+}
+
 /* ---------- Summary ---------- */
 .summary {
   display: flex;

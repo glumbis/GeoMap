@@ -1,7 +1,7 @@
 // Address page: top bar, left column, map on the right. Layout: docs/DESIGN.md.
 // Top bar: logo, search, Del / Skriv ut / Sammenlign. Left column, top to bottom: address, overall rating, warnings,
 // the perspectives ("Vurdering for deg"), summary,
-// PDF report, every data point by category, sources.
+// PDF report, "Spør megleren" checklist, every data point by category, sources.
 // Renders whatever the profile contains (docs/PROFILE.md). Never a hard-coded category list, never a fake number.
 import { h, titleCase } from "./dom";
 import { navigate } from "./router";
@@ -12,6 +12,8 @@ import { summaryCard } from "./summary";
 import { audienceSection } from "./audience";
 import { shareActions } from "./share";
 import { reportLink } from "./report";
+import { checklistSection } from "./checklist";
+import { finnBackLink } from "./finn";
 import "./address.css";
 import type { Category, DataPoint, Missing, Profile, Severity } from "./profile";
 
@@ -23,7 +25,11 @@ export async function renderAddress(app: HTMLElement, id: string) {
 
   const logo = topbarLogo();
 
-  const panel = h("section", { class: "panel", "aria-live": "polite" }, loading());
+  const panel = h("section", { class: "panel", "aria-live": "polite" });
+  // Came here from /finn: a way back to the same search, above whatever the column shows.
+  const back = finnBackLink();
+  const fill = (...nodes: (Node | string)[]) => panel.replaceChildren(...(back ? [back] : []), ...nodes);
+  fill(loading());
   const mapEl = h("div", { class: "map" });
   app.replaceChildren(
     h(
@@ -42,11 +48,11 @@ export async function renderAddress(app: HTMLElement, id: string) {
     const res = await fetch(`/api/address/${encodeURIComponent(id)}/profile`);
     const body = await res.json().catch(() => null);
     if (req !== current) return;
-    if (!res.ok) return panel.replaceChildren(errorState(res.status, body?.message));
+    if (!res.ok) return fill(errorState(res.status, body?.message));
     profile = body;
   } catch {
     if (req !== current) return;
-    return panel.replaceChildren(errorState(0));
+    return fill(errorState(0));
   } finally {
     setLogoLoading(logo, false);
   }
@@ -55,11 +61,12 @@ export async function renderAddress(app: HTMLElement, id: string) {
   a.place = titleCase(a.place);
   a.municipality = titleCase(a.municipality);
   document.title = `${a.text}, ${a.place} · Omnium`;
-  panel.replaceChildren(
+  fill(
     summary(profile),
     audienceSection(profile) ?? "",
     summaryCard(id, () => req === current),
     reportLink(a.id),
+    checklistSection(profile, openDataPoint) ?? "",
     h(
       "section",
       { class: "all-points", "aria-labelledby": "all-points-title" },
@@ -74,6 +81,48 @@ export async function renderAddress(app: HTMLElement, id: string) {
     (el as HTMLElement).style.setProperty("--reveal-i", String(Math.min(i, 8)));
   });
   showMap(mapEl, a.lng, a.lat);
+  void areaLine(id, req);
+}
+
+// ---------- compared with the area (GET /api/omrade/:id, built by `npm run scores`) ----------
+
+type AreaStat = { name: string; medianScore: number; percentile?: number };
+
+/** Grunnkrets names often end in a serial number ("Hosle nord 02"): people don't say it. */
+const placeName = (name: string) => name.replace(/\s+\d+$/, "").trim() || name;
+
+/**
+ * One quiet line under the score: "Bedre enn 38 % av adressene i Bærum (median 61) og 45 % i Hosle nord (median 60)."
+ * Fetched after the page is drawn, so it never delays it. Any failure (not built yet, 404, 503): no line at all.
+ */
+async function areaLine(id: string, req: number) {
+  let body: { score: number | null; kommune?: AreaStat; grunnkrets?: AreaStat };
+  try {
+    const res = await fetch(`/api/omrade/${encodeURIComponent(id)}`);
+    if (!res.ok) return;
+    body = await res.json();
+  } catch {
+    return;
+  }
+  const el = document.querySelector<HTMLElement>(".overall-area");
+  if (req !== current || !el) return;
+  const areas = [body.kommune, body.grunnkrets && { ...body.grunnkrets, name: placeName(body.grunnkrets.name) }]
+    .filter((x): x is AreaStat => !!x && Number.isFinite(x.medianScore));
+  if (!areas.length) return;
+  let text: string;
+  if (body.score != null && areas.every((x) => x.percentile != null)) {
+    // "Bedre enn 0 %" reads oddly: under 1 % it says "blant de laveste" instead.
+    const part = (x: AreaStat) =>
+      x.percentile! < 1
+        ? `blant de laveste av adressene i ${x.name} (median ${x.medianScore})`
+        : `bedre enn ${x.percentile} % av adressene i ${x.name} (median ${x.medianScore})`;
+    const joined = areas.map(part).join(" og ");
+    text = joined.charAt(0).toUpperCase() + joined.slice(1) + ".";
+  } else {
+    text = `Median i ${areas.map((x) => `${x.name}: ${x.medianScore}`).join(", i ")}.`;
+  }
+  el.textContent = text;
+  el.hidden = false;
 }
 
 // ---------- summary ----------
@@ -151,6 +200,7 @@ function overall(p: Profile) {
       h("div", { class: "overall-word" }, word),
       ok ? h("p", { class: "overall-meaning" }, MEANING[word]) : r.reason ? h("p", { class: "overall-meaning" }, r.reason) : null,
       ok && why ? h("p", { class: "overall-why" }, why) : null,
+      h("p", { class: "overall-area", hidden: true }), // filled by areaLine() once /api/omrade answers
       h("p", { class: "overall-coverage" }, `Skår 0–100 fra ${r.coverage.present} av ${r.coverage.expected} offentlige datapunkter.`),
     ),
   );

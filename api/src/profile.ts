@@ -4,6 +4,7 @@ import { CATEGORIES, DATA_POINTS, SOURCES, type DataPoint, type Find, type Readi
 import { query } from "./db.ts";
 import { infoText } from "./texts.ts";
 import { PERSPECTIVES } from "./perspectives.ts";
+import { questionsFor, type QuestionGroup } from "./questions.ts";
 import { rateCategory, rateOverall, ratePerspective, type Factor, type MissingPoint, type Rating, type Scored } from "./rating.ts";
 
 export const PROFILE_VERSION = 1;
@@ -49,6 +50,8 @@ export interface Profile {
   }[];
   /** Scores for one kind of use (docs/PROFILE.md -> "Perspectives"). */
   perspectives: { id: string; name: string; question: string; rating: Rating & { factors: Factor[] } }[];
+  /** "Spør megleren": hand-written questions for the viewing, from warnings, unmapped hazards and missing critical data (api/src/questions.ts). */
+  questions: QuestionGroup[];
   sources: typeof SOURCES;
 }
 
@@ -247,6 +250,7 @@ export function assembleProfile(address: Address, results: ReadingResult[], outs
       missing: c.missing,
     })),
     perspectives,
+    questions: outside ? [] : questionsFor(categories.map((c) => ({ id: c.category.id, dataPoints: c.dataPoints, missing: c.missing }))),
     sources: SOURCES.filter((s) => usedSources.has(s.id)),
   };
 }

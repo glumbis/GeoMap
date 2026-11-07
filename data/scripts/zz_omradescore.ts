@@ -1,5 +1,6 @@
 // Area score map: Oslo + Akershus in 500 m squares, each with the same 0–100 overall score an address gets
-// (same DATA_POINTS, same rating rules as api/src/profile.ts), worked out at the square's centre point.
+// (same DATA_POINTS; the profile itself is built by assembleProfile() from api/src/profile.ts, so superseded
+// awareness areas, penalties and caps follow exactly the address page's rules), worked out at the square's centre point.
 // Owner: Erik. Needs every other table, so the file name starts with "zz" to run last in `npm run ingest`.
 // Only squares where people live (centre in a grunnkrets with at least MIN_PER_KM2 people per km²) are scored.
 // Each square also stores the four perspective scores and raw values (hazard, road noise, distances, departures)
@@ -8,9 +9,8 @@
 // Fast because each data point runs as ONE query for all squares (a spatial join), not one query per square.
 import { writeFile } from "node:fs/promises";
 import { conn, query } from "../../api/src/db.ts";
-import { CATEGORIES, DATA_POINTS, type Find, type Reading, type Row } from "../../api/src/datapoints.ts";
-import { PERSPECTIVES } from "../../api/src/perspectives.ts";
-import { rateCategory, rateOverall, ratePerspective, type MissingPoint, type Scored } from "../../api/src/rating.ts";
+import { DATA_POINTS, type Find, type Reading, type Row } from "../../api/src/datapoints.ts";
+import { assembleProfile, type MissingReason, type ReadingResult } from "../../api/src/profile.ts";
 import type { Address } from "../../api/src/address.ts";
 import { rawPath } from "./lib.ts";
 
@@ -36,15 +36,21 @@ await conn.run(`
     FROM range(${x0}, ${x1}, ${SIZE}) tx(x), range(${y0}, ${y1}, ${SIZE}) ty(y)
   )
   SELECT row_number() OVER (ORDER BY c.x, c.y)::INTEGER AS cid, c.x, c.y, ST_X(c.geom) AS lng, ST_Y(c.geom) AS lat, c.geom,
-    any_value(k.kommunenummer) AS kommunenummer, any_value(k.name) AS kommune
+    any_value(k.kommunenummer) AS kommunenummer, any_value(k.name) AS kommune,
+    -- Place names for the hit list: the grunnkrets the centre lies in, and in Oslo its bydel.
+    -- Grunnkrets names often end in a serial number ("Bærums verk 01"): drop it, people don't say it.
+    any_value(nullif(trim(regexp_replace(g.name, '\\s+\\d+$', '')), '')) AS place
+    ${loaded.has("oslo_bydeler") ? ", any_value(bd.name) AS bydel" : ", NULL::VARCHAR AS bydel"}
   FROM c
   JOIN kommuner k ON ST_Intersects(k.geom, c.geom)
   JOIN grunnkretser g ON ST_Intersects(g.geom, c.geom) AND g.population > 0 AND g.perKm2 >= ${MIN_PER_KM2}
+  ${loaded.has("oslo_bydeler") ? "LEFT JOIN oslo_bydeler bd ON ST_Intersects(bd.geom, c.geom)" : ""}
   GROUP BY c.x, c.y, c.geom`);
 const squares = await query<{ cid: number; lng: number; lat: number; kommunenummer: string; kommune: string }>(
   "SELECT cid, lng, lat, kommunenummer, kommune FROM sq ORDER BY cid",
 );
 console.log(`omradescore: ${squares.length} squares of ${SIZE} m where people live`);
+const OSLO = "0301";
 
 // ---------- One query per data point, for all squares ----------
 async function rows(sql: string): Promise<Row[]> {
@@ -88,11 +94,15 @@ async function mappedAll(table: string): Promise<Set<number> | undefined> {
 
 type Result = { reading?: Reading };
 const results = new Map<string, Map<number, Result>>(); // dp id -> square -> reading (missing when absent)
+const whyMissing = new Map<string, MissingReason>(); // dp id -> reason for every square without a reading (default noCoverage)
 for (const dp of DATA_POINTS) {
   if (!/^[a-z0-9_]+$/.test(dp.table)) throw new Error(`bad table name in data point ${dp.id}: ${dp.table}`);
   const perSquare = new Map<number, Result>();
   results.set(dp.id, perSquare);
-  if (!loaded.has(dp.table)) continue; // missing for every square
+  if (!loaded.has(dp.table)) {
+    whyMissing.set(dp.id, "notLoaded"); // missing for every square
+    continue;
+  }
   const t0 = Date.now();
   try {
     const found = await findAll(dp.table, dp.find);
@@ -110,6 +120,7 @@ for (const dp of DATA_POINTS) {
     // Like the profile: a broken data point counts as missing, it doesn't stop the map.
     console.error(`  ${dp.id} (${dp.table}) failed, counted as missing:`, (err as Error).message);
     perSquare.clear();
+    whyMissing.set(dp.id, "sourceUnavailable");
   }
   console.log(`  ${dp.id}: ${perSquare.size} squares (${Date.now() - t0} ms)`);
 }
@@ -137,8 +148,18 @@ function hazardOf(get: (id: string) => Reading | undefined): boolean | null {
   return read.some((r) => r.warning?.severity === "high" || r.warning?.severity === "medium");
 }
 
+// Oslo has no T-1442 data, so without the rule below most Oslo squares had quiet = NULL ("Rolig" dropped 436 of 725).
+// The strategic noise map has no coverage outline, but its own metadata (STØYKILDENAVN on every feature from the
+// Statens vegvesen WFS) says what was modelled: "ERF-veger med ÅDT over 8200, i storbyområdene alle ERF-veger og
+// kommunale veger med ÅDT over 500". Oslo kommune (KOMM 301) is that storbyområde, so every road in Oslo with more than
+// 500 vehicles a day is in the model, and no zone means those roads give under 50 dB Lden there. Roads left out carry
+// under 500 vehicles a day, far too little to lift a spot to 55 dB (our "quiet" line). So inside Oslo, no zone = quiet.
+// Outside Oslo only big roads are modelled, so there no zone stays unknown (unless T-1442 says outside its zones).
+// Only when the strategic table loaded and its data point ran (a failed data point leaves an empty map).
+const strategicOk = loaded.has("stoy_strategisk") && (results.get("roadNoiseStrategic")?.size ?? 0) > 0;
+
 /** Road noise. noiseDb = highest known Lden lower bound; quiet = below 55 dB / outside the zones (null when unknown). */
-function noiseOf(get: (id: string) => Reading | undefined): { noiseDb: number | null; quiet: boolean | null } {
+function noiseOf(get: (id: string) => Reading | undefined, kommunenummer: string): { noiseDb: number | null; quiet: boolean | null } {
   const dbs: number[] = [];
   let quietSeen = false;
   const t1442 = get("roadNoise"); // value null = outside red/yellow zone (only read outside Oslo), "gul" = 55–65 dB, "rød" = 65+
@@ -150,6 +171,7 @@ function noiseOf(get: (id: string) => Reading | undefined): { noiseDb: number | 
   const strategic = get("roadNoiseStrategic"); // value = Lden lower bound of a 5 dB band (50..75); no zone = no reading
   const lden = strategic ? num(strategic.value) : null;
   if (lden != null) dbs.push(lden);
+  else if (strategicOk && kommunenummer === OSLO) quietSeen = true; // see the comment above strategicOk
   const noiseDb = dbs.length ? Math.max(...dbs) : null;
   const quiet = noiseDb != null && noiseDb >= 55 ? false : noiseDb != null || quietSeen ? true : null;
   return { noiseDb, quiet };
@@ -158,41 +180,33 @@ function noiseOf(get: (id: string) => Reading | undefined): { noiseDb: number | 
 const out: Out[] = [];
 const stat = { overallNotOk: 0, dropped: 0 };
 for (const s of squares) {
-  const get = (id: string) => results.get(id)!.get(s.cid)?.reading;
-  const categories = CATEGORIES.map((category) => {
-    const mine = DATA_POINTS.filter((dp) => dp.category === category.id);
-    const present: Scored[] = [];
-    const missing: MissingPoint[] = [];
-    for (const dp of mine) {
-      const reading = get(dp.id);
-      if (reading) present.push({ id: dp.id, label: dp.label, importance: dp.importance, reading });
-      else missing.push({ id: dp.id, label: dp.label, importance: dp.importance });
-    }
-    return { category, present, rating: rateCategory(present, missing) };
+  // The same ReadingResult[] that buildProfile() makes for an address, in DATA_POINTS order. Squares all lie inside
+  // kommuner, so never "outsideArea". assembleProfile() replaces a superseded reading on its own result object only.
+  const readings: ReadingResult[] = DATA_POINTS.map((dp) => {
+    const reading = results.get(dp.id)!.get(s.cid)?.reading;
+    return reading ? { dp, reading } : { dp, reason: whyMissing.get(dp.id) ?? "noCoverage" };
   });
-  const r = rateOverall(categories);
+  const address: Address = {
+    id: `grid-${s.cid}`, text: "", postcode: "", place: "", municipality: s.kommune,
+    municipalityNumber: s.kommunenummer, lng: s.lng, lat: s.lat,
+  };
+  // Area shares only change the text of checks ("like most of Oslo"), never a score or warning, so none are passed.
+  const p = assembleProfile(address, readings, false, new Map());
+  // Readings after assembleProfile: a superseded awareness area has lost its warning, as on the address page.
+  const byId = new Map(readings.map((x) => [x.dp.id, x.reading]));
+  const get = (id: string) => byId.get(id);
+  const r = p.rating;
   const ok = r.status === "ok" && r.score != null;
   if (!ok) stat.overallNotOk++;
-
-  // Perspectives exactly like buildProfile(): listed points that have a reading; a missing required point -> no number.
-  const persp: Record<string, number | null> = {};
-  for (const p of PERSPECTIVES) {
-    const mine = DATA_POINTS.filter((dp) => p.weights[dp.id]);
-    const points = mine.filter((dp) => get(dp.id)).map((dp) => ({
-      point: { id: dp.id, label: dp.label, importance: dp.importance, reading: get(dp.id)! }, weight: p.weights[dp.id],
-    }));
-    const missing = mine.filter((dp) => !get(dp.id))
-      .map((dp) => ({ id: dp.id, label: dp.label, importance: dp.importance, required: p.required.includes(dp.id) }));
-    const pr = ratePerspective(points, missing);
-    persp[p.id] = pr.status === "ok" && pr.score != null ? pr.score : null;
-  }
+  const persp: Record<string, number | null> = Object.fromEntries(
+    p.perspectives.map((x) => [x.id, x.rating.status === "ok" && x.rating.score != null ? x.rating.score : null]));
 
   const distances = Object.fromEntries(Object.entries(DISTANCES).map(([col, id]) => [col, num(get(id)?.value)])) as Record<keyof typeof DISTANCES, number | null>;
   const row: Out = {
     cid: s.cid, score: ok ? r.score! : null, capText: ok ? (r.cappedBy?.[0]?.text ?? null) : null,
     present: r.coverage.present, expected: r.coverage.expected,
     living: persp.living ?? null, building: persp.building ?? null, family: persp.family ?? null, commuter: persp.commuter ?? null,
-    hazard: hazardOf(get), ...noiseOf(get), transitDepartures: num(get("transitDepartures")?.value), ...distances,
+    hazard: hazardOf(get), ...noiseOf(get, s.kommunenummer), transitDepartures: num(get("transitDepartures")?.value), ...distances,
   };
   const { cid: _c, capText: _t, present: _p, expected: _e, ...values } = row;
   if (Object.values(values).every((v) => v == null)) {
@@ -215,7 +229,8 @@ await conn.run(`
   SELECT r.cid, r.score, r.capText, r.present, r.expected,
     r.living, r.building, r.family, r.commuter, r.hazard, r.quiet, r.noiseDb,
     r.schoolM, r.kindergartenM, r.groceryM, r.transitStopM, r.trailsM, r.doctorM, r.transitDepartures,
-    s.kommune || coalesce(': ' || r.score, '') AS name, s.kommune, s.kommunenummer, 'Omnium (beregnet)' AS source,
+    coalesce(s.place || ', ', '') || s.kommune || coalesce(': ' || r.score, '') AS name, s.place, s.bydel,
+    s.kommune, s.kommunenummer, 'Omnium (beregnet)' AS source,
     ${WGS(`ST_MakeEnvelope(s.x, s.y, s.x + ${SIZE}, s.y + ${SIZE})`)} AS geom
   FROM read_json('${file.replace(/\\/g, "/")}', format = 'array',
     columns = {${Object.entries(COLS).map(([k, v]) => `${k}: '${v}'`).join(", ")}}) r
@@ -225,9 +240,14 @@ const [st] = await query<Record<string, number>>(`
     count(living)::INTEGER AS living, count(building)::INTEGER AS building, count(family)::INTEGER AS family, count(commuter)::INTEGER AS commuter,
     count(hazard)::INTEGER AS hazardKnown, (count(*) FILTER (hazard))::INTEGER AS hazardTrue,
     count(quiet)::INTEGER AS quietKnown, (count(*) FILTER (quiet))::INTEGER AS quietTrue, count(noiseDb)::INTEGER AS noiseDb,
-    count(schoolM)::INTEGER AS schoolM, count(transitDepartures)::INTEGER AS transitDepartures
+    count(schoolM)::INTEGER AS schoolM, count(transitDepartures)::INTEGER AS transitDepartures,
+    count(place)::INTEGER AS place, (count(*) FILTER (kommunenummer = '${OSLO}'))::INTEGER AS oslo,
+    (count(bydel) FILTER (kommunenummer = '${OSLO}'))::INTEGER AS osloBydel,
+    (count(quiet) FILTER (kommunenummer = '${OSLO}'))::INTEGER AS osloQuietKnown,
+    (count(*) FILTER (kommunenummer = '${OSLO}' AND quiet))::INTEGER AS osloQuietTrue
   FROM omradescore`);
 console.log(`omradescore: ${st.n} squares kept, ${stat.dropped} dropped (no data at all), ${stat.overallNotOk} without an overall score`);
 console.log(`  score ${st.lo}–${st.hi} (average ${st.avg}) on ${st.scored} squares`);
 console.log(`  perspectives: living ${st.living}, building ${st.building}, family ${st.family}, commuter ${st.commuter}`);
 console.log(`  hazard known ${st.hazardKnown} (true ${st.hazardTrue}), quiet known ${st.quietKnown} (true ${st.quietTrue}), noiseDb ${st.noiseDb}, schoolM ${st.schoolM}, transitDepartures ${st.transitDepartures}`);
+console.log(`  place ${st.place}/${st.n}; Oslo ${st.oslo} squares: bydel ${st.osloBydel}, quiet known ${st.osloQuietKnown} (true ${st.osloQuietTrue})`);
