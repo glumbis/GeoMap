@@ -1,5 +1,6 @@
 // Area score map: Oslo + Akershus in 500 m squares, each with the same 0–100 overall score an address gets
-// (same DATA_POINTS, same rating rules as api/src/profile.ts), worked out at the square's centre point.
+// (same DATA_POINTS; the profile itself is built by assembleProfile() from api/src/profile.ts, so superseded
+// awareness areas, penalties and caps follow exactly the address page's rules), worked out at the square's centre point.
 // Owner: Erik. Needs every other table, so the file name starts with "zz" to run last in `npm run ingest`.
 // Only squares where people live (centre in a grunnkrets with at least MIN_PER_KM2 people per km²) are scored.
 // Each square also stores the four perspective scores and raw values (hazard, road noise, distances, departures)
@@ -8,9 +9,8 @@
 // Fast because each data point runs as ONE query for all squares (a spatial join), not one query per square.
 import { writeFile } from "node:fs/promises";
 import { conn, query } from "../../api/src/db.ts";
-import { CATEGORIES, DATA_POINTS, type Find, type Reading, type Row } from "../../api/src/datapoints.ts";
-import { PERSPECTIVES } from "../../api/src/perspectives.ts";
-import { rateCategory, rateOverall, ratePerspective, type MissingPoint, type Scored } from "../../api/src/rating.ts";
+import { DATA_POINTS, type Find, type Reading, type Row } from "../../api/src/datapoints.ts";
+import { assembleProfile, type MissingReason, type ReadingResult } from "../../api/src/profile.ts";
 import type { Address } from "../../api/src/address.ts";
 import { rawPath } from "./lib.ts";
 
@@ -94,11 +94,15 @@ async function mappedAll(table: string): Promise<Set<number> | undefined> {
 
 type Result = { reading?: Reading };
 const results = new Map<string, Map<number, Result>>(); // dp id -> square -> reading (missing when absent)
+const whyMissing = new Map<string, MissingReason>(); // dp id -> reason for every square without a reading (default noCoverage)
 for (const dp of DATA_POINTS) {
   if (!/^[a-z0-9_]+$/.test(dp.table)) throw new Error(`bad table name in data point ${dp.id}: ${dp.table}`);
   const perSquare = new Map<number, Result>();
   results.set(dp.id, perSquare);
-  if (!loaded.has(dp.table)) continue; // missing for every square
+  if (!loaded.has(dp.table)) {
+    whyMissing.set(dp.id, "notLoaded"); // missing for every square
+    continue;
+  }
   const t0 = Date.now();
   try {
     const found = await findAll(dp.table, dp.find);
@@ -116,6 +120,7 @@ for (const dp of DATA_POINTS) {
     // Like the profile: a broken data point counts as missing, it doesn't stop the map.
     console.error(`  ${dp.id} (${dp.table}) failed, counted as missing:`, (err as Error).message);
     perSquare.clear();
+    whyMissing.set(dp.id, "sourceUnavailable");
   }
   console.log(`  ${dp.id}: ${perSquare.size} squares (${Date.now() - t0} ms)`);
 }
@@ -175,41 +180,33 @@ function noiseOf(get: (id: string) => Reading | undefined, kommunenummer: string
 const out: Out[] = [];
 const stat = { overallNotOk: 0, dropped: 0 };
 for (const s of squares) {
-  const get = (id: string) => results.get(id)!.get(s.cid)?.reading;
-  const categories = CATEGORIES.map((category) => {
-    const mine = DATA_POINTS.filter((dp) => dp.category === category.id);
-    const present: Scored[] = [];
-    const missing: MissingPoint[] = [];
-    for (const dp of mine) {
-      const reading = get(dp.id);
-      if (reading) present.push({ id: dp.id, label: dp.label, importance: dp.importance, reading });
-      else missing.push({ id: dp.id, label: dp.label, importance: dp.importance });
-    }
-    return { category, present, rating: rateCategory(present, missing) };
+  // The same ReadingResult[] that buildProfile() makes for an address, in DATA_POINTS order. Squares all lie inside
+  // kommuner, so never "outsideArea". assembleProfile() replaces a superseded reading on its own result object only.
+  const readings: ReadingResult[] = DATA_POINTS.map((dp) => {
+    const reading = results.get(dp.id)!.get(s.cid)?.reading;
+    return reading ? { dp, reading } : { dp, reason: whyMissing.get(dp.id) ?? "noCoverage" };
   });
-  const r = rateOverall(categories);
+  const address: Address = {
+    id: `grid-${s.cid}`, text: "", postcode: "", place: "", municipality: s.kommune,
+    municipalityNumber: s.kommunenummer, lng: s.lng, lat: s.lat,
+  };
+  // Area shares only change the text of checks ("like most of Oslo"), never a score or warning, so none are passed.
+  const p = assembleProfile(address, readings, false, new Map());
+  // Readings after assembleProfile: a superseded awareness area has lost its warning, as on the address page.
+  const byId = new Map(readings.map((x) => [x.dp.id, x.reading]));
+  const get = (id: string) => byId.get(id);
+  const r = p.rating;
   const ok = r.status === "ok" && r.score != null;
   if (!ok) stat.overallNotOk++;
-
-  // Perspectives exactly like buildProfile(): listed points that have a reading; a missing required point -> no number.
-  const persp: Record<string, number | null> = {};
-  for (const p of PERSPECTIVES) {
-    const mine = DATA_POINTS.filter((dp) => p.weights[dp.id]);
-    const points = mine.filter((dp) => get(dp.id)).map((dp) => ({
-      point: { id: dp.id, label: dp.label, importance: dp.importance, reading: get(dp.id)! }, weight: p.weights[dp.id],
-    }));
-    const missing = mine.filter((dp) => !get(dp.id))
-      .map((dp) => ({ id: dp.id, label: dp.label, importance: dp.importance, required: p.required.includes(dp.id) }));
-    const pr = ratePerspective(points, missing);
-    persp[p.id] = pr.status === "ok" && pr.score != null ? pr.score : null;
-  }
+  const persp: Record<string, number | null> = Object.fromEntries(
+    p.perspectives.map((x) => [x.id, x.rating.status === "ok" && x.rating.score != null ? x.rating.score : null]));
 
   const distances = Object.fromEntries(Object.entries(DISTANCES).map(([col, id]) => [col, num(get(id)?.value)])) as Record<keyof typeof DISTANCES, number | null>;
   const row: Out = {
     cid: s.cid, score: ok ? r.score! : null, capText: ok ? (r.cappedBy?.[0]?.text ?? null) : null,
     present: r.coverage.present, expected: r.coverage.expected,
     living: persp.living ?? null, building: persp.building ?? null, family: persp.family ?? null, commuter: persp.commuter ?? null,
-    hazard: hazardOf(get), ...noiseOf(get, s.kommunenummer),transitDepartures: num(get("transitDepartures")?.value), ...distances,
+    hazard: hazardOf(get), ...noiseOf(get, s.kommunenummer), transitDepartures: num(get("transitDepartures")?.value), ...distances,
   };
   const { cid: _c, capText: _t, present: _p, expected: _e, ...values } = row;
   if (Object.values(values).every((v) => v == null)) {

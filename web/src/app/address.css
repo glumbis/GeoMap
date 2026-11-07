@@ -82,3 +82,7 @@
 .check:hover .check-text { text-decoration: underline; text-underline-offset: 0.2em; }
 .check:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 .check-action { font-size: 0.875rem; color: var(--ink-muted); }
+
+/* "Bedre enn 38 % av adressene i Bærum (median 61)": a quiet secondary line under the score (GET /api/omrade). */
+.overall-area { margin-top: 0.25rem !important; font-size: 0.8125rem; line-height: 1.4; color: var(--ink-muted); }
+.overall-area[hidden] { display: none; }

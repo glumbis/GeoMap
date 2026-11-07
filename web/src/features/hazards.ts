@@ -116,35 +116,67 @@ function layerGroups(): Group[] {
     [75, mix(bad, navy, 0.4)],
   ];
 
-  // ---- Area score: red under 30, yellow at 60, green from 90 (data/scripts/zz_omradescore.ts) ----
-  const score: ExpressionSpecification = ["to-number", ["get", "score"], 0];
-  const scoreColor: ExpressionSpecification = ["interpolate", ["linear"], score, 30, bad, 60, warn, 90, good];
+  // ---- Area scores: red under 30, yellow at 60, green from 90 ----
+  // Nabolagsscore: median of every rated street address per grunnkrets (data/area-scores.ts, `npm run scores`).
+  // Score for området: the score at the centre of 500 m squares (data/scripts/zz_omradescore.ts).
+  const scoreColorOf = (key: string): ExpressionSpecification =>
+    ["interpolate", ["linear"], ["to-number", ["get", key], 0], 30, bad, 60, warn, 90, good];
+  const scoreClasses = (none: string): Cls[] => [
+    { label: "90+ svært godt", color: good },
+    { label: "60 middels", color: warn },
+    { label: "Under 30 svakt", color: bad },
+    { label: none, color: surface },
+  ];
+  const areaOpacity: ExpressionSpecification = ["interpolate", ["linear"], ["zoom"], 8, 0.55, 14, 0.35]; // stronger zoomed out, lighter over streets
 
   return [
     {
-      title: "Områdescore",
+      title: "Område",
       layers: [
         {
+          id: "nabolagsscore",
+          label: "Nabolagsscore",
+          endpoint: "/api/grunnkrets_scores",
+          on: false,
+          minZoom: 8,
+          limit: 3000, // all 2,082 grunnkretser at once, so the whole region shows from low zoom
+          classes: scoreClasses("Ingen farge: under 5 adresser vurdert"),
+          fillColor: scoreColorOf("medianScore"),
+          lineColor: mix(navy, surface, 0.4),
+          faintLines: true,
+          fillOpacity: areaOpacity,
+          facts: (f) => {
+            const p = f.properties;
+            const median = Number(p.medianScore);
+            const perspectives = ([["median_living", "Bo her"], ["median_building", "Bygge her"], ["median_family", "Familie"], ["median_commuter", "Pendler"]] as const)
+              .filter(([k]) => p[k] != null && Number.isFinite(Number(p[k])))
+              .map(([k, label]) => `${label} ${Number(p[k])}`);
+            return item(
+              p.name ? String(p.name).replace(/\s+\d+$/, "") : "Grunnkrets",
+              Number.isFinite(median) ? `Median score ${median}/100 (${scoreWord(median).toLowerCase()})` : null,
+              p.addresses != null ? `${Number(p.addresses).toLocaleString("nb-NO")} adresser vurdert` : null,
+              p.pctSeriousWarning != null ? `${Number(p.pctSeriousWarning)} % har alvorlig eller viktig advarsel` : null,
+              perspectives.length ? `Median per bruk: ${perspectives.join(", ")}` : null,
+              sourceLine(f),
+            );
+          },
+        },
+        {
           id: "omradescore",
-          label: "Score for området",
+          label: "Score for området (500 m ruter)",
           endpoint: "/api/omradescore",
           on: false,
           minZoom: 8,
           limit: 10000,
-          classes: [
-            { label: "90+ svært godt", color: good },
-            { label: "60 middels", color: warn },
-            { label: "Under 30 svakt", color: bad },
-            { label: "Ingen farge: få bor der", color: surface },
-          ],
-          fillColor: scoreColor,
+          classes: scoreClasses("Ingen farge: få bor der"),
+          fillColor: scoreColorOf("score"),
           lineColor: "rgba(0,0,0,0)", // a grid of outlines would hide the map
-          fillOpacity: ["interpolate", ["linear"], ["zoom"], 8, 0.55, 14, 0.35], // stronger zoomed out, lighter over streets
+          fillOpacity: areaOpacity,
           facts: (f) => {
             const p = f.properties;
             return item(
               `Score for området: ${Number(p.score)}/100`,
-              p.capText ? `Begrenset av: ${String(p.capText).charAt(0).toLowerCase()}${String(p.capText).slice(1)}` : null,
+              p.capText ? `Trukket ned av: ${String(p.capText).charAt(0).toLowerCase()}${String(p.capText).slice(1)}` : null,
               `Beregnet for midten av ruten (500 × 500 m), basert på ${Number(p.present)} av ${Number(p.expected)} datapunkter. Søk opp adressen for nøyaktig score.`,
               sourceLine(f),
             );
@@ -854,6 +886,14 @@ function shorten(text: string, max: number): string {
   if (text.length <= max) return text;
   const cut = text.slice(0, max);
   return `${cut.slice(0, cut.lastIndexOf(" ") > 0 ? cut.lastIndexOf(" ") : max)} …`;
+}
+
+/** Same words as the overall rating on the address page (address.ts scoreWord). */
+function scoreWord(score: number) {
+  if (score >= 80) return "Svært god";
+  if (score >= 60) return "God";
+  if (score >= 40) return "Middels";
+  return "Svak";
 }
 
 function radonLabel(a: string): string {
