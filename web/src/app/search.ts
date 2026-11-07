@@ -101,6 +101,8 @@ export function createSearch(opts: {
     list.classList.remove("is-stale");
     const pickFirst = pickWhenReady;
     pickWhenReady = false;
+    const wasHidden = list.hidden === true;
+    const before = [...list.children].map((li) => li.textContent);
     list.replaceChildren();
     if (typeof items === "string") {
       hits = [];
@@ -125,7 +127,22 @@ export function createSearch(opts: {
     active = -1;
     list.hidden = false;
     input.setAttribute("aria-expanded", "true");
+    animateIn(wasHidden, before);
     if (pickFirst && hits.length) pick(0);
+  }
+
+  /** Smooth, not jumpy: the list glides in when it opens; after that only rows that changed fade in (a short stagger). */
+  function animateIn(opening: boolean, before: (string | null)[]) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (opening) {
+      list.animate([{ opacity: 0, transform: "translateY(-6px)" }, { opacity: 1, transform: "none" }], { duration: 180, easing: "ease-out" });
+    }
+    [...list.children].forEach((li, i) => {
+      if (!opening && before[i] === li.textContent) return; // same row as before: leave it still
+      li.animate([{ opacity: 0, transform: "translateY(-3px)" }, { opacity: 1, transform: "none" }], {
+        duration: 160, delay: Math.min(i, 6) * 25, easing: "ease-out", fill: "backwards",
+      });
+    });
   }
 
   function close() {

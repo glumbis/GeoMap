@@ -198,7 +198,7 @@
 }
 
 /* ---- "Brukes av … til …" (start.ts): static words right-aligned against the centre, changing words from the centre,
-   so nothing moves sideways. Fades out while the field has text, keeping its space. ---- */
+   so nothing moves sideways. Always visible; it holds still while the field has text. ---- */
 .page-start .start-uses {
   display: grid;
   grid-template-columns: 1fr 1fr;

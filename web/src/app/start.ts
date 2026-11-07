@@ -87,7 +87,7 @@ const HOLD_MS = 2600; // how long a pair stays
  * The line sits between the logo and the field. The static words are in their own grid column, right-aligned against
  * the centre, and the changing words start at the centre, so nothing shifts sideways as the words change.
  * The changing words spin up like a slot machine: a long column of words races past, motion-blurred, overshoots a
- * little and snaps back onto the next pair, sharp. It fades out (keeping its space, so nothing moves) while the field has text.
+ * little and snaps back onto the next pair, sharp. It always stays visible; while the field has text it holds still.
  */
 function usesLine(search: HTMLElement): HTMLElement {
   const whoSlot = h("span", { class: "uses-slot", "aria-hidden": "true" });
@@ -123,15 +123,14 @@ function usesLine(search: HTMLElement): HTMLElement {
     ).finished.then(() => slot.replaceChildren(track([to])), () => {});
   };
 
+  // The line always stays. While the field has text it only holds still (no spin next to the result list).
   const input = search.querySelector("input");
-  const sync = () => line.classList.toggle("is-hidden", !!input?.value.trim());
-  input?.addEventListener("input", sync);
 
   if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     let i = 0;
     const step = () => {
       if (!line.isConnected) return; // left the page
-      if (!document.hidden && !line.classList.contains("is-hidden")) {
+      if (!document.hidden && !input?.value.trim()) {
         i = (i + 1) % USES.length;
         const fill = Array.from({ length: ROLL_ITEMS - 2 }, () => Math.floor(Math.random() * USES.length));
         roll(whoSlot, 0, fill, USES[i][0]);
