@@ -5,6 +5,8 @@ import { navigate } from "./router";
 import { createSearch } from "./search";
 import { showMap } from "./map";
 import { summaryCard } from "./summary";
+import { audienceSection } from "./audience";
+import { shareActions } from "./share";
 import type { Category, DataPoint, Missing, Profile, Rating, Severity } from "./profile";
 
 let current = 0; // ignore responses for an address we already left
@@ -44,6 +46,7 @@ export async function renderAddress(app: HTMLElement, id: string) {
   document.title = `${a.text}, ${a.place} · Omnium`;
   panel.replaceChildren(
     summary(profile),
+    audienceSection(profile) ?? "",
     summaryCard(id, () => req === current),
     ...profile.categories.map((c) => categoryCard(c, profile)),
     sourcesBlock(profile),
@@ -59,8 +62,9 @@ function summary(p: Profile) {
   return h(
     "div",
     { class: "summary" },
-    h("h1", { class: "address-title" }, a.text),
+    h("h1", { class: `address-title${a.text.length > 20 ? " is-long" : ""}` }, a.text),
     h("p", { class: "address-sub" }, `${a.postcode} ${a.place} · ${a.municipality} kommune`),
+    shareActions(),
     overall(r),
     p.warnings.length ? warnings(p) : null,
   );
@@ -168,7 +172,7 @@ function categoryCard(c: Category, p: Profile) {
       h("span", { class: "card-count" }, `${c.dataPoints.length} av ${c.dataPoints.length + c.missing.length}`),
       badge,
     ),
-    !ok && c.rating.reason ? h("p", { class: "card-reason" }, c.rating.reason) : null,
+    !ok ? h("p", { class: "card-reason" }, c.rating.reason || "Ingen skår for denne kategorien ennå") : null,
     h("ul", { class: "dps" }, ...c.dataPoints.map((d) => dataPointRow(d, p)), ...c.missing.map((m) => missingRow(m, p))),
   );
 }

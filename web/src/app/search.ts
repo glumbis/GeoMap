@@ -29,8 +29,17 @@ async function search(text: string, signal: AbortSignal): Promise<Hit[]> {
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`Geonorge ${res.status}`);
   const body = await res.json();
-  return (body.adresser ?? [])
-    .filter((a: any) => a.objtype === "Vegadresse" && inArea(a.kommunenummer))
+  const q = text.trim().toLowerCase();
+  const rank = (a: any) => ((a.adressetekst ?? "").toLowerCase().startsWith(q) ? 0 : 2) + (a.kommunenummer === "0301" ? 0 : 1);
+  const street = (a: any) => String(a.adressetekst ?? "").replace(/\s+\d+\s*[A-Za-z]?$/, "").toLowerCase();
+  const wanted = q.replace(/\s+\d+\s*[A-Za-z]?$/, "");
+  let found = (body.adresser ?? []).filter((a: any) => a.objtype === "Vegadresse" && inArea(a.kommunenummer));
+  const exact = found.filter((a: any) => street(a).startsWith(wanted));
+  if (exact.length) found = exact; // drop fuzzy hits from other streets
+  return found
+    .map((a: any, i: number) => ({ a, i }))
+    .sort((x: any, y: any) => rank(x.a) - rank(y.a) || street(x.a).localeCompare(street(y.a), "nb") || Number(x.a.nummer) - Number(y.a.nummer) || String(x.a.bokstav ?? "").localeCompare(String(y.a.bokstav ?? "")) || x.i - y.i)
+    .map((x: any) => x.a)
     .slice(0, MAX_SHOWN)
     .map((a: any) => ({
       id: addressId(a),
@@ -73,7 +82,7 @@ export function createSearch(opts: { size: "large" | "compact"; onPick: (hit: Hi
           "li",
           { role: "option", id: `search-opt-${i}`, class: "search-hit" },
           h("span", { class: "search-hit-main" }, hit.text),
-          h("span", { class: "search-hit-sub" }, `${hit.postcode} ${hit.place}`),
+          h("span", { class: "search-hit-sub" }, `${hit.postcode} ${hit.place}${hit.municipality && hit.municipality.toLowerCase() !== hit.place.toLowerCase() ? `, ${hit.municipality}` : ""}`),
         );
         li.addEventListener("mousedown", (e) => {
           e.preventDefault(); // keep focus in the input

@@ -78,7 +78,7 @@ async function load(card: HTMLElement, id: string, stillHere: () => boolean) {
     ...(rest.length
       ? [h("details", { class: "ai-facts" }, h("summary", {}, `Vis alle (${s.facts.length})`), h("ul", { class: "fact-list" }, ...rest.map(factItem)))]
       : []),
-    h("p", { class: "ai-note" }, "Faktasetninger fra datakildene. AI-sammendrag er ikke tilgjengelig nå."),
+    h("p", { class: "ai-note" }, "Faktasetninger fra datakildene"),
   );
 }
 

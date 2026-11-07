@@ -46,6 +46,19 @@ export function renderStart(app: HTMLElement) {
 
   const mapEl = h("div", { class: "start-map", "aria-hidden": "true" });
   const roller = ideaRoller();
+  const search = createSearch({
+    size: "large",
+    autofocus: true,
+    onPick: (hit) => {
+      cleanup();
+      navigate(`/a/${hit.id}`);
+    },
+  });
+  const field = search.querySelector("input")!;
+  const sync = () => roller.pause(document.activeElement === field || field.value.trim() !== "");
+  field.addEventListener("focus", sync);
+  field.addEventListener("blur", sync);
+  field.addEventListener("input", sync);
   app.replaceChildren(
     mapEl,
     h("div", { class: "start-fade", "aria-hidden": "true" }),
@@ -54,14 +67,7 @@ export function renderStart(app: HTMLElement) {
       { class: "start" },
       h("h1", { class: "start-logo" }, h("img", { src: "/logo-mark.png", alt: "" }), h("span", {}, "omnium")),
       roller.el,
-      createSearch({
-        size: "large",
-        autofocus: true,
-        onPick: (hit) => {
-          cleanup();
-          navigate(`/a/${hit.id}`);
-        },
-      }),
+      search,
       h("p", { class: "start-tagline" }, "Alt offentlig tilgjengelig om en eiendom i Oslo og Akershus"),
     ),
   );
@@ -93,10 +99,12 @@ function ideaRoller() {
     line,
   );
 
-  if (reducedMotion()) return { el, stop: () => {} };
+  if (reducedMotion()) return { el, stop: () => {}, pause: (_p: boolean) => {} };
   let i = 0;
+  let paused = false;
   let swap: number | undefined;
   const timer = window.setInterval(() => {
+    if (paused) return;
     line.classList.add("is-out");
     swap = window.setTimeout(() => {
       i = (i + 1) % SLOGANS.length;
@@ -107,6 +115,7 @@ function ideaRoller() {
   }, 3000);
   return {
     el,
+    pause: (p: boolean) => (paused = p),
     stop: () => {
       clearInterval(timer);
       clearTimeout(swap);
