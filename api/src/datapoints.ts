@@ -48,6 +48,8 @@ export interface Reading {
   /** Points taken off the overall and the perspectives that use this data point, after caps. For checks that must still count. */
   penalty?: number;
   explanation?: string;
+  /** Outside every zone, but one is close (DataPoint.near): how far, and which zone. Info only, never scored. */
+  nearestZone?: { distanceM: number; text?: string };
 }
 
 /**
@@ -80,6 +82,14 @@ export interface DataPoint {
    * warning, this one's check and penalty are dropped, so one hazard is not counted twice. Its score still counts.
    */
   supersededBy?: string;
+  /**
+   * Hazard zones: when read() says the address is outside every zone (effect "good"), the profile looks for the
+   * nearest zone within NEAR_ZONE_M and sets `nearestZone` + ", ca. X m til nærmeste <text(row)>" on the display
+   * (", ca. X m unna" when there is no text: the display already names the zone).
+   * Explains why a neighbour a few metres away scores far lower. Never changes the score. `where` filters the zones
+   * that count (fixed SQL, never user input).
+   */
+  near?: { text?: (row: Row) => string; where?: string };
   /** rows is [] when nothing was found. Return null when the source has no coverage here. */
   read: (rows: Row[], address: Address, mapped?: boolean) => Reading | null;
 }
@@ -286,6 +296,7 @@ export const DATA_POINTS: DataPoint[] = [
     id: "quickClay", label: "Kvikkleire faresone", category: "hazards", source: "nve-kvikkleire", importance: "critical",
     table: "nve_kvikkleire", find: { kind: "within" }, // data/scripts/nve_kvikkleire.ts (Sverre): name, faregrad ('Høy' | 'Middels' | 'Lav' | 'Ingen'), risikoklasse
     coverage: "kvikkleire_kartlagt", // data/scripts/nve_kartlagt.ts
+    near: { where: "lower(faregrad) IN ('høy', 'middels', 'lav')", text: (r) => `kvikkleiresone (faregrad ${String(r.faregrad).toLowerCase()})` },
     read: (rows, _address, mapped) => {
       if (!rows.length) {
         return mapped ? { value: null, display: "Ikke i faresone (kartlagt område)", effect: "good" } : NOT_MAPPED;
@@ -313,6 +324,7 @@ export const DATA_POINTS: DataPoint[] = [
     id: "flood200", label: "Flomsone (200-årsflom)", category: "hazards", source: "nve-flomsoner", importance: "critical",
     table: "flomsoner", find: { kind: "within" }, // data/scripts/flomsoner.ts (Sverre): gjentaksintervall (10/20/50/100/200), lowPoint
     coverage: "flom_kartlagt", // data/scripts/nve_kartlagt.ts
+    near: { text: (r) => `${Number(r.gjentaksintervall) || 200}-årsflomsone` },
     read: (rows, _address, mapped) => {
       if (!rows.length) {
         return mapped ? { value: false, display: "Ikke i flomsone (kartlagt område)", effect: "good" } : NOT_MAPPED;
@@ -335,6 +347,7 @@ export const DATA_POINTS: DataPoint[] = [
     id: "quickClayAwareness", label: "Aktsomhetsområde for kvikkleireskred", category: "hazards", source: "nve-kvikkleire-aktsomhet", importance: "normal",
     table: "kvikkleire_aktsomhet", find: { kind: "within" },
     coverage: "kvikkleire_aktsomhet_dekning",
+    near: {},
     supersededBy: "quickClay",
     read: (rows, _address, mapped) => {
       if (!rows.length) return mapped ? { value: false, display: "Ikke i aktsomhetsområde for kvikkleireskred", effect: "good" } : NOT_MAPPED;
@@ -350,6 +363,7 @@ export const DATA_POINTS: DataPoint[] = [
     // Coarser than flood200 (which is only mapped in some places), so a low warning: "check before building".
     id: "floodAwareness", label: "Aktsomhetsområde for flom", category: "hazards", source: "nve-flomaktsomhet", importance: "normal",
     table: "flomaktsomhet", find: { kind: "within" },
+    near: {},
     supersededBy: "flood200",
     read: (rows) =>
       rows.length
@@ -362,6 +376,7 @@ export const DATA_POINTS: DataPoint[] = [
   {
     id: "rockfall", label: "Steinsprang", category: "hazards", source: "nve-steinsprang", importance: "normal",
     table: "steinsprang", find: { kind: "within" }, // data/scripts/steinsprang.ts (Sverre): zone 'utløsning' (release) | 'utløp' (runout)
+    near: {},
     read: (rows) => {
       if (!rows.length) return { value: false, display: "Ikke i aktsomhetsområde", effect: "good" };
       const runout = rows.some((r) => r.zone === "utløp");
@@ -376,6 +391,7 @@ export const DATA_POINTS: DataPoint[] = [
   {
     id: "debrisFlow", label: "Jord- og flomskred", category: "hazards", source: "nve-jordflomskred", importance: "normal",
     table: "jordflomskred", find: { kind: "within" }, // data/scripts/jordflomskred.ts (Sverre)
+    near: {},
     read: (rows) =>
       rows.length
         ? {
@@ -387,6 +403,7 @@ export const DATA_POINTS: DataPoint[] = [
   {
     id: "avalanche", label: "Snøskred", category: "hazards", source: "nve-snoskred", importance: "normal",
     table: "snoskred", find: { kind: "within" }, // data/scripts/snoskred.ts (Sverre): forestEffect (true = with today's forest)
+    near: { text: (r) => (r.forestEffect === true ? "" : "sone (bare uten skog)") },
     read: (rows) => {
       if (!rows.length) return { value: false, display: "Ikke i aktsomhetsområde", effect: "good" };
       if (rows.some((r) => r.forestEffect === true)) {
@@ -405,6 +422,7 @@ export const DATA_POINTS: DataPoint[] = [
   {
     id: "stormSurge", label: "Stormflo", category: "hazards", source: "kartverket-stormflo", importance: "normal",
     table: "stormflo", find: { kind: "within" }, // data/scripts/stormflo.ts (Sverre): years (20 | 200), climate ('nå' | '2100'), waterLevelCm
+    near: { where: "climate = 'nå'", text: (r) => `${Number(r.years)}-årsstormflosone` },
     read: (rows) => {
       if (!rows.length) return { value: false, display: "Ikke i stormflosone", effect: "good" };
       const now = rows.filter((r) => r.climate === "nå");
