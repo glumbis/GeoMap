@@ -95,7 +95,8 @@ function factsList(facts: Fact[]) {
   return h(
     "details",
     { class: "ai-facts" },
-    h("summary", {}, `Faktaene bak (${facts.length})`),
+    // Count data points, not sentences, so it matches "basert på N av M datapunkter" (missing-data and score sentences have no dataPointId).
+    h("summary", {}, `Faktaene bak (${facts.filter((f) => f.dataPointId).length} datapunkter)`),
     h("ul", { class: "fact-list" }, ...facts.map(factItem)),
   );
 }

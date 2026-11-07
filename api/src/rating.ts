@@ -2,7 +2,8 @@
 // Scores use only data we have. Missing data never counts as good.
 import type { Category, Reading, Severity } from "./datapoints.ts";
 
-export type Status = "ok" | "insufficientData" | "unavailable";
+/** informational: the category has data, but only facts that are never scored (e.g. municipal stats). */
+export type Status = "ok" | "insufficientData" | "unavailable" | "informational";
 
 export interface Coverage {
   present: number;
@@ -101,9 +102,7 @@ export function rateCategory(present: Scored[], missing: MissingPoint[]): Rating
     return { status: "insufficientData", reason: `For få datapunkter (${present.length} av ${coverage.expected}).`, coverage };
   }
   const avg = average(present);
-  if (avg == null) {
-    return { status: "insufficientData", reason: "Datapunktene her er bare informasjon og gir ingen karakter ennå.", coverage };
-  }
+  if (avg == null) return { status: "informational", reason: "Bare fakta om stedet, ingen karakter.", coverage };
   return { status: "ok", ...applyCaps(avg, caps(present, CATEGORY_CAP)), coverage };
 }
 
@@ -166,10 +165,11 @@ export function rateOverall(categories: { category: Category; rating: Rating; pr
     };
   }
 
-  const totalWeight = categories.reduce((s, c) => s + c.category.weight, 0);
+  // Fact-only categories can never be scored, so they don't count against the 60% rule.
+  const totalWeight = categories.filter((c) => c.rating.status !== "informational").reduce((s, c) => s + c.category.weight, 0);
   const okWeight = ok.reduce((s, c) => s + c.category.weight, 0);
   if (okWeight < MIN_OK_WEIGHT * totalWeight) {
-    const notOk = categories.filter((c) => c.rating.status !== "ok").map((c) => c.category.name.toLowerCase());
+    const notOk = categories.filter((c) => c.rating.status !== "ok" && c.rating.status !== "informational").map((c) => c.category.name.toLowerCase());
     return {
       status: "insufficientData",
       reason: `Kan ikke gi samlet karakter: for lite data for ${list(notOk)}.`,

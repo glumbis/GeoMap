@@ -1,7 +1,7 @@
 // Shape of GET /api/address/:id/profile, as the web app uses it. Source of truth: api/src/profile.ts + docs/PROFILE.md.
 
 export type Severity = "high" | "medium" | "low";
-export type Status = "ok" | "insufficientData" | "unavailable";
+export type Status = "ok" | "insufficientData" | "unavailable" | "informational";
 
 export interface Rating {
   status: Status;

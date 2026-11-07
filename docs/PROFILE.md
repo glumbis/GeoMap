@@ -40,6 +40,7 @@ Every address has one id, used in the URL (`/a/<id>` in the web app, `/api/addre
   - *ok*: a score could be calculated.
   - *insufficient data*: some data exists, but not enough to rate fairly.
   - *unavailable*: no data at all.
+  - *informational* (categories only): there is data, but only facts that are never scored, like municipal stats. Show it as facts, not as "can't rate".
 - **Score:** 0–100, higher is better. Only present when the status is ok.
 - **Reason:** plain-language explanation. Only present when the status is not ok.
 - **Coverage:** how many data points we have, how many we expected, and how many critical ones are missing. The UI can show this as "8 of 10 data points".
@@ -82,6 +83,7 @@ A data point declares its mapped-area table with `coverage` in `api/src/datapoin
 **A category**
 - *unavailable* if it has no data points at all
 - *insufficient data* if any critical data point is missing, or fewer than half of the expected data points are present
+- *informational* if every present data point is unscored (neutral facts). It does not count against the overall's 60% rule
 - *ok* otherwise, scored from the present data points only
 
 **The overall rating**
@@ -116,7 +118,7 @@ The code is the source of truth (`api/src/profile.ts`, `api/src/rating.ts`, `api
 }
 ```
 
-- `rating.status`: `ok` | `insufficientData` | `unavailable`. `score` only when `ok`, `reason` only when not.
+- `rating.status`: `ok` | `insufficientData` | `unavailable` | `informational`. `score` only when `ok`, `reason` only when not.
 - `cappedBy`: warnings that pulled the score down. `weakestCategory`: overall only, whenever at least one category is rated.
 - A data point's `source` is a source `id` from `sources`. `unit`, `score`, `warning` and `explanation` are optional.
 - `missing[].reason`: `noCoverage` | `sourceUnavailable` | `notLoaded`.

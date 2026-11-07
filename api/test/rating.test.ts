@@ -93,3 +93,13 @@ test("low warnings never cap the overall", () => {
   assert.equal(o.score, 100);
   assert.equal(o.cappedBy, undefined);
 });
+
+test("a category with only unscored facts is 'informational', and doesn't block the overall", () => {
+  const facts = [neutral("municipality", "normal"), neutral("population", "normal")];
+  assert.equal(rateCategory(facts, []).status, "informational");
+  const rated = (category: Category, present: Scored[]) => ({ category, present, rating: rateCategory(present, []) });
+  // Facts-only category holds most of the weight: the overall is still rated from the rest.
+  const o = rateOverall([rated(cat("hazards", 25, true), [good("quickClay", "critical")]), rated(cat("area", 75), facts)]);
+  assert.equal(o.status, "ok");
+  assert.equal(o.score, 100);
+});

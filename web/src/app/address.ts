@@ -157,7 +157,7 @@ function categoryCard(c: Category, p: Profile) {
   const ok = c.rating.status === "ok" && c.rating.score != null;
   const badge = ok
     ? h("span", { class: `cat-score cat-score--${scoreClass(c.rating.score!)}` }, c.rating.score!)
-    : h("span", { class: "cat-score cat-score--none" }, "Kan ikke vurderes");
+    : h("span", { class: "cat-score cat-score--none" }, c.rating.status === "informational" ? "Kun fakta" : "Kan ikke vurderes");
   return h(
     "details",
     { class: "card", id: `cat-${c.id}` },
