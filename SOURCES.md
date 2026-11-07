@@ -97,6 +97,14 @@ Terms for all Kartverket free data: CC BY 4.0, credit "© Kartverket". Details i
   - Columns: `id`, `name`, `years` (20 | 200), `climate` ('nå' | '2100'), `waterLevelCm` (above NN2000: 140–160 cm for 20-year, 160–190 for 200-year today, 220–240 in 2100), `source`, `geom`.
   - Checked: no test address is in a zone. Real hits match Kartverket's ground height (hoydedata API): Drammensveien 281, Oslo (`0301-11290-281`, 20-year today, ground 1.51 m vs water 1.6 m); Frognerstranda 6 (`0301-12047-6`, 2100); Scheens vei 1, Bærum; Nessetveien 55, Nesodden.
   - Licence CC BY 4.0, credit "© Kartverket".
+- **MET Norway station observations (vind)** → table `vindroser`, script `data/scripts/vindroser.ts`, data point `wind` (info only), wind rose page in the PDF report (2026-11-07).
+  - Source: MET Norway THREDDS, one NetCDF per station and parameter (`thredds.met.no/thredds/catalog/met.no/observations/surface/<station>/<81 wind_speed | 61 wind_from_direction>/`), read with OPeNDAP (binary DAP2). No key. Frost API was not used (needs a client ID).
+  - 2016 onwards, sampled to one value per whole hour (recent years are per minute). Quality flags 5–7 (very uncertain, erroneous) dropped. Calm = under 0.3 m/s.
+  - Per station: hours per 16 directions × 6 speed bands (MET's Beaufort bands), calm hours, period, and station height from Kartverket's hoydedata API. Columns: `stationId`, `name`, `elevationM`, `hours`, `calmHours`, `periodFrom`, `periodTo`, `rose` (JSON 16×6), `source`, `geom`.
+  - 16 stations within ~25 km of the study area (Blindern, Hovin, Tryvannshøgda, Kjeller, Søråsjordet/Ås, Aurskog, Berskog, Hønefoss, Rygge ...). Nearest within 25 km is used; hilltop stations (300 moh or more, i.e. Tryvannshøgda) only within 3 km (`api/src/wind.ts`).
+  - Gap: no MET wind station on THREDDS in northern Akershus (Gardermoen, Eidsvoll, Hurdal, Nannestad): the data point is missing there and the report says so. Gardermoen (SN4780) is only in Frost.
+  - Checked: Blindern mostly NNØ and SSV (Oslo's valley winds), as on seklima.met.no.
+  - Licence CC BY 4.0, credit "Meteorologisk institutt".
 - **Avinor Støysoner Avinors lufthavner** (entry below) → table `flystoy`, script `data/scripts/flystoy.ts`, API `/api/flystoy`, data point `aircraftNoise` (2026-11-07).
   - Source: Geonorge county download for Akershus (GeoPackage in a zip, EPSG:25833, layer `Støy`). Oslo has no Avinor airport, so only Gardermoen (ENGM) is in the study area. Avinor's calculation year 2022, file updated 2026-10-12.
   - T-1442 airport zones: red = Lden 62 dB or more, yellow = 52–62 dB. 1 red and 2 yellow (multi)polygons, simplified to 1 m.

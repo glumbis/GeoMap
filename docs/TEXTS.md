@@ -116,6 +116,9 @@ How to use this file:
 **Forklaring:** Miljødirektoratet registrerer steder der grunnen er eller kan være forurenset, for eksempel gamle fyllinger, industritomter og skytebaner.
 - **Når registrert i nærheten:** At et sted er registrert, betyr ikke alltid at grunnen faktisk er forurenset. Det har mest å si hvis man skal grave, bygge eller dyrke i jorda.
 
+### `wind` — Vind (hovedvindretning)
+**Forklaring:** Hvor vinden oftest blåser fra, målt time for time siden 2016 på nærmeste værstasjon fra Meteorologisk institutt. Retningen sier hvilken side av huset som får mest vind, og hvor uteplassen får mest le. Vindrosen i rapporten viser alle retninger og hvor sterk vinden er. Dette er bare informasjon og teller ikke i poengsummen.
+
 ## Beliggenhet
 
 ### `transitStop` — Nærmeste holdeplass
