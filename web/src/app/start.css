@@ -1,6 +1,6 @@
 /* Start page: animated logo, rolling slogan, map button, live map with a cursor lens. Variables only (theme.css). */
 
-/* ---- Layers: map (interactive) < paper fade (+ lens hole) < ring < content (only its blocks take the mouse) ---- */
+/* ---- Layers: map < paper fade < magnified map lens < content ---- */
 .page-start .start-map {
   inset: 0;
   animation: none;
@@ -8,10 +8,6 @@
 }
 .page-start .start-fade {
   z-index: 1;
-}
-.page-start.lens-on .start-fade {
-  -webkit-mask-image: radial-gradient(circle var(--lr) at var(--lx) var(--ly), transparent 0, transparent 45%, #000 100%);
-  mask-image: radial-gradient(circle var(--lr) at var(--lx) var(--ly), transparent 0, transparent 45%, #000 100%);
 }
 .start-lens {
   position: absolute;
@@ -23,12 +19,17 @@
   border-radius: 50%;
   pointer-events: none;
   opacity: 0;
-  border: 1px solid color-mix(in srgb, var(--ink) 55%, transparent);
-  -webkit-backdrop-filter: saturate(1.35);
-  backdrop-filter: saturate(1.35);
+  border: 1px solid var(--ink);
+  overflow: hidden;
+  background: var(--map-land);
   /* centre on the cursor; scale follows the eased lens radius (--lr is 7 rem when fully open) */
   transform: translate(calc(var(--lx, 0px) - 7rem), calc(var(--ly, 0px) - 7rem)) scale(var(--ls, 0));
   transform-origin: center;
+}
+.start-lens__map {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 .page-start.lens-on .start-lens {
   opacity: 1;

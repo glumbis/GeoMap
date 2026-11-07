@@ -1,16 +1,14 @@
-// The interactive map behind the start page: drag + zoom, a slow idle pan, a cursor "lens" that reveals the map
-// un-faded, a place-name tooltip when the cursor rests, and click-to-zoom with "Sjekk nærmeste adresse".
+// The interactive map behind the start page: drag + zoom, a slow idle pan, a full-colour magnifying lens,
+// a place-name tooltip when the cursor rests, and click-to-zoom with "Sjekk nærmeste adresse".
 import { Map, Popup } from "maplibre-gl";
 import { basemapStyle } from "./basemap";
 import { h, titleCase } from "./dom";
 
-const CENTER: [number, number] = [10.7, 59.915]; // a little west of Oslo centre, so the city sits right of the text
+const AREA: [[number, number], [number, number]] = [[10.0, 59.45], [11.95, 60.55]];
 const WAYPOINTS: [number, number][] = [
-  [10.73, 59.925],
-  [10.69, 59.9],
-  [10.66, 59.92],
-  [10.72, 59.935],
-  [10.7, 59.915],
+  [10.99, 60.02],
+  [10.95, 59.98],
+  [10.975, 60],
 ];
 const IDLE_START_MS = 4000;
 const IDLE_RESUME_MS = 6000;
@@ -31,9 +29,9 @@ export function createStartMap(app: HTMLElement, mapEl: HTMLElement, onAddress: 
   const map = new Map({
     container: mapEl,
     style: basemapStyle(),
-    center: CENTER,
-    zoom: 13,
-    minZoom: 8.5,
+    bounds: AREA,
+    fitBoundsOptions: { padding: 48 },
+    minZoom: 5,
     maxZoom: 17,
     dragRotate: false,
     pitchWithRotate: false,
@@ -43,7 +41,7 @@ export function createStartMap(app: HTMLElement, mapEl: HTMLElement, onAddress: 
   map.touchZoomRotate.disableRotation();
   map.getCanvas().removeAttribute("tabindex"); // never take focus from the search field
 
-  // ---- Idle pan: a slow tour of Oslo while nobody touches the map ----
+  // ---- Idle pan: small movements within Oslo + Akershus ----
   let drifting = false;
   let wi = 0;
   let idleTimer: number | undefined;
@@ -78,9 +76,26 @@ export function createStartMap(app: HTMLElement, mapEl: HTMLElement, onAddress: 
   });
   scheduleIdle(IDLE_START_MS);
 
-  // ---- Lens: the fade layer gets a soft hole that follows the cursor, with an ink ring ----
+  // ---- Lens: an independent full-colour map stays centred on the cursor's geographic point ----
   const ring = h("div", { class: "start-lens", "aria-hidden": "true" });
   app.append(ring);
+  let lensMap: Map | undefined;
+  if (!still && matchMedia("(any-hover: hover)").matches) {
+    const lensEl = h("div", { class: "start-lens__map" });
+    ring.append(lensEl);
+    const style = basemapStyle();
+    const raster = style.layers.find((layer) => layer.id === "basemap");
+    if (raster?.type === "raster") raster.paint = { "raster-opacity": 1, "raster-fade-duration": 0 };
+    lensMap = new Map({
+      container: lensEl,
+      style,
+      interactive: false,
+      attributionControl: false, // the main map already displays the same Kartverket attribution
+      center: map.getCenter(),
+      zoom: map.getZoom() + 0.75,
+    });
+    lensMap.getCanvas().removeAttribute("tabindex");
+  }
   const rem = () => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
   let tx = 0;
   let ty = 0;
@@ -90,6 +105,12 @@ export function createStartMap(app: HTMLElement, mapEl: HTMLElement, onAddress: 
   let tr = 0;
   let raf = 0;
   let overMap = false;
+  const syncLens = () => {
+    if (!lensMap || r <= 0.5) return;
+    const box = mapEl.getBoundingClientRect();
+    lensMap.jumpTo({ center: map.unproject([x - box.left, y - box.top]), zoom: map.getZoom() + 0.75 });
+  };
+  map.on("move", syncLens);
   const frame = () => {
     raf = 0;
     const k = still ? 1 : LERP;
@@ -101,6 +122,7 @@ export function createStartMap(app: HTMLElement, mapEl: HTMLElement, onAddress: 
     app.style.setProperty("--lr", `${r.toFixed(1)}px`);
     app.style.setProperty("--ls", (r / (LENS_REM * rem())).toFixed(3)); // 0..1 for the ring's scale
     app.classList.toggle("lens-on", r > 0.5);
+    syncLens();
     if (Math.abs(tx - x) > 0.3 || Math.abs(ty - y) > 0.3 || Math.abs(tr - r) > 0.3) raf = requestAnimationFrame(frame);
   };
   const kick = () => {
@@ -151,7 +173,7 @@ export function createStartMap(app: HTMLElement, mapEl: HTMLElement, onAddress: 
       x = tx;
       y = ty;
     }
-    tr = overMap && !down && e.pointerType !== "touch" ? LENS_REM * rem() : 0;
+    tr = lensMap && overMap && !down && e.pointerType !== "touch" ? LENS_REM * rem() : 0;
     kick();
     if (!tip.hidden && Math.hypot(e.clientX - tipX, e.clientY - tipY) > 6) tip.hidden = true;
     clearTimeout(restTimer);
@@ -235,6 +257,7 @@ export function createStartMap(app: HTMLElement, mapEl: HTMLElement, onAddress: 
     removeEventListener("pointerup", onUp);
     app.removeEventListener("pointermove", onMove);
     app.removeEventListener("pointerleave", onLeave);
+    lensMap?.remove();
     ring.remove();
     tip.remove();
     map.remove();

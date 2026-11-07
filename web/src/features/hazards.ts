@@ -552,7 +552,8 @@ export default function (map: Map) {
     panel.classList.toggle("is-collapsed", collapsed);
     body.hidden = collapsed;
   };
-  toggle.addEventListener("click", () => {
+  toggle.addEventListener("click", (e) => {
+    e.stopPropagation();
     collapsed = !collapsed;
     try {
       localStorage.setItem(STORE, collapsed ? "1" : "0");
@@ -580,7 +581,10 @@ export default function (map: Map) {
     zoomNote,
   );
   applyCollapsed();
-  panel.querySelector<HTMLElement>(".hz-panel__title")!.addEventListener("click", () => toggle.click());
+  panel.addEventListener("click", (e) => {
+    const target = e.target as Element;
+    if (collapsed || target.closest(".hz-panel__head")) toggle.click();
+  });
   container.append(panel);
 
   function layerRow(L: MapLayer): HTMLElement {

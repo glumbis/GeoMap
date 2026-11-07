@@ -27,7 +27,7 @@ Three pages: the start page, the address page and the map page (`/kart`, full-wi
 
 The start page should feel like the logo: a round window onto a soft, living map.
 
-- **Background:** a live, interactive map of Oslo (drag and scroll-zoom; no rotate or tilt) that pans slowly on its own after a few seconds without input and stops as soon as you touch it (`web/src/app/startmap.ts`). It is faded into the paper colour on the left so the content sits on calm paper. A soft lens follows the cursor and shows the map un-faded inside a thin ink ring; when the cursor rests, a small label shows the place name (Geonorge stedsnavn). Clicking the map zooms in and offers "Sjekk nærmeste adresse". With "reduce motion" the map stands still and nothing animates.
+- **Background:** a live, interactive map opening on all of Oslo + Akershus (drag and scroll-zoom; no rotate or tilt). It pans slowly within the region after a few seconds without input and stops as soon as you touch it (`web/src/app/startmap.ts`). It is faded into the paper colour on the left so the content sits on calm paper. Outside the content blocks, a circular lens follows the cursor and shows a separate, synchronised map in full colour at a slightly closer zoom, inside a crisp ink ring. The lens is decorative, passes clicks through and is disabled for touch and reduced motion. When the cursor rests, a small label shows the place name (Geonorge stedsnavn). Clicking the map zooms in and offers "Sjekk nærmeste adresse". With "reduce motion" the map stands still and nothing animates.
 - **Centred, top to bottom:**
   - The logo mark (ring turns into place once on load, then a thin gradient ring circles it slowly) next to the serif word mark "Omnium".
   - A line saying who Omnium is for and what they get: "For " + audience + ": " + what, e.g. "For byggere: grunnforhold og løsmasser før du graver". 16 phrases (boligkjøpere, boligeiere, byggere, utbyggere, arkitekter, eiendomsmeglere, takstmenn, banker, forsikring, kommuneplanleggere, barnefamilier, leietakere, graveentreprenører, borettslag, journalister, studenter), each max ~55 characters and only about data we have or plan to have (no prices, no permits). The audience word is teal italic serif. The line fades to the next phrase every 3 s (200 ms fade, one line only). Screen readers get the full list once; with "reduce motion" the line stands still. CSS in `web/src/app/start.css`. The start page is left-aligned like a masthead, with the map fading in from the right.
@@ -88,7 +88,7 @@ The map should look like part of the logo, not like a default web map.
 - **Data layers:** brand colours with transparency. Hazards in `--bad`/`--warn` fills at ~30% opacity with a thin solid outline. Nature in `--green`, water in `--map-water`. Municipality borders thin navy.
 - **Pin:** orange teardrop with a white dot, as in the logo.
 - **Controls:** zoom buttons and attribution restyled to match (white, rounded, soft shadow). Keep the "© Kartverket" attribution visible.
-- **Layer panel:** a white rounded card, grouped by the same categories as the cards, a small colour swatch per layer.
+- **Layer panel:** a fixed-width paper panel, grouped by the same categories as the cards, a small colour swatch per layer. Clicking anywhere on the collapsed panel (including its hint and padding) opens it; when open, only the header closes it. The header button supports keyboard activation and announces its expanded state.
 
 ## Assets
 
