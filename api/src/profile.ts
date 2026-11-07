@@ -74,7 +74,7 @@ export async function buildProfile(id: string): Promise<Profile> {
       continue;
     }
     try {
-      const reading = dp.read(await findRows(dp.table, dp.find, address.lng, address.lat));
+      const reading = dp.read(await findRows(dp.table, dp.find, address.lng, address.lat), address);
       results.push(reading ? { dp, reading } : { dp, reason: "noCoverage" });
     } catch (err) {
       // A broken entry must not break the whole profile. Show it as missing and log why.

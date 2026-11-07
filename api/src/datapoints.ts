@@ -7,6 +7,8 @@
 // are proposals: when you ingest the dataset, fix the entry to match your table (or name the table to match).
 // UI text (labels, display, warnings, reasons) is Norwegian bokmål.
 
+import type { Address } from "./address.ts";
+
 export type Effect = "good" | "neutral" | "bad";
 export type Severity = "high" | "medium" | "low";
 export type Row = Record<string, unknown>;
@@ -61,7 +63,7 @@ export interface DataPoint {
   table: string;
   find: Find;
   /** rows is [] when nothing was found. Return null when the source has no coverage here. */
-  read: (rows: Row[]) => Reading | null;
+  read: (rows: Row[], address: Address) => Reading | null;
 }
 
 export const CATEGORIES: Category[] = [
@@ -183,8 +185,12 @@ export const DATA_POINTS: DataPoint[] = [
   {
     id: "roadNoise", label: "Veistøy", category: "environment", source: "svv-stoy", importance: "normal",
     table: "veistoy", find: { kind: "within" }, // data/scripts/veistoy.ts (Even): stoysone 'rød' | 'gul'
-    read: (rows) => {
-      if (!rows.length) return { value: null, display: "Ikke i støysone", effect: "good", explanation: "Kartet dekker bare riks- og fylkesveier, ikke kommunale veier." };
+    read: (rows, address) => {
+      if (!rows.length) {
+        // T-1442 has no data in Oslo: an empty result there means "unknown", not "quiet".
+        if (address.municipalityNumber === "0301") return null;
+        return { value: null, display: "Ikke i støysone", effect: "good", explanation: "Kartet dekker bare riks- og fylkesveier, ikke kommunale veier." };
+      }
       const red = rows.some((r) => String(r.stoysone).toLowerCase().startsWith("r"));
       return red
         ? { value: "rød", display: "Rød støysone (over 65 dB)", effect: "bad", score: 10, warning: { severity: "medium", text: "Rød støysone fra vei" } }
