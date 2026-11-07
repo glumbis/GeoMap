@@ -287,9 +287,11 @@ export const DATA_POINTS: DataPoint[] = [
         // Today's flooding: the most frequent storm surge that reaches the address.
         const worst = now.reduce((a, b) => (Number(b.years) < Number(a.years) ? b : a));
         const years = Number(worst.years);
+        // Same TEK17 §7-2 rule as flood200: a 20-year zone fails even the lowest safety class (F1).
+        const high = years <= 20;
         return {
-          value: years, unit: "år", display: `I ${years}-årsstormflosone i dag (${cm(worst)})`, effect: "bad", score: years <= 20 ? 10 : 20,
-          warning: { severity: "medium", text: `Ligger i ${years}-årsstormflosone` },
+          value: years, unit: "år", display: `I ${years}-årsstormflosone i dag (${cm(worst)})`, effect: "bad", score: high ? 0 : 20,
+          warning: { severity: high ? "high" : "medium", text: `Ligger i ${years}-årsstormflosone` },
           explanation: "Ved stormflo stiger havet over vanlig høyvann. Området kan bli oversvømt fra sjøen.",
         };
       }
