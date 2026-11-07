@@ -109,6 +109,11 @@ Terms for all Kartverket free data: CC BY 4.0, credit "© Kartverket". Details i
   - Gap: no MET wind station on THREDDS in northern Akershus (Gardermoen, Eidsvoll, Hurdal, Nannestad): the data point is missing there and the report says so. Gardermoen (SN4780) is only in Frost.
   - Checked: Blindern mostly NNØ and SSV (Oslo's valley winds), as on seklima.met.no.
   - Licence CC BY 4.0, credit "Meteorologisk institutt".
+- **PVGIS terrain horizon (sol)** → no table, fetched live by `api/src/sun.ts` for the "Sol og lys" page in the PDF report (2026-11-07).
+  - Source: EU Joint Research Centre, PVGIS 5.3 `printhorizon` (`https://re.jrc.ec.europa.eu/api/v5_3/printhorizon?lat=..&lon=..&outputformat=json`). No key. One call per address, 48 directions (7.5°), horizon height in degrees from a digital elevation model, plus the point's height. Azimuth A counts from south (0), west positive.
+  - Terrain only: hills and ridges, not buildings or trees. Sun position is computed in code (NOAA equations); checked against Oslo's sunrise/sunset (within 3 min) in `api/test/sun.test.ts`.
+  - Checked: Nedre Rælingsveg 148 gets no direct sun 16–27 December; Arendalsgata 22 loses 22 % of the midwinter sun to the hills.
+  - Licence: free reuse with credit, "PVGIS © European Union, 2001–2026".
 - **Avinor Støysoner Avinors lufthavner** (entry below) → table `flystoy`, script `data/scripts/flystoy.ts`, API `/api/flystoy`, data point `aircraftNoise` (2026-11-07).
   - Source: Geonorge county download for Akershus (GeoPackage in a zip, EPSG:25833, layer `Støy`). Oslo has no Avinor airport, so only Gardermoen (ENGM) is in the study area. Avinor's calculation year 2022, file updated 2026-10-12.
   - T-1442 airport zones: red = Lden 62 dB or more, yellow = 52–62 dB. 1 red and 2 yellow (multi)polygons, simplified to 1 m.
