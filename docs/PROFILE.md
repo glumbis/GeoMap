@@ -11,6 +11,7 @@ Lukas owns the final field names and numbers. Change this file first, then the c
 3. **Say what is missing.** Every data point we expected but do not have is listed as missing, with the reason. The UI shows it as "Unavailable".
 4. **Never guess a score.** A score uses only data we actually have. If too much important data is missing, there is no score, only a plain-language reason why we can't rate.
 5. **Everything has a source.** Every data point, missing or not, names its source. Every warning points to a real data point.
+6. **Study area: Oslo + Akershus.** Our data covers the municipalities in the `kommuner` table only. Any address in Norway can be searched and opened, but outside the study area every data point is missing with reason `outsideArea` and the overall rating is `unavailable` with a reason that says so. We never read "no hazard" from a dataset that does not cover the address.
 
 ## Address id
 
@@ -121,7 +122,7 @@ The code is the source of truth (`api/src/profile.ts`, `api/src/rating.ts`, `api
 - `rating.status`: `ok` | `insufficientData` | `unavailable` | `informational`. `score` only when `ok`, `reason` only when not.
 - `cappedBy`: warnings that pulled the score down. `weakestCategory`: overall only, whenever at least one category is rated.
 - A data point's `source` is a source `id` from `sources`. `unit`, `score`, `warning` and `explanation` are optional.
-- `missing[].reason`: `noCoverage` | `sourceUnavailable` | `notLoaded`.
+- `missing[].reason`: `noCoverage` | `sourceUnavailable` | `notLoaded` | `outsideArea` (address is outside Oslo + Akershus, see core rule 6).
 - Severity caps, category: a `high` warning caps its category at 30, `medium` at 60; `low` gives no cap. All caps are soft: score = uncapped score × cap / 100. The overall averages the categories' uncapped scores, so a warning is not scaled down twice.
 - Severity caps, overall: the worst warning sets the cap (`high` 40, `medium` 75). Every further `high` or `medium` warning lowers it by 10, down to 10. `low` gives no cap. `cappedBy` lists every `high` and `medium` warning, each with the final cap, whenever there is one.
   Why: one medium cap of 60 made most addresses score exactly 60 (high radon is common around Oslo), so a quiet suburb tied with a flood zone next to a loud road.

@@ -12,7 +12,6 @@ const LERP = 0.16;
 
 const NAMES = "https://ws.geonorge.no/stedsnavn/v1/punkt";
 const POINTS = "https://ws.geonorge.no/adresser/v1/punktsok";
-const inArea = (kommunenummer: string) => kommunenummer === "0301" || kommunenummer.startsWith("32");
 const addressId = (a: any) => `${a.kommunenummer}-${a.adressekode}-${a.nummer}${(a.bokstav ?? "").toUpperCase()}`;
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -197,9 +196,8 @@ export function createStartMap(app: HTMLElement, mapEl: HTMLElement, onAddress: 
         const hits: any[] = ((await res.json()).adresser ?? [])
           .filter((a: any) => a.objtype === "Vegadresse")
           .sort((a: any, b: any) => a.meterDistanseTilPunkt - b.meterDistanseTilPunkt);
-        const a = hits.find((x) => inArea(x.kommunenummer));
-        if (a) return onAddress(addressId(a));
-        status.textContent = hits.length ? "Utenfor Oslo og Akershus" : "Ingen adresse i nærheten";
+        if (hits.length) return onAddress(addressId(hits[0]));
+        status.textContent = "Ingen adresse i nærheten";
         btn.disabled = false;
       } catch (err) {
         if ((err as Error).name === "AbortError") return;

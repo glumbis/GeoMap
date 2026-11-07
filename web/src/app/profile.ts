@@ -31,7 +31,7 @@ export interface Missing {
   label: string;
   importance: "critical" | "normal";
   source: string;
-  reason: "noCoverage" | "sourceUnavailable" | "notLoaded";
+  reason: "noCoverage" | "sourceUnavailable" | "notLoaded" | "outsideArea";
 }
 
 export interface Category {

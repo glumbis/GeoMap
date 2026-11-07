@@ -211,6 +211,7 @@ const MISSING_WHY: Record<Missing["reason"], string> = {
   notLoaded: "Ikke lastet inn ennå",
   noCoverage: "Kilden dekker ikke denne adressen",
   sourceUnavailable: "Kilden svarer ikke nå",
+  outsideArea: "Utenfor Oslo og Akershus",
 };
 
 function missingRow(m: Missing, p: Profile) {

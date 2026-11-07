@@ -158,6 +158,7 @@ const MISSING: Record<MissingDataPoint["reason"], (labels: string) => string> = 
   notLoaded: (l) => `Vi har ikke data om ${l} ennå.`,
   noCoverage: (l) => `Kildene har ingen data om ${l} for dette stedet.`,
   sourceUnavailable: (l) => `Data om ${l} var ikke tilgjengelig da sammendraget ble laget.`,
+  outsideArea: () => "Adressen ligger utenfor Oslo og Akershus, og vi har bare data for Oslo og Akershus ennå.",
 };
 
 /** "a, b og c" */

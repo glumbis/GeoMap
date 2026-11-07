@@ -1,6 +1,6 @@
 // Address search with autocomplete (Geonorge adresser/v1/sok). Used on both pages.
-// Only street addresses (Vegadresse) in Oslo (0301) and Akershus (32xx). Geonorge can't filter on several
-// municipalities at once, so we ask for more hits and filter here.
+// Only street addresses (Vegadresse), anywhere in Norway. Our data covers Oslo (0301) and Akershus (32xx),
+// so hits there come first; Geonorge can't rank by that, so we ask for many hits and sort here.
 import { h, titleCase } from "./dom";
 
 export interface Hit {
@@ -19,7 +19,8 @@ const FIELDS = ["adressetekst", "kommunenummer", "adressekode", "nummer", "bokst
   .map((f) => `adresser.${f}`)
   .join(",");
 
-const inArea = (kommunenummer: string) => kommunenummer === "0301" || kommunenummer.startsWith("32");
+/** 0 = Oslo, 1 = Akershus, 2 = rest of Norway (no data there yet, docs/PROFILE.md rule 6). */
+const areaRank = (kommunenummer: string) => (kommunenummer === "0301" ? 0 : kommunenummer.startsWith("32") ? 1 : 2);
 
 /** Address id as in docs/PROFILE.md: <kommunenummer>-<adressekode>-<nummer><bokstav>. */
 const addressId = (a: any) => `${a.kommunenummer}-${a.adressekode}-${a.nummer}${(a.bokstav ?? "").toUpperCase()}`;
@@ -30,10 +31,10 @@ async function search(text: string, signal: AbortSignal): Promise<Hit[]> {
   if (!res.ok) throw new Error(`Geonorge ${res.status}`);
   const body = await res.json();
   const q = text.trim().toLowerCase();
-  const rank = (a: any) => ((a.adressetekst ?? "").toLowerCase().startsWith(q) ? 0 : 2) + (a.kommunenummer === "0301" ? 0 : 1);
+  const rank = (a: any) => ((a.adressetekst ?? "").toLowerCase().startsWith(q) ? 0 : 3) + areaRank(a.kommunenummer);
   const street = (a: any) => String(a.adressetekst ?? "").replace(/\s+\d+\s*[A-Za-z]?$/, "").toLowerCase();
   const wanted = q.replace(/\s+\d+\s*[A-Za-z]?$/, "");
-  let found = (body.adresser ?? []).filter((a: any) => a.objtype === "Vegadresse" && inArea(a.kommunenummer));
+  let found = (body.adresser ?? []).filter((a: any) => a.objtype === "Vegadresse");
   const exact = found.filter((a: any) => street(a).startsWith(wanted));
   if (exact.length) found = exact; // drop fuzzy hits from other streets
   return found
@@ -130,7 +131,7 @@ export function createSearch(opts: { size: "large" | "compact"; onPick: (hit: Hi
       ctrl = new AbortController();
       try {
         const found = await search(text, ctrl.signal);
-        show(found.length ? found : "Ingen adresser i Oslo eller Akershus passer");
+        show(found.length ? found : "Ingen adresser passer");
       } catch (err) {
         if ((err as Error).name !== "AbortError") show("Adressesøket svarer ikke. Prøv igjen.");
       }

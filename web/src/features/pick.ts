@@ -6,18 +6,16 @@ import "./pick.css";
 
 // "Drop a pin anywhere": click the map, get a temporary pin and the nearest address (Geonorge punktsok).
 // The popup also holds the hazard blocks for that spot: hazards.ts hands every click to clickHook, so there is one popup.
-// Only Oslo (0301) and Akershus (32xx), like search.ts. Address id as in docs/PROFILE.md.
+// Any address in Norway, like search.ts. Address id as in docs/PROFILE.md.
 
 const API = "https://ws.geonorge.no/adresser/v1/punktsok";
 const RADIUS = 200;
 const DOUBLE_CLICK_MS = 250;
 
-const inArea = (kommunenummer: string) => kommunenummer === "0301" || kommunenummer.startsWith("32");
 const addressId = (a: any) => `${a.kommunenummer}-${a.adressekode}-${a.nummer}${(a.bokstav ?? "").toUpperCase()}`;
 
 type Result =
   | { kind: "found"; id: string; text: string; place: string; meters: number }
-  | { kind: "outside" }
   | { kind: "none" };
 
 async function nearest(lng: number, lat: number, signal: AbortSignal): Promise<Result> {
@@ -27,9 +25,8 @@ async function nearest(lng: number, lat: number, signal: AbortSignal): Promise<R
   const hits: any[] = ((await res.json()).adresser ?? [])
     .filter((a: any) => a.objtype === "Vegadresse")
     .sort((a: any, b: any) => a.meterDistanseTilPunkt - b.meterDistanseTilPunkt);
-  if (!hits.length) return { kind: "none" };
-  const a = hits.find((x) => inArea(x.kommunenummer));
-  if (!a) return { kind: "outside" };
+  const a = hits[0];
+  if (!a) return { kind: "none" };
   return {
     kind: "found",
     id: addressId(a),
@@ -105,7 +102,6 @@ export default function (map: Map) {
   }
 
   function resultView(r: Result): HTMLElement[] {
-    if (r.kind === "outside") return [h("span", { class: "pick-popup__muted" }, "Utenfor Oslo og Akershus")];
     if (r.kind === "none") return [h("span", { class: "pick-popup__muted" }, "Ingen adresse i nærheten")];
     const link = h("a", { class: "pick-popup__link", href: `/a/${r.id}` }, "Sjekk denne adressen");
     link.addEventListener("click", (ev) => {

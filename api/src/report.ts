@@ -35,6 +35,7 @@ const SEVERITY: Record<Severity, { word: string; colour: string }> = {
 const EFFECT = { good: C.good, bad: C.bad, neutral: C.unknown };
 const MISSING: Record<MissingDataPoint["reason"], string> = {
   notLoaded: "Ikke lastet inn ennå", noCoverage: "Kilden dekker ikke denne adressen", sourceUnavailable: "Kilden svarer ikke nå",
+  outsideArea: "Utenfor Oslo og Akershus",
 };
 
 // ---------- Static maps: Kartverket tiles laid out in HTML, hazard zones drawn as SVG on top ----------

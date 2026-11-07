@@ -8,7 +8,7 @@ import { rateCategory, rateOverall, ratePerspective, type Factor, type MissingPo
 
 export const PROFILE_VERSION = 1;
 
-type MissingReason = "noCoverage" | "sourceUnavailable" | "notLoaded";
+type MissingReason = "noCoverage" | "sourceUnavailable" | "notLoaded" | "outsideArea";
 
 export interface PresentDataPoint extends Reading {
   id: string;
@@ -77,10 +77,16 @@ async function isMapped(table: string, loaded: Set<string>, lng: number, lat: nu
 export async function buildProfile(id: string): Promise<Profile> {
   const address = await lookupAddress(id);
   const loaded = new Set((await query<{ t: string }>("SELECT table_name AS t FROM duckdb_tables()")).map((r) => r.t));
+  // Study area = the kommuner table (Oslo + Akershus). Outside it no dataset covers the address (docs/PROFILE.md, rule 6).
+  const outside = (await isMapped("kommuner", loaded, address.lng, address.lat)) === false;
 
   const results: { dp: DataPoint; reading?: Reading; reason?: MissingReason }[] = [];
   for (const dp of DATA_POINTS) {
     if (!/^[a-z0-9_]+$/.test(dp.table)) throw new Error(`bad table name in data point ${dp.id}: ${dp.table}`);
+    if (outside) {
+      results.push({ dp, reason: "outsideArea" });
+      continue;
+    }
     if (!loaded.has(dp.table)) {
       results.push({ dp, reason: "notLoaded" });
       continue;
@@ -134,7 +140,9 @@ export async function buildProfile(id: string): Promise<Profile> {
   return {
     version: PROFILE_VERSION,
     address,
-    rating: rateOverall(categories),
+    rating: outside
+      ? { ...rateOverall(categories), status: "unavailable", reason: "Adressen ligger utenfor Oslo og Akershus. Vi har bare data for Oslo og Akershus ennå." }
+      : rateOverall(categories),
     warnings,
     categories: categories.map((c) => ({
       id: c.category.id,
