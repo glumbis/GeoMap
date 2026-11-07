@@ -25,20 +25,15 @@ Three pages: the start page, the address page and the map page (`/kart`, full-wi
 
 ### 1. Start page (the first thing anyone sees)
 
-The start page has two equal halves: an editorial search column on the left and an interactive map on the right.
+A minimal, centred page on a pure white background (`--surface`). No background map, lens, slogans or tagline.
 
-- **Map on the right:** a live map confined to the right half, opening on all of mainland Norway, including the far north. It stays at that view until the user pans or zooms. Drag, scroll-zoom and zoom buttons work only inside this half; no map is drawn beneath the content. No rotation or tilt. A full-colour magnifying lens and place-name tip stay clipped to the map pane; the lens is disabled for touch and reduced motion. Clicking the map zooms in and offers "Sjekk nærmeste adresse". Address profiles still cover Oslo + Akershus only.
-- **Left column, top to bottom:**
-  - The logo mark (ring turns into place once on load, then a thin gradient ring circles it slowly) next to the serif word mark "Omnium".
-  - A line saying who Omnium is for and what they get: "For " + audience + ": " + what, e.g. "For byggere: grunnforhold og løsmasser før du graver". 16 phrases (boligkjøpere, boligeiere, byggere, utbyggere, arkitekter, eiendomsmeglere, takstmenn, banker, forsikring, kommuneplanleggere, barnefamilier, leietakere, graveentreprenører, borettslag, journalister, studenter), each max ~55 characters and only about data we have or plan to have (no prices, no permits). The audience word is teal italic serif. The line fades to the next phrase every few seconds and can wrap within the left column; space is reserved so the controls stay still. Screen readers get the full list once; with "reduce motion" the line stands still. CSS in `web/src/app/start.css`. The start page is left-aligned like a masthead on opaque paper.
-  - **One big search field** (fills the left column within its padding). Placeholder: "Skriv inn en adresse".
-  - One short line under the field: "Alt offentlig tilgjengelig om en eiendom i Oslo og Akershus".
-- Autocomplete as you type, from Geonorge `https://ws.geonorge.no/adresser/v1/sok?sok=<text>&fuzzy=true&treffPerSide=1000`.
-  - Keep only `objtype` `Vegadresse` in Oslo (`0301`) and Akershus (`32xx`); Geonorge can't filter on several municipalities at once, so filter in the browser. Show at most 8.
-  - Show street, number, postcode and place.
-  - Arrow keys + Enter + Escape work. Debounce ~150 ms.
-  - Results appear in document flow below the input, in a bounded scrolling list. They move the map button down instead of overlapping it. The left column scrolls independently when needed; the right map stays in place.
-- One quiet secondary button under the field: "Gå til kartet →" (opens `/kart`). Content is left-aligned with generous space between the groups (logo, slogan, search + button, tagline). The blocks fade in one after another on load.
+- One centred column, up to 40 rem wide, with generous space around it.
+- The logo mark sits next to the serif word mark "Omnium", centred above the search field. The logo is static.
+- One large address search field: "Skriv inn en adresse".
+- Autocomplete searches street addresses throughout Norway using Geonorge, showing at most eight suggestions with street, number, postcode and place. Profiles outside Oslo + Akershus explain the limited data coverage.
+- Results appear in normal document flow below the input, in a bounded scrolling list. They push the map link down and never overlap it. Arrow keys keep the selected result visible; Enter selects it and Escape closes the list.
+- A quiet "Gå til kartet →" link below the search opens `/kart`.
+- The content stays horizontally centred when results open. If the screen is too short, the page scrolls vertically so every control remains reachable. No horizontal scrolling.
 
 ### 2. Address page (after picking an address)
 

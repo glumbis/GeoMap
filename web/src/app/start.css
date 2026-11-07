@@ -1,80 +1,70 @@
-/* Start page: animated logo, rolling slogan, map button, live map with a cursor lens. Variables only (theme.css). */
-
-/* Two independent halves: paper content on the left, a clipped interactive map on the right. */
-.page-start .start-map-pane {
-  position: absolute;
-  inset: 0 0 0 50%;
-  overflow: hidden;
-  border-left: 1px solid var(--line);
-  background: var(--map-land);
-}
-.page-start .start-map {
-  inset: 0;
-  animation: none;
-  will-change: auto;
-}
-.start-lens {
-  position: absolute;
-  z-index: 2;
-  left: 0;
-  top: 0;
-  width: 14rem;
-  height: 14rem;
-  border-radius: 50%;
-  pointer-events: none;
-  opacity: 0;
-  border: 1px solid var(--ink);
-  overflow: hidden;
-  background: var(--map-land);
-  /* centre on the cursor; scale follows the eased lens radius (--lr is 7 rem when fully open) */
-  transform: translate(calc(var(--lx, 0px) - 7rem), calc(var(--ly, 0px) - 7rem)) scale(var(--ls, 0));
-  transform-origin: center;
-}
-.start-lens__map {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-.page-start.lens-on .start-lens {
-  opacity: 1;
+/* A simple, centred start page. Colours come from the shared brand tokens. */
+.page-start {
+  background: var(--surface);
 }
 .page-start .start {
-  width: 50%;
+  width: 100%;
   height: 100%;
   min-width: 0;
-  padding: 2rem clamp(2rem, 4vw, 4rem);
-  align-items: stretch;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: flex-start;
+  gap: 0;
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  background: var(--paper);
-  pointer-events: auto;
-  gap: 0;
+  background: var(--surface);
 }
-.start-content {
+.page-start .start-content {
   flex: none;
   width: 100%;
+  max-width: 40rem;
   min-width: 0;
   margin-block: auto;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
 }
-.start-content > * {
+.page-start .start-content > * {
   flex-shrink: 0;
   max-width: 100%;
+}
+.page-start .start-logo {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 0;
+}
+.page-start .start-logo .start-mark {
+  display: block;
+  flex: none;
+  width: 3.5rem;
+  height: 3.5rem;
+  font-size: 1rem;
+}
+.page-start .start-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.page-start .start-word {
+  font-size: 3rem;
+  line-height: 1;
 }
 .page-start .start .search {
   width: 100%;
   min-width: 0;
-  margin-top: 1.5rem;
+  margin-top: 2rem;
 }
-/* Suggestions take up space, so the map link always follows them instead of sitting underneath. */
+/* Results occupy their own space and push the map link down instead of overlapping it. */
 .page-start .search-list {
   position: static;
   margin-top: 0.5rem;
-  max-height: min(14rem, 28vh);
+  max-height: min(16rem, 32vh);
   overflow-y: auto;
   overscroll-behavior: contain;
   box-shadow: none;
@@ -88,124 +78,11 @@
   font-size: 0.8125rem;
 }
 .page-start .start-actions {
-  margin-top: 1rem;
-}
-.page-start .start-tagline {
-  margin-top: 2rem;
-}
-.start-block {
-  pointer-events: auto;
-}
-
-/* ---- Logo: ring turns into place once, then a slow gradient ring circles it ---- */
-.page-start .start-logo {
-  gap: 1rem;
-}
-.start-mark {
-  position: relative;
-  display: block;
-  width: 3.5rem;
-  height: 3.5rem;
-  font-size: 1rem;
-}
-.page-start .start-mark img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  animation: mark-in 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-.start-mark::after {
-  content: "";
-  position: absolute;
-  inset: -0.4rem;
-  border-radius: 50%;
-  background: conic-gradient(from 0deg, var(--orange), var(--teal), var(--navy), var(--teal), var(--orange));
-  -webkit-mask-image: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
-  mask-image: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
-  opacity: 0;
-  animation:
-    ring-in 900ms ease-out 300ms forwards,
-    ring-turn 20s linear 1.2s infinite;
-}
-@keyframes mark-in {
-  from {
-    opacity: 0;
-    transform: rotate(-140deg) scale(0.7);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-@keyframes ring-in {
-  to {
-    opacity: 0.85;
-  }
-}
-@keyframes ring-turn {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* ---- Slogan: "For" is fixed; only the audience word rolls ---- */
-.page-start .start-for {
-  min-height: 2.8em; /* reserve two lines so slogans can wrap within the left half without shifting the field */
-  margin: 2rem 0 0;
-  padding: 0;
-  width: 100%;
-  font-size: 1.5rem;
-  line-height: 1.4;
-}
-.sf-line {
-  display: inline;
-}
-.sf-who {
-  position: relative;
-  display: inline-block;
-  vertical-align: top;
-  height: 1.4em;
-  overflow: hidden;
-  white-space: nowrap;
-  padding: 0 0.12em;
-  margin: 0 -0.12em; /* room for the italic overhang without moving the text */
-  transition: width 350ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-.sf-word {
-  display: inline-block;
-  transition:
-    transform 350ms cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 350ms ease;
-}
-.sf-word.is-abs {
-  position: absolute;
-  left: 0.12em;
-  top: 0;
-}
-.sf-word.is-in {
-  transform: translateY(100%);
-  opacity: 0;
-}
-.sf-word.is-leaving {
-  transform: translateY(-100%);
-  opacity: 0;
-}
-.sf-what {
-  transition: opacity 260ms ease;
-}
-.sf-what.is-out {
-  opacity: 0;
-}
-
-/* ---- Map button: quiet outline, the search stays the primary action ---- */
-.start-actions {
   display: flex;
-  gap: 1rem;
+  justify-content: center;
+  margin-top: 1.25rem;
 }
-.start-btn {
+.page-start .start-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -215,106 +92,10 @@
   font-weight: 500;
   color: var(--ink);
   text-decoration: none;
-  background: transparent;
+  background: var(--surface);
   border: 1px solid var(--ink);
-  border-radius: 2px;
-  transition: background 150ms;
+  border-radius: var(--radius);
 }
-.start-btn:hover {
+.page-start .start-btn:hover {
   background: var(--hover);
-}
-.start-btn span {
-  display: inline-block;
-  transition: transform 150ms;
-}
-.start-btn:hover span {
-  transform: translateX(0.2rem);
-}
-
-/* ---- Entrance: staggered fade + slide, 60 ms apart ---- */
-.sl-in {
-  animation: sl-in 380ms ease-out calc(var(--i, 0) * 60ms) both;
-}
-@keyframes sl-in {
-  from {
-    opacity: 0;
-    transform: translateY(0.75rem);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-/* ---- Place name under the cursor, and the click popup ---- */
-.start-tip {
-  position: fixed;
-  z-index: 4;
-  display: flex;
-  flex-direction: column;
-  padding: 0.25rem 0.625rem;
-  font-size: 0.8125rem;
-  line-height: 1.3;
-  color: var(--ink);
-  background: var(--surface);
-  border: 1px solid var(--ink);
-  border-radius: 2px;
-  pointer-events: none;
-}
-.start-tip[hidden] {
-  display: none;
-}
-.start-tip span {
-  color: var(--ink-muted);
-}
-.sm-popup .maplibregl-popup-content {
-  padding: 0.75rem 1.75rem 0.75rem 0.75rem;
-  border: 1px solid var(--ink);
-  border-radius: 2px;
-  box-shadow: none;
-  background: var(--surface);
-  font-family: var(--font);
-}
-.sm-popup__body {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  align-items: flex-start;
-}
-.sm-popup__btn {
-  padding: 0.4rem 0.75rem;
-  font: inherit;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--surface);
-  background: var(--ink);
-  border: 1px solid var(--ink);
-  border-radius: 2px;
-  cursor: pointer;
-}
-.sm-popup__btn:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-.sm-popup__status {
-  font-size: 0.8125rem;
-  color: var(--ink-muted);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sl-in,
-  .page-start .start-mark img,
-  .start-mark::after {
-    animation: none;
-  }
-  .start-mark::after {
-    opacity: 0.85;
-  }
-  .sf-who,
-  .sf-word,
-  .sf-what,
-  .start-btn,
-  .start-btn span {
-    transition: none;
-  }
 }
