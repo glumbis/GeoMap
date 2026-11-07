@@ -33,6 +33,11 @@ export interface Profile {
   address: Address;
   rating: Rating;
   warnings: { severity: Severity; text: string; dataPointId: string; categoryId: string }[];
+  /**
+   * Common things to check (radon, awareness areas): not hazard findings, never cap the score.
+   * areaShare: how much of the municipality's area has the same finding, in percent, so "like most of Oslo" can be said.
+   */
+  checks: { text: string; dataPointId: string; categoryId: string; areaShare?: { percent: number; municipality: string } }[];
   categories: {
     id: string;
     name: string;
@@ -67,6 +72,31 @@ async function findRows(table: string, find: Find, lng: number, lat: number): Pr
     return query(`SELECT * FROM (${near}) WHERE distanceM <= $7 ORDER BY distanceM LIMIT 1`, params);
   }
   return query(`SELECT * FROM (${near}) WHERE distanceM <= $7 ORDER BY distanceM LIMIT 500`, params);
+}
+
+const shareCache = new Map<string, Promise<number | undefined>>();
+
+/**
+ * Percent of a municipality's area where `table` has a row matching `where` (fixed SQL from DATA_POINTS, never user input).
+ * Estimated on a 40 × 40 grid of points over the municipality, so it is cheap; cached per table, filter and municipality.
+ */
+function areaShare(table: string, where: string, municipalityNumber: string): Promise<number | undefined> {
+  const key = `${table}|${where}|${municipalityNumber}`;
+  if (!shareCache.has(key)) {
+    const run = query<{ total: bigint | number; hit: bigint | number }>(
+      `WITH k AS (SELECT geom FROM kommuner WHERE kommunenummer = $1 LIMIT 1),
+            b AS (SELECT ST_XMin(geom) x0, ST_YMin(geom) y0, ST_XMax(geom) x1, ST_YMax(geom) y1 FROM k),
+            g AS (SELECT row_number() OVER () AS n, ST_Point(x0 + (x1 - x0) * (i + 0.5) / 40, y0 + (y1 - y0) * (j + 0.5) / 40) AS p
+                  FROM b, range(40) t(i), range(40) u(j)),
+            inside AS (SELECT n, p FROM g, k WHERE ST_Intersects(k.geom, g.p))
+       SELECT (SELECT count(*) FROM inside) AS total,
+              (SELECT count(DISTINCT inside.n) FROM inside JOIN ${table} r ON ST_Intersects(r.geom, inside.p) WHERE ${where}) AS hit`,
+      [municipalityNumber],
+    ).then(([r]) => (r && Number(r.total) ? Math.round((Number(r.hit) / Number(r.total)) * 100) : undefined));
+    run.catch(() => shareCache.delete(key)); // try again next time
+    shareCache.set(key, run);
+  }
+  return shareCache.get(key)!;
 }
 
 /** Is the point inside an area the source has mapped? undefined when the coverage table isn't loaded. */
@@ -104,14 +134,33 @@ export async function buildProfile(id: string): Promise<Profile> {
       results.push({ dp, reason: "sourceUnavailable" });
     }
   }
-  return assembleProfile(address, results, outside);
+  // Area shares need the database, so they are looked up here and handed to assembleProfile (which has no DB access).
+  const shares = new Map<string, number>();
+  if (!outside) {
+    for (const r of results) {
+      const w = r.reading?.warning;
+      if (!w?.check || !w.sameArea) continue;
+      const share = await areaShare(r.dp.table, w.sameArea, address.municipalityNumber).catch(() => undefined);
+      if (share != null) shares.set(r.dp.id, share);
+    }
+  }
+  return assembleProfile(address, results, outside, shares);
 }
 
 /**
  * Readings -> the full profile (categories, warnings, ratings, perspectives). No database access, so the
  * batch scoring of every address (data/area-scores.ts) uses exactly the same rules as the address page.
  */
-export function assembleProfile(address: Address, results: ReadingResult[], outside = false): Profile {
+export function assembleProfile(address: Address, results: ReadingResult[], outside = false, shares: Map<string, number> = new Map()): Profile {
+  // A coarse awareness area is not counted again when the detailed hazard zone for the same hazard already warns.
+  for (const r of results) {
+    const by = r.dp.supersededBy && results.find((x) => x.dp.id === r.dp.supersededBy);
+    if (r.reading && by && by.reading?.warning && !by.reading.warning.check) {
+      const { warning: _w, penalty: _p, ...rest } = r.reading;
+      r.reading = rest;
+    }
+  }
+
   const categories = CATEGORIES.map((category) => {
     const mine = results.filter((r) => r.dp.category === category.id);
     const dataPoints: PresentDataPoint[] = [];
@@ -131,9 +180,23 @@ export function assembleProfile(address: Address, results: ReadingResult[], outs
   });
 
   const order: Severity[] = ["high", "medium", "low"];
-  const warnings = categories
-    .flatMap((c) => c.dataPoints.filter((p) => p.warning).map((p) => ({ ...p.warning!, dataPointId: p.id, categoryId: c.category.id })))
+  const flagged = categories.flatMap((c) => c.dataPoints.filter((p) => p.warning).map((p) => ({ p, categoryId: c.category.id })));
+  const warnings = flagged
+    .filter(({ p }) => !p.warning!.check)
+    .map(({ p, categoryId }) => ({ severity: p.warning!.severity, text: p.warning!.text, dataPointId: p.id, categoryId }))
     .sort((a, b) => order.indexOf(a.severity) - order.indexOf(b.severity));
+  const checks = [];
+  for (const { p, categoryId } of flagged.filter(({ p }) => p.warning!.check)) {
+    const share = outside ? undefined : shares.get(p.id);
+    checks.push({
+      text: p.warning!.text,
+      dataPointId: p.id,
+      categoryId,
+      ...(share != null && { areaShare: { percent: share, municipality: address.municipality } }),
+    });
+  }
+  // sameArea is SQL for the line above, not for clients.
+  for (const c of categories) for (const p of c.dataPoints) if (p.warning?.sameArea) p.warning = { ...p.warning, sameArea: undefined };
 
   const perspectives = PERSPECTIVES.map((p) => {
     const mine = results.filter((r) => p.weights[r.dp.id]);
@@ -154,6 +217,7 @@ export function assembleProfile(address: Address, results: ReadingResult[], outs
       ? { ...rateOverall(categories), status: "unavailable", reason: "Adressen ligger utenfor Oslo og Akershus. Vi har bare data for Oslo og Akershus ennå." }
       : rateOverall(categories),
     warnings,
+    checks,
     categories: categories.map((c) => ({
       id: c.category.id,
       name: c.category.name,

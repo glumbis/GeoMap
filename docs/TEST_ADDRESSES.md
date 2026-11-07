@@ -19,8 +19,8 @@ The id is the address id from `docs/PROFILE.md` (`<kommunenummer>-<adressekode>-
 
 | Case | Address | Id | Kommune (nr) | lat | lng | Expected result |
 |---|---|---|---|---|---|---|
-| Quick clay | Kjelsåsveien 162, 0491 Oslo | `0301-13747-162` | Oslo (0301) | 59.965764 | 10.776008 | Quick clay zone "Kjelsås", faregrad Middels. App on 2026-11-07 afternoon: overall 47, warnings quick clay (middels), høy radon, strategic noise 55–60 dB, plus low warnings for marine clay, quick-clay and flood awareness areas and polluted ground |
-| Flood zone | Strandvegen 81, 2005 Rælingen | `3224-11700-81` | Rælingen (3224) | 59.947770 | 11.047739 | Inside 200-year flood zone `fs002_37`, and also inside the **20-year** flood zone (NVE `Flomsoner2` layer 14, checked 2026-11-07). The app shows only "I 20-årsflomsone": the most frequent zone wins. Overall 32 on 2026-11-07 afternoon (a 20-year flood zone is a high warning since 2026-11-07, TEK17 §7-2). Also inside a yellow road noise zone (checked 2026-11-07) |
+| Quick clay | Kjelsåsveien 162, 0491 Oslo | `0301-13747-162` | Oslo (0301) | 59.965764 | 10.776008 | Quick clay zone "Kjelsås", faregrad Middels. App on 2026-11-07 afternoon: overall 47, warnings quick clay (middels), høy radon, strategic noise 55–60 dB, plus low warnings for marine clay, quick-clay and flood awareness areas and polluted ground. Since radon and awareness areas became checks (2026-11-07 evening): overall 43, warning quick clay (middels) plus low ones; checks høy radon, quick-clay and flood awareness areas |
+| Flood zone | Strandvegen 81, 2005 Rælingen | `3224-11700-81` | Rælingen (3224) | 59.947770 | 11.047739 | Inside 200-year flood zone `fs002_37`, and also inside the **20-year** flood zone (NVE `Flomsoner2` layer 14, checked 2026-11-07). The app shows only "I 20-årsflomsone": the most frequent zone wins. Overall 32 on 2026-11-07 afternoon, 29 since checks got point penalties (evening) (a 20-year flood zone is a high warning since 2026-11-07, TEK17 §7-2). Also inside a yellow road noise zone (checked 2026-11-07) |
 
 ## Source endpoints used
 
@@ -81,3 +81,9 @@ Radon checked against NGU's map service **`RadonUranAktsomhetWMS`**, layer `Rado
 - **Profile / rating:** each address should show the expected result above. #4 and #5 should score best on hazards (#5 Naturfare 100; #4 92 since 2026-11-07 afternoon because of its quick-clay awareness area) and #4 on noise (Miljø 100).
 - **AI summary:** read the summary for each address. It must mention the hazard for #1–#3 and must **not** invent hazards for #4 and #5.
 - **Demo:** #1 against #4 makes a clear contrast.
+
+## Scores after radon became a check (2026-11-07 evening)
+
+Radon and the quick-clay/flood awareness areas no longer cap; they are "checks" with a fixed point penalty (`docs/PROFILE.md` -> "Penalties").
+Overall (before -> after): #1 14 -> 17, #2 50 -> 48, #3 52 -> 51, #4 61 -> 70, #5 61 -> 74. The spread stays wide; addresses with only a radon finding no longer sit at the old medium cap.
+

@@ -221,6 +221,13 @@ function render(p: Profile, s: Summary, zones: Zone[]): string {
     return `<li><span class="sev" style="background:${sev.colour}">${sev.word}</span><span class="w-text">${esc(w.text)}</span><span class="w-cat">${esc(cat)}</span></li>`;
   };
 
+  // Common things to check (radon, awareness areas): no severity, never cap the score; say how common they are in the municipality.
+  const checkRow = (c: Profile["checks"][number]) => {
+    const cat = p.categories.find((x) => x.id === c.categoryId)?.name ?? "";
+    const share = c.areaShare ? ` · gjelder ${c.areaShare.percent} % av arealet i ${esc(titleCase(c.areaShare.municipality))}` : "";
+    return `<li><span class="sev" style="background:${C.muted}">SJEKK</span><span class="w-text">${esc(c.text)}${share}</span><span class="w-cat">${esc(cat)}</span></li>`;
+  };
+
   const pointRow = (d: PresentDataPoint) => {
     const src = sourceOf.get(d.source);
     return `<div class="dp">
@@ -323,6 +330,7 @@ function render(p: Profile, s: Summary, zones: Zone[]): string {
 
   <h3>Alle funn</h3>
   ${p.warnings.length ? `<ul class="warnings">${p.warnings.map(warningRow).join("")}</ul>` : `<p class="note">Ingen funn som gir advarsel.</p>`}
+  ${p.checks.length ? `<h3 class="mini">Sjekk dette</h3><ul class="warnings">${p.checks.map(checkRow).join("")}</ul>` : ""}
   <p class="note">Et funn kommer alltid fra et datapunkt med kilde, aldri fra AI. Alvorlige funn begrenser poengsummen, slik at én stor risiko ikke kan veies opp av gode forhold ellers.</p>
 </section>
 

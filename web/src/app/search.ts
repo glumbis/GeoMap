@@ -85,6 +85,9 @@ export function createSearch(opts: {
     opts.onLoadingChange?.(value);
   }
 
+  let stale = false; // the list shows results for older text while a new search runs
+  let pickWhenReady = false; // Enter pressed while stale: pick the first new result when it arrives
+
   function cancelPending() {
     requestId++;
     clearTimeout(timer);
@@ -94,6 +97,10 @@ export function createSearch(opts: {
   }
 
   function show(items: Hit[] | string) {
+    stale = false;
+    list.classList.remove("is-stale");
+    const pickFirst = pickWhenReady;
+    pickWhenReady = false;
     list.replaceChildren();
     if (typeof items === "string") {
       hits = [];
@@ -118,10 +125,12 @@ export function createSearch(opts: {
     active = -1;
     list.hidden = false;
     input.setAttribute("aria-expanded", "true");
+    if (pickFirst && hits.length) pick(0);
   }
 
   function close() {
     cancelPending();
+    pickWhenReady = false;
     list.hidden = true;
     input.setAttribute("aria-expanded", "false");
     input.removeAttribute("aria-activedescendant");
@@ -139,18 +148,25 @@ export function createSearch(opts: {
 
   function pick(i: number) {
     const hit = hits[i];
-    if (!hit || list.hidden) return;
+    if (!hit || list.hidden || stale) return; // results for older text: wait for the new ones
     input.value = `${hit.text}, ${hit.place}`;
     close();
     opts.onPick(hit);
   }
 
   input.addEventListener("input", () => {
-    close();
-    hits = [];
-    list.replaceChildren();
     const text = input.value.trim();
-    if (text.length < 2) return;
+    if (text.length < 2) {
+      close();
+      hits = [];
+      list.replaceChildren();
+      return;
+    }
+    // Keep the old results (dimmed, not pickable) until the new ones arrive: closing and reopening the list on every
+    // letter made everything under it jump.
+    cancelPending();
+    stale = true;
+    list.classList.add("is-stale");
     const mine = requestId;
     setLoading(true); // Include the debounce, so feedback starts as soon as a search is scheduled.
     timer = window.setTimeout(async () => {
@@ -180,7 +196,8 @@ export function createSearch(opts: {
       setActive(e.key === "ArrowDown" ? (active + 1) % hits.length : active <= 0 ? hits.length - 1 : active - 1);
     } else if (e.key === "Enter") {
       e.preventDefault();
-      pick(active >= 0 ? active : 0);
+      if (stale) pickWhenReady = true;
+      else pick(active >= 0 ? active : 0);
     } else if (e.key === "Escape") {
       close();
     }

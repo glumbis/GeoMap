@@ -87,6 +87,7 @@ function summary(p: Profile) {
     shareActions(a.id),
     overall(r),
     p.warnings.length ? warnings(p) : null,
+    p.checks?.length ? checks(p) : null,
   );
 }
 
@@ -131,6 +132,10 @@ function overall(r: Rating) {
       !ok && r.reason ? h("p", { class: "overall-reason" }, r.reason) : null,
       capped
         ? h("p", { class: "overall-cap" }, `Begrenset av ${r.cappedBy!.length === 1 ? "1 advarsel" : `${r.cappedBy!.length} advarsler`} under`)
+        : null,
+      // Radon and awareness areas never cap, but they cost points: say how many.
+      ok && r.penalties?.length
+        ? h("p", { class: "overall-penalty" }, `Trukket ${r.penalties.reduce((s, x) => s + x.points, 0)} poeng for «Sjekk dette»`)
         : null,
       h(
         "p",
@@ -179,6 +184,40 @@ function warnings(p: Profile) {
   });
   show(false);
   return h("div", { class: "warnings-block" }, list, more);
+}
+
+// What to do about each check, in a few words.
+const CHECK_ACTION: Record<string, string> = {
+  radon: "Mål radon i boligen, helst om vinteren.",
+  quickClayAwareness: "Spør om grunnundersøkelse før graving eller tilbygg.",
+  floodAwareness: "Spør om vann i kjeller før, og sjekk forsikringen.",
+};
+
+/** "Sjekk dette": common findings that don't cap the score, how common they are in the municipality, and what to do. */
+function checks(p: Profile) {
+  return h(
+    "div",
+    { class: "checks" },
+    h("h2", { class: "checks-title" }, "Sjekk dette"),
+    h(
+      "ul",
+      { class: "checks-list" },
+      ...p.checks!.map((c) => {
+        const btn = h(
+          "button",
+          { class: "check", type: "button" },
+          h("span", { class: "check-text" }, c.text),
+          // Says the finding is common around here, not that it is about this plot only.
+          c.areaShare
+            ? h("span", { class: "check-share" }, `Vanlig i ${titleCase(c.areaShare.municipality)}: ${c.areaShare.percent} % av arealet har det samme`)
+            : null,
+          CHECK_ACTION[c.dataPointId] ? h("span", { class: "check-action" }, CHECK_ACTION[c.dataPointId]) : null,
+        );
+        btn.addEventListener("click", () => openDataPoint(c.categoryId, c.dataPointId));
+        return h("li", {}, btn);
+      }),
+    ),
+  );
 }
 
 function openDataPoint(categoryId: string, dataPointId: string) {

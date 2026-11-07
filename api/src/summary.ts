@@ -79,7 +79,8 @@ const RULES: Record<string, Rule> = {
   radon: (d) => [rankOf(d, d.value === "lav" ? 5 : 6), `Adressen ligger i et område med ${d.display.toLowerCase()} for radon`],
   quickClay: (d) => {
     if (d.warning) return [rankOf(d, 1), `Eiendommen ligger i en faresone for kvikkleireskred med ${d.value} faregrad`];
-    if (d.value === "ikkeKartlagt") return [7, "NVE har ikke kartlagt faresoner for kvikkleireskred i området der eiendommen ligger, så kartet sier ingenting om kvikkleire her"];
+    // "no mapped hazard grade", not "nothing known": an awareness area (quickClayAwareness) may still cover the address.
+    if (d.value === "ikkeKartlagt") return [7, "NVE har ikke laget faresonekart for kvikkleireskred der eiendommen ligger, så det finnes ingen kartlagt faregrad her"];
     if (d.value === "ingen") return [6, "Eiendommen ligger i en kartlagt kvikkleiresone der NVE ikke har satt noen faregrad"];
     return [5, "Eiendommen ligger ikke i en kartlagt faresone for kvikkleireskred"];
   },
@@ -87,8 +88,20 @@ const RULES: Record<string, Rule> = {
     d.warning
       ? [rankOf(d, 2), `Eiendommen ligger i en flomsone som kan bli oversvømt ved en ${d.value}-årsflom`]
       : d.value === "ikkeKartlagt"
-        ? [7, "NVE har ikke laget flomsonekart for området der eiendommen ligger, så kartet sier ingenting om flomfare her"]
+        ? [7, "NVE har ikke laget flomsonekart der eiendommen ligger, så det finnes ingen kartlagt flomsone her"]
         : [5, "Eiendommen ligger ikke i en kartlagt flomsone"],
+  // Awareness areas are coarse "possible here, not checked" maps. Say so, so they don't read as a contradiction
+  // next to "not in a mapped hazard zone" or "no hazard zone map here".
+  quickClayAwareness: (d) =>
+    d.value === true
+      ? [3, "Eiendommen ligger i et aktsomhetsområde for kvikkleireskred, et grovt kart over hvor kvikkleire kan finnes, som ikke er en kartlagt faresone"]
+      : d.value === "ikkeKartlagt"
+        ? [7, "NVE har ikke vurdert aktsomhet for kvikkleireskred i området der eiendommen ligger"]
+        : [5, "Eiendommen ligger ikke i et aktsomhetsområde for kvikkleireskred"],
+  floodAwareness: (d) =>
+    d.value === true
+      ? [3, "Eiendommen ligger i et aktsomhetsområde for flom, et grovt kart over områder langs vassdrag som kan bli oversvømt, som ikke er en kartlagt flomsone"]
+      : [5, "Eiendommen ligger ikke i et aktsomhetsområde for flom"],
   rockfall: (d) =>
     d.warning
       ? [rankOf(d, 2), "Eiendommen ligger i et aktsomhetsområde for steinsprang"]
@@ -224,6 +237,10 @@ Hopp over en gruppe som ikke finnes.
 
 Ikke gi råd, og ikke bruk vurderende ord som "farlig", "trygt", "bra" eller "dårlig".
 Ikke si at det ikke finnes andre farer. Si bare hva som er sjekket og hva som ble funnet.
+Aktsomhetsområde og faresone er to ulike kart: et aktsomhetsområde er grovt og betyr at faren er mulig, en faresone er kartlagt i detalj.
+Begge kan gjelde samme sted uten å motsi hverandre. Skriv dem sammen så det henger logisk, for eksempel
+"Eiendommen ligger i et aktsomhetsområde for kvikkleireskred, men ikke i en kartlagt faresone."
+Skriv aldri at det mangler data om en fare som du allerede har nevnt et funn om.
 Behold nøyaktig nivå (faregrad, støysone, årsflom), "kartlagt", "i luftlinje" og "i kommunen" der faktaene sier det.
 Det finnes to støykart. Skriv alltid hvilket: "fra riks- og fylkesvei" eller "i det strategiske støykartet".
 Ikke finn på tall, steder, farer eller manglende data. Ikke skriv kilder eller årstall i parentes.
