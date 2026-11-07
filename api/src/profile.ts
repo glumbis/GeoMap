@@ -44,8 +44,9 @@ export interface Profile {
 const UTM = (g: string) => `ST_Transform(${g}, 'EPSG:4326', 'EPSG:25833', always_xy := true)`;
 
 async function findRows(table: string, find: Find, lng: number, lat: number): Promise<Row[]> {
+  const extra = find.where ? ` AND (${find.where})` : "";
   if (find.kind === "within") {
-    return query(`SELECT * EXCLUDE (geom) FROM ${table} WHERE ST_Intersects(geom, ST_Point($1, $2)) LIMIT 50`, [lng, lat]);
+    return query(`SELECT * EXCLUDE (geom) FROM ${table} WHERE ST_Intersects(geom, ST_Point($1, $2))${extra} LIMIT 50`, [lng, lat]);
   }
   const r = find.kind === "nearest" ? find.maxM : find.radiusM;
   // Cheap bbox prefilter in degrees, then exact distance in metres.
@@ -53,7 +54,7 @@ async function findRows(table: string, find: Find, lng: number, lat: number): Pr
   const dLng = r / (111_320 * Math.cos((lat * Math.PI) / 180));
   const near = `
     SELECT * EXCLUDE (geom), ST_Distance(${UTM("geom")}, ${UTM("ST_Point($1, $2)")}) AS distanceM FROM ${table}
-    WHERE ST_Intersects(geom, ST_MakeEnvelope($3, $4, $5, $6))`;
+    WHERE ST_Intersects(geom, ST_MakeEnvelope($3, $4, $5, $6))${extra}`;
   const params = [lng, lat, lng - dLng, lat - dLat, lng + dLng, lat + dLat, r];
   if (find.kind === "nearest") {
     return query(`SELECT * FROM (${near}) WHERE distanceM <= $7 ORDER BY distanceM LIMIT 1`, params);

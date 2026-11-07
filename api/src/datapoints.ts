@@ -47,7 +47,10 @@ export interface Reading {
  * - nearest: the closest row within maxM metres, with an extra `distanceM` column.
  * - count:   one row `{ count }`: features within radiusM metres.
  */
-export type Find = { kind: "within" } | { kind: "nearest"; maxM: number } | { kind: "count"; radiusM: number };
+export type Find = ({ kind: "within" } | { kind: "nearest"; maxM: number } | { kind: "count"; radiusM: number }) & {
+  /** Optional extra SQL filter on the table's own columns, e.g. "isPrimary". Fixed text only, never user input. */
+  where?: string;
+};
 
 export interface DataPoint {
   id: string;
@@ -205,12 +208,12 @@ export const DATA_POINTS: DataPoint[] = [
   },
   {
     id: "school", label: "Nærmeste grunnskole", category: "location", source: "udir-skoler", importance: "normal",
-    table: "skoler", find: { kind: "nearest", maxM: 5000 },
+    table: "schools", find: { kind: "nearest", maxM: 5000, where: "isPrimary" },
     read: nearestScore([[500, 100], [1000, 80], [2000, 50], [5000, 20]]),
   },
   {
     id: "kindergarten", label: "Nærmeste barnehage", category: "location", source: "udir-barnehager", importance: "normal",
-    table: "barnehager", find: { kind: "nearest", maxM: 3000 },
+    table: "kindergartens", find: { kind: "nearest", maxM: 3000 },
     read: nearestScore([[400, 100], [800, 80], [1500, 50], [3000, 20]]),
   },
 
