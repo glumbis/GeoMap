@@ -68,9 +68,12 @@ const RULES: Record<string, Rule> = {
       : d.value === "Bart fjell"
         ? [6, "Det er bart fjell eller bare et tynt lag løsmasser på stedet"]
         : [6, `Grunnen består av ${d.display}`],
-  // Not in FACTS.md yet.
-  bedrock: (d) =>
-    d.warning ? [rankOf(d, 3), `Berggrunnen er ${d.display}`] : [6, `Berggrunnen er ${d.display}`],
+  bedrock: (d) => {
+    // display: "Leirskifer", "Syenitt (oversiktskart)", "... , med alunskifer"
+    const coarse = d.display.includes("(oversiktskart)") ? " ifølge et oversiktskart" : "";
+    if (d.warning) return [rankOf(d, 3), `Berggrunnen på stedet inneholder alunskifer${coarse}`];
+    return [6, `Berggrunnen på stedet er ${String(d.value).toLowerCase()}${coarse}`];
+  },
   radon: (d) => [rankOf(d, d.value === "lav" ? 5 : 6), `Adressen ligger i et område med ${d.display.toLowerCase()} for radon`],
   quickClay: (d) => {
     if (d.warning) return [rankOf(d, 1), `Eiendommen ligger i en faresone for kvikkleireskred med ${d.value} faregrad`];

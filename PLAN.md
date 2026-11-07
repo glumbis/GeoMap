@@ -64,7 +64,7 @@ What the demo still needs, most important first:
 1. **Erik:** show the AI summary on the address page (`GET /api/address/<id>/summary`, label "AI-generert" only when `aiGenerated` is true). Works now with the key in `.env`.
 2. **Erik:** quick-clay and flood zones on the map (`/api/nve_kvikkleire`, `/api/flomsoner`). The pitch points at the zone around the pin.
 3. **Even:** update `docs/DEMO.md`. Scores changed (Grevlingåsen 75, Arendalsgata 20), and the bus caveat can go: the busiest stop within 500 m of Grevlingåsen (Jegeråsen, 212 m) has 161 weekday departures.
-4. ~~**Even:** FACTS.md rules for the new data points~~ Done, and `api/src/summary.ts` matches them. Still open: a FACTS.md rule for `bedrock` (the code says "Berggrunnen er {display}", rank 3 with alum shale, else 6) and a `transitDepartures` section in `docs/TEXTS.md`.
+4. ~~**Even:** FACTS.md rules for the new data points~~ Done, and `api/src/summary.ts` matches them. Bedrock and `transitDepartures` texts are in too.
 5. **Sverre:** ~~landslide/avalanche~~ done (`jordflomskred`, `snoskred`). ~~Bedrock~~ done (`berggrunn`, alum shale flag). Nothing in the demo waits on more data.
 
 After these, stop adding data and move to phase 3 (demo).
