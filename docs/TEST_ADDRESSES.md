@@ -19,8 +19,8 @@ The id is the address id from `docs/PROFILE.md` (`<kommunenummer>-<adressekode>-
 
 | Case | Address | Id | Kommune (nr) | lat | lng | Expected result |
 |---|---|---|---|---|---|---|
-| Quick clay | Kjelsåsveien 162, 0491 Oslo | `0301-13747-162` | Oslo (0301) | 59.965764 | 10.776008 | Quick clay zone "Kjelsås", faregrad Middels |
-| Flood zone | Strandvegen 81, 2005 Rælingen | `3224-11700-81` | Rælingen (3224) | 59.947770 | 11.047739 | Inside 200-year flood zone `fs002_37`. Also inside a yellow road noise zone (checked 2026-11-07) |
+| Quick clay | Kjelsåsveien 162, 0491 Oslo | `0301-13747-162` | Oslo (0301) | 59.965764 | 10.776008 | Quick clay zone "Kjelsås", faregrad Middels. App on 2026-11-07: overall 64, warnings quick clay (middels), høy radon, strategic noise 55–60 dB |
+| Flood zone | Strandvegen 81, 2005 Rælingen | `3224-11700-81` | Rælingen (3224) | 59.947770 | 11.047739 | Inside 200-year flood zone `fs002_37`, and also inside the **20-year** flood zone (NVE `Flomsoner2` layer 14, checked 2026-11-07). App: overall 71. Also inside a yellow road noise zone (checked 2026-11-07) |
 
 ## Source endpoints used
 

@@ -49,7 +49,10 @@ Rules for every sentence:
 | When | Sentence | Rank |
 |---|---|---|
 | warning (marin leire) | Grunnen består av {display}, som er marin leire ({src}). | 3 |
+| value "Bart fjell" | Det er bart fjell eller bare et tynt lag løsmasser på stedet ({src}). | 6 |
 | no warning | Grunnen består av {display} ({src}). | 6 |
+
+Write `{display}` with a lower-case first letter inside the sentence: "Grunnen består av hav- og fjordavsetning, …", not "… av Hav- og fjordavsetning".
 
 **`radon` (Radon)**
 
@@ -122,10 +125,12 @@ Note: the noise map has no data on municipal roads. Oslo is marked "no coverage"
 
 | When | Sentence | Rank |
 |---|---|---|
-| warning, value ≥ 65 | Adressen har beregnet veistøy på {display} i det strategiske støykartet ({src}). | 2 |
-| warning, value 55–64 | Adressen har beregnet veistøy på {display} i det strategiske støykartet ({src}). | 3 |
-| no warning, value ≥ 55 | Adressen har beregnet veistøy på {display} i det strategiske støykartet ({src}). | 4 |
-| value 50–54 | Adressen har beregnet veistøy på {display} i det strategiske støykartet ({src}). | 6 |
+| warning, value ≥ 65 | Adressen har beregnet veistøy på {band} i det strategiske støykartet fra {year} ({src}). | 2 |
+| warning, value 55–64 | Adressen har beregnet veistøy på {band} i det strategiske støykartet fra {year} ({src}). | 3 |
+| no warning, value ≥ 55 | Adressen har beregnet veistøy på {band} i det strategiske støykartet fra {year} ({src}). | 4 |
+| value 50–54 | Adressen har beregnet veistøy på {band} i det strategiske støykartet fra {year} ({src}). | 6 |
+
+`{display}` is "65–70 dB (2021)": `{band}` is the part before the brackets, `{year}` the year in them. Example (Arendalsgata 22): "Adressen har beregnet veistøy på 65–70 dB i det strategiske støykartet fra 2021 (Statens vegvesen)."
 
 It only warns in Oslo. Outside Oslo, `roadNoise` already gives the warning: don't write two warning sentences about the same noise. When it is missing, it goes under "Missing data" (no zone = unknown, never "stille").
 
@@ -186,6 +191,9 @@ Never call it "skolen adressen hører til": we do not know the school catchment.
 | When | Sentence | Rank |
 |---|---|---|
 | value is a number | Nærmeste registrerte tursti eller skiløype er {name}, {distance} unna i luftlinje ({src}). | 6 |
+| value is a number, {name} is "Tursti", "Skiløype", "Sykkelrute" or "Turrute" (a route with no name) | Nærmeste registrerte {name in lower case} er {distance} unna i luftlinje ({src}). | 6 |
+
+Example (Grevlingåsen 17): "Nærmeste registrerte tursti er 32 m unna i luftlinje (Kartverket)." Not "… er Tursti, 32 m unna".
 | value is empty | Det er ingen registrert tursti eller skiløype innen 3 km i luftlinje ({src}). | 4 |
 
 ### Area
