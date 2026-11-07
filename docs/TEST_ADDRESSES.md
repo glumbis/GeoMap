@@ -5,20 +5,22 @@ Each one was checked on 2026-11-06 directly against the source map services list
 
 ## Main five
 
-| # | Case | Address | Kommune (nr) | Gnr/Bnr | lat | lng | Expected result | Checked against |
-|---|---|---|---|---|---|---|---|---|
-| 1 | Quick clay | Arendalsgata 22, 0463 Oslo | Oslo (0301) | 221/19 | 59.937586 | 10.758173 | Inside quick clay hazard zone "Myraløkka", faregrad **Høy**, risiko 5 | NVE `SkredKvikkleire2` layer 0 (KvikkleireFaregrad) |
-| 2 | Flood zone | Nedre Rælingsveg 148, 2005 Rælingen | Rælingen (3224) | 104/771 | 59.949070 | 11.045545 | Inside **200-year** flood zone (flomsone `fs002_37`), not inside 10-year zone | NVE `Flomsoner2` layer 17 (Flomsone_200arsflom) |
-| 3 | Noisy road | Gamle Drammensvei 207, 1337 Sandvika | Bærum (3201) | 7/61 | 59.892180 | 10.534069 | **Red** road noise zone (Lden > 65 dB), next to E18 | Statens vegvesen WMS `norstoy_1_0`, layer `Stoyvarselkart` |
-| 4 | Quiet suburb | Grevlingåsen 17, 1362 Hosle | Bærum (3201) | 21/309 | 59.939649 | 10.590461 | **No** quick clay zone, no 200-year flood zone, no road noise zone | All three services above |
-| 5 | Ski area | Holmenkollveien 196, 0791 Oslo | Oslo (0301) | 34/16 | 59.977219 | 10.676161 | Next to Frognerseteren / Nordmarka ski tracks. **No** quick clay, flood or road noise zone | All three services above |
+The id is the address id from `docs/PROFILE.md` (`<kommunenummer>-<adressekode>-<nummer><bokstav>`), looked up in Geonorge `adresser/v1/sok` on 2026-11-07. Open one in the app at `/a/<id>`, or its profile at `/api/address/<id>/profile`.
+
+| # | Case | Address | Id | Kommune (nr) | Gnr/Bnr | lat | lng | Expected result | Checked against |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | Quick clay | Arendalsgata 22, 0463 Oslo | `0301-10223-22` | Oslo (0301) | 221/19 | 59.937586 | 10.758173 | Inside quick clay hazard zone "Myraløkka", faregrad **Høy**, risiko 5 | NVE `SkredKvikkleire2` layer 0 (KvikkleireFaregrad) |
+| 2 | Flood zone | Nedre Rælingsveg 148, 2005 Rælingen | `3224-8900-148` | Rælingen (3224) | 104/771 | 59.949070 | 11.045545 | Inside **200-year** flood zone (flomsone `fs002_37`), not inside 10-year zone. Also inside a **red** road noise zone (checked 2026-11-07) | NVE `Flomsoner2` layer 17 (Flomsone_200arsflom) |
+| 3 | Noisy road | Gamle Drammensvei 207, 1337 Sandvika | `3201-1101-207` | Bærum (3201) | 7/61 | 59.892180 | 10.534069 | **Red** road noise zone (Lden > 65 dB), next to E18 | Statens vegvesen WMS `norstoy_1_0`, layer `Stoyvarselkart` |
+| 4 | Quiet suburb | Grevlingåsen 17, 1362 Hosle | `3201-1574-17` | Bærum (3201) | 21/309 | 59.939649 | 10.590461 | **No** quick clay zone, no 200-year flood zone, no road noise zone | All three services above |
+| 5 | Ski area | Holmenkollveien 196, 0791 Oslo | `0301-13070-196` | Oslo (0301) | 34/16 | 59.977219 | 10.676161 | Next to Frognerseteren / Nordmarka ski tracks. **No** quick clay, flood or road noise zone | All three services above |
 
 ## Backups
 
-| Case | Address | Kommune (nr) | lat | lng | Expected result |
-|---|---|---|---|---|---|
-| Quick clay | Kjelsåsveien 162, 0491 Oslo | Oslo (0301) | 59.965764 | 10.776008 | Quick clay zone "Kjelsås", faregrad Middels |
-| Flood zone | Strandvegen 81, 2005 Rælingen | Rælingen (3224) | 59.947770 | 11.047739 | Inside 200-year flood zone `fs002_37` |
+| Case | Address | Id | Kommune (nr) | lat | lng | Expected result |
+|---|---|---|---|---|---|---|
+| Quick clay | Kjelsåsveien 162, 0491 Oslo | `0301-13747-162` | Oslo (0301) | 59.965764 | 10.776008 | Quick clay zone "Kjelsås", faregrad Middels |
+| Flood zone | Strandvegen 81, 2005 Rælingen | `3224-11700-81` | Rælingen (3224) | 59.947770 | 11.047739 | Inside 200-year flood zone `fs002_37`. Also inside a yellow road noise zone (checked 2026-11-07) |
 
 ## Source endpoints used
 

@@ -264,6 +264,8 @@ NGU datasets: https://www.ngu.no/geologiske-kart/datasett (download per county, 
   - Category: environment
   - Priority: high
   - Notes: only riks- and fylkesveg, NOT municipal roads, and no data inside central Oslo (tested). Forecast 15–20 years ahead, at 4 m height. Not for detailed assessment of single homes: show as an indication. Same WMS also has `Strategiskstoykart_lden` which does cover Oslo.
+  - **Loaded** (2026-11-07) as table `veistoy` by `data/scripts/veistoy.ts`, API `/api/veistoy`: 3268 zones (1467 red, 1801 yellow) from the WFS on the same URL (`typeNames=norstoy_1_0:Stoyvarselkart`, GeoJSON, EPSG:4326). Columns: stoysone ('rød' | 'gul'), forecastYear (2040), calculated.
+  - Not loaded yet: `Strategiskstoykart_lden` (also on this WFS). It covers Oslo incl. municipal roads, but is a 2021 situation in 5 dB bands (`STØYINTERVALL` 55, 60, 65, ...) and uses old municipality numbers (`KOMM` "301"). Different method from T-1442, so keep it as its own table, not mixed into `veistoy`.
 
 - **Name:** Støysoner for Bane NORs jernbanenett
   - Owner: Bane NOR SF
