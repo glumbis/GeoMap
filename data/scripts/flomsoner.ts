@@ -6,44 +6,24 @@
 // Only mapped rivers: outside every zone can mean "not mapped", not "safe".
 import { writeFile } from "node:fs/promises";
 import { conn, query } from "../../api/src/db.ts";
-import { getJson, rawPath } from "./lib.ts";
+import { arcgisFeatures, rawPath, studyBbox } from "./lib.ts";
 
 const SERVICE = "https://kart.nve.no/enterprise/rest/services/Flomsoner2/MapServer";
 // Current-climate zones only. 500/1000-year and the climate-adjusted layers are left out on purpose.
 const LAYERS: [layer: number, years: number][] = [[13, 10], [14, 20], [15, 50], [16, 100], [17, 200]];
-const FIELDS = "objectid,flomsoneid,gjentaksinterval,symbolflom,statusdato";
-const PAGE = 1000;
-
-const [box] = await query<{ minx: number; miny: number; maxx: number; maxy: number }>(`
-  SELECT min(ST_XMin(geom)) AS minx, min(ST_YMin(geom)) AS miny, max(ST_XMax(geom)) AS maxx, max(ST_YMax(geom)) AS maxy
-  FROM kommuner`);
-if (box?.minx == null) throw new Error("kommuner table is empty. Run: npm run ingest kommuner");
 
 // Flooded land only (objekttype FlomAreal), not the river, lake or sea itself. Current mappings only
-// (statuskartlegging 1 = gjeldende, 5 = ajourført).
+// (statuskartlegging 1 = gjeldende, 5 = ajourført). Each feature is tagged with its layer's return period.
+const bbox = await studyBbox();
 const features: any[] = [];
 for (const [layer, years] of LAYERS) {
-  for (let offset = 0; ; offset += PAGE) {
-    const params = new URLSearchParams({
+  features.push(
+    ...(await arcgisFeatures(`${SERVICE}/${layer}`, bbox, {
       where: "objekttype = 'FlomAreal' AND statuskartlegging IN (1, 5)",
-      geometry: [box.minx, box.miny, box.maxx, box.maxy].join(","),
-      geometryType: "esriGeometryEnvelope",
-      inSR: "4326",
-      spatialRel: "esriSpatialRelIntersects",
-      outFields: FIELDS,
-      outSR: "4326",
-      orderByFields: "objectid",
-      resultOffset: String(offset),
-      resultRecordCount: String(PAGE),
-      f: "geojson",
-    });
-    const page = await getJson(`${SERVICE}/${layer}/query?${params}`);
-    if (page.error) throw new Error(`NVE layer ${layer}: ${JSON.stringify(page.error)}`);
-    // Tag each feature with the layer's return period (the field is missing on a few rows).
-    for (const f of page.features) f.properties.years = years;
-    features.push(...page.features);
-    if (page.features.length < PAGE) break;
-  }
+      outFields: "objectid,flomsoneid,gjentaksinterval,symbolflom,statusdato",
+      tag: { years },
+    })),
+  );
 }
 
 const file = rawPath("flomsoner.geojson");

@@ -67,6 +67,17 @@ Terms for all Kartverket free data: CC BY 4.0, credit "© Kartverket". Details i
   - Columns: `id`, `name`, `zone` ('utløsning' | 'utløp'), `quality`, `source`, `geom`.
   - Checked: none of the 5 test addresses is in an area (nearest: #3, ~500 m). 6 random sample points all match NVE. A real hit: Ringeriksveien 284, Bærum (`3201-1002-284`) is in a runout area, confirmed against NVE.
   - Licence NLOD, credit "NVE".
+- **NVE Jord- og flomskred aktsomhetsområder** → table `jordflomskred`, script `data/scripts/jordflomskred.ts`, API `/api/jordflomskred` (2026-11-07).
+  - Source: NVE ArcGIS REST `JordFlomskredAktsomhet` layer 1 (runout areas). 6470 areas. Outlines simplified to ~2 m.
+  - Columns: `id`, `name`, `source`, `geom`. About 2% of public transport stops lie inside one.
+  - Checked: no test address is in an area; 4 random sample points match NVE. A real hit: Bekkelagsterrassen 29A, Oslo (`0301-10444-29A`), confirmed against NVE.
+- **NVE Aktsomhetskart snøskred (NAKSIN 2023, S2)** → table `snoskred`, script `data/scripts/snoskred.ts`, API `/api/snoskred` (2026-11-07).
+  - Source: NVE ArcGIS REST `SnoskredAktsomhet`, layer 3 (with forest effect, 1175 areas) and layer 2 (without forest effect, 6764 areas). S2 is the safety class for homes. Outlines simplified to ~2 m.
+  - Columns: `id`, `name`, `forestEffect` (true = zone with today's forest, false = zone if the forest is gone), `source`, `geom`.
+  - Data point: inside a with-forest zone = medium warning; only inside the without-forest zone = low warning ("only if the forest is cut").
+  - Checked: no test address is in a zone; 4 random sample points match NVE. Real hits: General Ruges vei 150, Oslo (`0301-12212-150`, both zones) and Sætre terrasse 34, Asker (`3203-1434-34`, without-forest only), confirmed against NVE.
+  - Licence NLOD, credit "NVE".
+- Shared helpers in `data/scripts/lib.ts`: `studyBbox()` and `arcgisFeatures()` (pages any ArcGIS REST layer, e.g. NVE, as GeoJSON). All NVE scripts use them.
 
 - **Name:** Eiendom REST-API (property lookup)
   - Owner: Kartverket

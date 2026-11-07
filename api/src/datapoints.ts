@@ -81,6 +81,8 @@ export const SOURCES: Source[] = [
   { id: "nve-kvikkleire", name: "Faresoner kvikkleire", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/kvikkleire/a29b905c-6aaa-4283-ae2c-d167624c08a8", licence: "NLOD 2.0" },
   { id: "nve-flomsoner", name: "Flomsoner", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/flomsoner/e95008fc-0945-4d66-8bc9-e50ab3f50401", licence: "NLOD 2.0" },
   { id: "nve-steinsprang", name: "Aktsomhetsområder steinsprang", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/steinsprang-aktsomhetsomraader/02c6d51c-4e8c-4948-a620-dc046c8cb747", licence: "NLOD 2.0" },
+  { id: "nve-jordflomskred", name: "Aktsomhetsområder jord- og flomskred", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/aktsomhetskart-for-jord-og-flomskred/30e1883e-70e9-4510-9e97-00edbdcddc02", licence: "NLOD 2.0" },
+  { id: "nve-snoskred", name: "Aktsomhetskart snøskred (NAKSIN)", owner: "NVE", url: "https://kartkatalog.geonorge.no/metadata/aktsomhetskart-for-snoeskred/54ada9d8-e6fc-48d6-82b0-5477166a4aaa", licence: "NLOD 2.0" },
   { id: "ngu-losmasser", name: "Løsmasser", owner: "NGU", url: "https://kartkatalog.geonorge.no/metadata/loesmasser-regionalt/e5847c27-0c30-44b6-9198-a797c177fa20", licence: "NLOD 2.0" },
   { id: "ngu-radon", name: "Radon aktsomhet", owner: "NGU", url: "https://kartkatalog.geonorge.no/metadata/radon-aktsomhet/dc0605f3-2301-4abe-a91f-6da42464c281", licence: "NLOD 2.0" },
   { id: "svv-stoy", name: "Støykartlegging veg", owner: "Statens vegvesen", url: "https://kartkatalog.geonorge.no/metadata/stoeykartlegging-veg-etter-t-1442/d6db9f39-9725-4630-909e-5e62f09a0766", licence: "NLOD 2.0" },
@@ -198,6 +200,38 @@ export const DATA_POINTS: DataPoint[] = [
         value: true, display: `I aktsomhetsområde for steinsprang (${where})`, effect: "bad", score: 30,
         warning: { severity: "medium", text: "Aktsomhetsområde for steinsprang" },
         explanation: "Oversiktskart laget fra terrengmodell: viser hvor steinsprang er mulig, ikke hvor det vil skje.",
+      };
+    },
+  },
+  {
+    id: "debrisFlow", label: "Jord- og flomskred", category: "hazards", source: "nve-jordflomskred", importance: "normal",
+    table: "jordflomskred", find: { kind: "within" }, // data/scripts/jordflomskred.ts (Sverre)
+    read: (rows) =>
+      rows.length
+        ? {
+            value: true, display: "I aktsomhetsområde for jord- og flomskred", effect: "bad", score: 30,
+            warning: { severity: "medium", text: "Aktsomhetsområde for jord- og flomskred" },
+            explanation: "Oversiktskart laget fra terrengmodell: viser hvor jord- og flomskred er mulig, ikke hvor det vil skje.",
+          }
+        : { value: false, display: "Ikke i aktsomhetsområde", effect: "good" },
+  },
+  {
+    id: "avalanche", label: "Snøskred", category: "hazards", source: "nve-snoskred", importance: "normal",
+    table: "snoskred", find: { kind: "within" }, // data/scripts/snoskred.ts (Sverre): forestEffect (true = with today's forest)
+    read: (rows) => {
+      if (!rows.length) return { value: false, display: "Ikke i aktsomhetsområde", effect: "good" };
+      if (rows.some((r) => r.forestEffect === true)) {
+        return {
+          value: "medSkog", display: "I aktsomhetsområde for snøskred", effect: "bad", score: 30,
+          warning: { severity: "medium", text: "Aktsomhetsområde for snøskred" },
+          explanation: "Oversiktskart (NAKSIN) laget fra terrengmodell: viser hvor snøskred er mulig, ikke hvor det vil skje.",
+        };
+      }
+      // Only in the zone without forest: today's forest protects, but the risk comes back if it is cut.
+      return {
+        value: "utenSkog", display: "I aktsomhetsområde for snøskred bare uten skog", effect: "bad", score: 70,
+        warning: { severity: "low", text: "Snøskred mulig hvis skogen over blir borte" },
+        explanation: "Skogen i løsneområdet beskytter i dag. Hvis skogen hogges eller dør, kan snøskred nå hit.",
       };
     },
   },

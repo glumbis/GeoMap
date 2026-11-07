@@ -4,38 +4,15 @@
 // Only mapped zones: an address outside every zone may simply be unmapped, not safe.
 import { writeFile } from "node:fs/promises";
 import { conn, query } from "../../api/src/db.ts";
-import { getJson, rawPath } from "./lib.ts";
+import { arcgisFeatures, rawPath, studyBbox } from "./lib.ts";
 
-const LAYER = "https://kart.nve.no/enterprise/rest/services/SkredKvikkleire2/MapServer/0/query";
-const FIELDS = "objectid,skredomrid,skredomrnavn,faregrad,konsekvens,risiko,kommune,rapporturl";
-const PAGE = 1000;
+const LAYER = "https://kart.nve.no/enterprise/rest/services/SkredKvikkleire2/MapServer/0";
 
-const [box] = await query<{ minx: number; miny: number; maxx: number; maxy: number }>(`
-  SELECT min(ST_XMin(geom)) AS minx, min(ST_YMin(geom)) AS miny, max(ST_XMax(geom)) AS maxx, max(ST_YMax(geom)) AS maxy
-  FROM kommuner`);
-if (box?.minx == null) throw new Error("kommuner table is empty. Run: npm run ingest kommuner");
-
-// Page through every current zone (statusskredomr = 1) inside the study-area bbox.
-const features: unknown[] = [];
-for (let offset = 0; ; offset += PAGE) {
-  const params = new URLSearchParams({
-    where: "statusskredomr = 1",
-    geometry: [box.minx, box.miny, box.maxx, box.maxy].join(","),
-    geometryType: "esriGeometryEnvelope",
-    inSR: "4326",
-    spatialRel: "esriSpatialRelIntersects",
-    outFields: FIELDS,
-    outSR: "4326",
-    orderByFields: "objectid",
-    resultOffset: String(offset),
-    resultRecordCount: String(PAGE),
-    f: "geojson",
-  });
-  const page = await getJson(`${LAYER}?${params}`);
-  if (page.error) throw new Error(`NVE: ${JSON.stringify(page.error)}`);
-  features.push(...page.features);
-  if (page.features.length < PAGE) break;
-}
+// Every current zone (statusskredomr = 1) inside the study-area bbox.
+const features = await arcgisFeatures(LAYER, await studyBbox(), {
+  where: "statusskredomr = 1",
+  outFields: "objectid,skredomrid,skredomrnavn,faregrad,konsekvens,risiko,kommune,rapporturl",
+});
 
 const file = rawPath("nve_kvikkleire.geojson");
 await writeFile(file, JSON.stringify({ type: "FeatureCollection", features }));
