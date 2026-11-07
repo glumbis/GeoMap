@@ -1,4 +1,5 @@
 import type { Map } from "maplibre-gl";
+import { cssVar } from "../app/dom";
 
 // Municipality borders from GET /api/kommuner. Template for a map layer feature: copy and adapt.
 export default async function (map: Map) {
@@ -14,6 +15,6 @@ export default async function (map: Map) {
     id: "kommuner-line",
     type: "line",
     source: "kommuner",
-    paint: { "line-color": "#5b4b8a", "line-width": 1.5, "line-opacity": 0.7 },
+    paint: { "line-color": cssVar("--navy"), "line-width": 1.5, "line-opacity": 0.7 },
   });
 }
