@@ -79,16 +79,15 @@ const RULES: Record<string, Rule> = {
   radon: (d) => [rankOf(d, d.value === "lav" ? 5 : 6), `Adressen ligger i et område med ${d.display.toLowerCase()} for radon`],
   quickClay: (d) => {
     if (d.warning) return [rankOf(d, 1), `Eiendommen ligger i en faresone for kvikkleireskred med ${d.value} faregrad`];
-    // Not in FACTS.md yet: no zone, and NVE has not mapped quick clay here.
-    if (d.value === "ikkeKartlagt") return [7, "NVE har ikke kartlagt kvikkleire der eiendommen ligger, så vi vet ikke om det finnes kvikkleire her"];
+    if (d.value === "ikkeKartlagt") return [7, "NVE har ikke kartlagt faresoner for kvikkleireskred i området der eiendommen ligger, så kartet sier ingenting om kvikkleire her"];
     if (d.value === "ingen") return [6, "Eiendommen ligger i en kartlagt kvikkleiresone der NVE ikke har satt noen faregrad"];
     return [5, "Eiendommen ligger ikke i en kartlagt faresone for kvikkleireskred"];
   },
   flood200: (d) =>
     d.warning
       ? [rankOf(d, 2), `Eiendommen ligger i en flomsone som kan bli oversvømt ved en ${d.value}-årsflom`]
-      : d.value === "ikkeKartlagt" // not in FACTS.md yet
-        ? [7, "NVE har ikke laget flomsonekart der eiendommen ligger, så vi vet ikke om den kan bli oversvømt"]
+      : d.value === "ikkeKartlagt"
+        ? [7, "NVE har ikke laget flomsonekart for området der eiendommen ligger, så kartet sier ingenting om flomfare her"]
         : [5, "Eiendommen ligger ikke i en kartlagt flomsone"],
   rockfall: (d) =>
     d.warning
