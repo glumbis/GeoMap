@@ -65,7 +65,7 @@ What the pitch needs, and who it depends on. Update this as things land.
 | Quick-clay zone visible on the map | Works: quick-clay and flood zones on the address map, on by default, with a "Kartlag" panel | Erik |
 | Overall rating (a number) | Works: Grevlingåsen 75, Arendalsgata 20 (caps stack: high 40, medium 75, minus 10 per extra serious warning) | Lukas |
 | Explanations under each data point | Main text from `docs/TEXTS.md` is in the profile. Per-outcome texts ("Når ...") not yet | Lukas |
-| AI summary | On the page ("Sammendrag" card). AI text needs the key in `.env`; without it the card shows the fact sentences | Erik, Lukas |
+| AI summary | Works. Checked with the key on 2026-11-07: Arendalsgata names the quick clay first, Grevlingåsen invents nothing and says NVE has not mapped quick clay or flood there. Without the key the card shows the fact sentences | Erik, Lukas |
 | Map tiles | Take 3–5 seconds to appear the first time. Open both pages before presenting | — |
 
 For the 2:15 part, open Miljø on Grevlingåsen: the strategic noise map shows "Ikke tilgjengelig".
