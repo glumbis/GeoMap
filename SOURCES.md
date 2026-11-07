@@ -373,6 +373,8 @@ NGU datasets: https://www.ngu.no/geologiske-kart/datasett (download per county, 
   - Category: location
   - Priority: high
   - Notes: GTFS `stops.txt` has name + lat/lon. Count departures per stop for a "transit quality" score.
+  - **Loaded** (2026-11-07) as table `stops` by `data/scripts/stops.ts`, API `/api/stops`: 3975 stop places from the Journey Planner API (`https://api.entur.io/journey-planner/v3/graphql`, `stopPlacesByBbox`, needs only an `ET-Client-Name` header). All operators incl. Vy trains. Columns: name, modes, hasBus/hasTram/hasMetro/hasRail/hasWater, number of quays, kommunenummer.
+  - Not loaded yet: departures per stop. The Ruter GTFS zip is 50 MB (Ruter only, no Vy trains); the national one is 546 MB.
 
 - **Name:** OpenStreetMap (shops, doctors, pharmacies, etc.)
   - Owner: OpenStreetMap contributors
