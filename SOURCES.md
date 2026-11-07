@@ -458,7 +458,14 @@ NGU datasets: https://www.ngu.no/geologiske-kart/datasett (download per county, 
   - CRS: none (tables, join on kommune/grunnkrets number)
   - Category: area
   - Priority: high
-  - Notes: income and crime are mostly per kommune only, which is fine for Akershus. TODO: find exact table numbers.
+  - Notes: income and crime are mostly per kommune only, which is fine for Akershus.
+  - **Loaded** (2026-11-07) as table `ssb_kommuner` by `data/scripts/ssb.ts`, API `/api/ssb`. Latest year of each table, all on the 2024 municipality numbers:
+    - 11342 Areal og befolkning: population, land area, people per km² (2026)
+    - 07459 Befolkning: share aged 0–17, 18–66, 67+ (2026)
+    - 06944 Inntekt for husholdninger: median income after tax, all households (2024)
+    - 06265 Boliger: dwellings and share detached, semi-detached, terraced, apartment (2026)
+    - 09429 Utdanningsnivå: share of people 16+ with a university or college degree (2025)
+  - Not loaded yet: crime (anmeldte lovbrudd) and anything per grunnkrets.
 
 - **Name:** Kulturminner - Lokaliteter, Enkeltminner og Sikringssoner
   - Owner: Riksantikvaren
