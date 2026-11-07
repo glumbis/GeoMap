@@ -17,23 +17,28 @@ import { rawPath } from "./lib.ts";
 const SIZE = 500; // metres
 const MIN_PER_KM2 = 25;
 const UTM = (g: string) => `ST_Transform(${g}, 'EPSG:4326', 'EPSG:25833', always_xy := true)`;
-const WGS = (g: string) => `ST_Transform(${g}, 'EPSG:25833', 'EPSG:4326', always_xy := true)`;
 
 const loaded = new Set((await query<{ t: string }>("SELECT table_name AS t FROM duckdb_tables()")).map((r) => r.t));
 for (const t of ["kommuner", "grunnkretser"]) if (!loaded.has(t)) throw new Error(`${t} table is missing. Run: npm run ingest ${t}`);
 
 // ---------- Squares ----------
+// The grid follows longitude/latitude lines, so the squares sit straight on the web map (a UTM 33 grid is turned
+// ~3.7° here, because Oslo lies west of UTM 33's central meridian). Cell size: SIZE metres north–south, and SIZE
+// metres east–west at MID_LAT (59.9°); across Oslo + Akershus (59.4°–60.6°) the width varies by under 3 %.
+const MID_LAT = 59.9;
+const D_LAT = SIZE / 111_320;
+const D_LNG = SIZE / (111_320 * Math.cos((MID_LAT * Math.PI) / 180));
 const [b] = await query<{ minx: number; miny: number; maxx: number; maxy: number }>(`
-  SELECT min(ST_XMin(u)) AS minx, min(ST_YMin(u)) AS miny, max(ST_XMax(u)) AS maxx, max(ST_YMax(u)) AS maxy
-  FROM (SELECT ${UTM("geom")} AS u FROM kommuner)`);
-const [x0, y0] = [Math.floor(b.minx / SIZE) * SIZE, Math.floor(b.miny / SIZE) * SIZE];
-const [x1, y1] = [Math.ceil(b.maxx / SIZE) * SIZE, Math.ceil(b.maxy / SIZE) * SIZE];
+  SELECT min(ST_XMin(geom)) AS minx, min(ST_YMin(geom)) AS miny, max(ST_XMax(geom)) AS maxx, max(ST_YMax(geom)) AS maxy
+  FROM kommuner`);
+const [i0, j0] = [Math.floor(b.minx / D_LNG), Math.floor(b.miny / D_LAT)];
+const [i1, j1] = [Math.ceil(b.maxx / D_LNG), Math.ceil(b.maxy / D_LAT)];
 
 await conn.run(`
   CREATE OR REPLACE TEMP TABLE sq AS
   WITH c AS (
-    SELECT x, y, ${WGS(`ST_Point(x + ${SIZE / 2}, y + ${SIZE / 2})`)} AS geom
-    FROM range(${x0}, ${x1}, ${SIZE}) tx(x), range(${y0}, ${y1}, ${SIZE}) ty(y)
+    SELECT i * ${D_LNG} AS x, j * ${D_LAT} AS y, ST_Point((i + 0.5) * ${D_LNG}, (j + 0.5) * ${D_LAT}) AS geom
+    FROM range(${i0}, ${i1}) ti(i), range(${j0}, ${j1}) tj(j)
   )
   SELECT row_number() OVER (ORDER BY c.x, c.y)::INTEGER AS cid, c.x, c.y, ST_X(c.geom) AS lng, ST_Y(c.geom) AS lat, c.geom,
     any_value(k.kommunenummer) AS kommunenummer, any_value(k.name) AS kommune,
@@ -231,7 +236,7 @@ await conn.run(`
     r.schoolM, r.kindergartenM, r.groceryM, r.transitStopM, r.trailsM, r.doctorM, r.transitDepartures,
     coalesce(s.place || ', ', '') || s.kommune || coalesce(': ' || r.score, '') AS name, s.place, s.bydel,
     s.kommune, s.kommunenummer, 'Omnium (beregnet)' AS source,
-    ${WGS(`ST_MakeEnvelope(s.x, s.y, s.x + ${SIZE}, s.y + ${SIZE})`)} AS geom
+    ST_MakeEnvelope(s.x, s.y, s.x + ${D_LNG}, s.y + ${D_LAT}) AS geom
   FROM read_json('${file.replace(/\\/g, "/")}', format = 'array',
     columns = {${Object.entries(COLS).map(([k, v]) => `${k}: '${v}'`).join(", ")}}) r
   JOIN sq s USING (cid)`);

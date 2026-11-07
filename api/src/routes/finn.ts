@@ -4,7 +4,8 @@
 // GET /api/finn?minScore=&minLiving=&minBuilding=&minFamily=&minCommuter=&noHazard=1&quiet=1
 //   &maxSchoolM=&maxKindergartenM=&maxGroceryM=&maxTransitStopM=&maxTrailsM=&maxDoctorM=&minTransitDepartures=
 //   &kommune=<name or number>&bbox=minLng,minLat,maxLng,maxLat&limit=5000 (max 10000)
-//   -> GeoJSON FeatureCollection of matching squares + matched (before limit), total (all squares), criteria (parsed).
+//   -> GeoJSON FeatureCollection of matching squares + matched (before limit), total (all squares in the chosen
+//      kommune/bbox, or the whole region when neither is given), criteria (parsed).
 //   kommune is forgiving ("baerum", "Lorenskog", "Oslo kommune" all work); one we don't know matches nothing.
 //   Each square has place (grunnkrets name) and, in Oslo, bydel.
 //   A NULL value never satisfies a criterion: unknown is not "fits". A NULL distance means nothing within the
@@ -80,10 +81,20 @@ app.get("/", async (c) => {
   }
   const filter = where.length ? `WHERE ${where.join(" AND ")}` : "";
 
-  const [counts] = await query<{ matched: number; total: number }>(
-    `SELECT (count(*) FILTER (${where.length ? where.join(" AND ") : "true"}))::INTEGER AS matched, count(*)::INTEGER AS total FROM ${TABLE}`,
-    all,
+  // total = squares in the chosen area (kommune and/or bbox), so "12 av 160" reads against Nesodden, not the region.
+  const scope = criteriaWhere(criteria.kommune ? { kommune: criteria.kommune } : {});
+  const scopeParams: (string | number)[] = [...scope.params];
+  if (bbox) {
+    const n = scopeParams.length;
+    scopeParams.push(...bbox);
+    scope.where.push(`ST_Intersects(geom, ST_MakeEnvelope($${n + 1}, $${n + 2}, $${n + 3}, $${n + 4}))`);
+  }
+  const [{ matched }] = await query<{ matched: number }>(`SELECT count(*)::INTEGER AS matched FROM ${TABLE} ${filter}`, all);
+  const [{ total }] = await query<{ total: number }>(
+    `SELECT count(*)::INTEGER AS total FROM ${TABLE} ${scope.where.length ? `WHERE ${scope.where.join(" AND ")}` : ""}`,
+    scopeParams,
   );
+  const counts = { matched, total };
   const rows = await query<{ f: string }>(
     `SELECT to_json(t) AS f FROM (
        SELECT ${PROPS.join(", ")}, ST_AsGeoJSON(ST_ReducePrecision(geom, 0.000001)) AS __geometry
