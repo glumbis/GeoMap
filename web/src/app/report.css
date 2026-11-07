@@ -1,0 +1,46 @@
+/* PDF report link under the overall rating: a secondary button (ink outline, navy text, orange only on focus). */
+.report {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.375rem;
+  margin: 0.25rem 0 0.5rem;
+}
+.report-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--navy);
+  font-weight: 500;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  transition: background-color 150ms ease;
+}
+.report-btn:hover {
+  background: var(--hover, var(--paper));
+}
+.report-btn:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+}
+.report-btn.is-busy {
+  color: var(--ink-muted);
+  border-color: var(--ink-muted);
+}
+.report-icon {
+  display: inline-flex;
+}
+.report-note {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--ink-muted);
+}
+@media print {
+  .report {
+    display: none !important;
+  }
+}

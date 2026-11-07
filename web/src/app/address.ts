@@ -7,6 +7,7 @@ import { showMap } from "./map";
 import { summaryCard } from "./summary";
 import { audienceSection } from "./audience";
 import { shareActions } from "./share";
+import { reportLink } from "./report";
 import type { Category, DataPoint, Missing, Profile, Rating, Severity } from "./profile";
 
 let current = 0; // ignore responses for an address we already left
@@ -71,6 +72,7 @@ function summary(p: Profile) {
     h("p", { class: "address-sub" }, `${a.postcode} ${a.place} · ${a.municipality} kommune`),
     shareActions(),
     overall(r),
+    reportLink(a.id),
     p.warnings.length ? warnings(p) : null,
   );
 }
