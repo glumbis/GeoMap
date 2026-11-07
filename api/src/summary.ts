@@ -62,13 +62,19 @@ const yearly = (sentence: (value: string, year: string) => string): Rule => (d) 
 };
 
 const RULES: Record<string, Rule> = {
-  soilType: (d) => (d.warning ? [3, `Grunnen består av ${d.display}, som er marin leire`] : [6, `Grunnen består av ${d.display}`]),
-  // FACTS.md still has the old radon levels; this uses the exact level from datapoints.ts (lav, middels, høy, meget høy).
+  soilType: (d) =>
+    d.warning
+      ? [3, `Grunnen består av ${d.display}, som er marin leire`]
+      : d.value === "Bart fjell"
+        ? [6, "Det er bart fjell eller bare et tynt lag løsmasser på stedet"]
+        : [6, `Grunnen består av ${d.display}`],
+  // Not in FACTS.md yet.
+  bedrock: (d) =>
+    d.warning ? [rankOf(d, 3), `Berggrunnen er ${d.display}`] : [6, `Berggrunnen er ${d.display}`],
   radon: (d) => [rankOf(d, d.value === "lav" ? 5 : 6), `Adressen ligger i et område med ${d.display.toLowerCase()} for radon`],
   quickClay: (d) => {
     if (d.warning) return [rankOf(d, 1), `Eiendommen ligger i en faresone for kvikkleireskred med ${d.value} faregrad`];
-    // Not in FACTS.md yet: NVE zone with faregrad 'Ingen'.
-    if (d.value === "ingen") return [6, "Eiendommen ligger i en kartlagt sone for kvikkleire uten oppgitt faregrad"];
+    if (d.value === "ingen") return [6, "Eiendommen ligger i en kartlagt kvikkleiresone der NVE ikke har satt noen faregrad"];
     return [5, "Eiendommen ligger ikke i en kartlagt faresone for kvikkleireskred"];
   },
   flood200: (d) =>
@@ -79,7 +85,6 @@ const RULES: Record<string, Rule> = {
     d.warning
       ? [rankOf(d, 2), "Eiendommen ligger i et aktsomhetsområde for steinsprang"]
       : [5, "Eiendommen ligger ikke i et aktsomhetsområde for steinsprang"],
-  // debrisFlow and avalanche: not in FACTS.md yet, same shape as rockfall.
   debrisFlow: (d) =>
     d.warning
       ? [rankOf(d, 2), "Eiendommen ligger i et aktsomhetsområde for jord- og flomskred"]
@@ -88,7 +93,7 @@ const RULES: Record<string, Rule> = {
     d.value === "medSkog"
       ? [rankOf(d, 2), "Eiendommen ligger i et aktsomhetsområde for snøskred"]
       : d.value === "utenSkog"
-        ? [rankOf(d, 3), "Eiendommen ligger i et område der snøskred er mulig hvis skogen over blir borte"]
+        ? [rankOf(d, 3), "Eiendommen ligger i et område der snøskred bare kan nå fram hvis skogen over blir borte"]
         : [5, "Eiendommen ligger ikke i et aktsomhetsområde for snøskred"],
   roadNoise: (d) =>
     d.value === "rød"
@@ -96,25 +101,37 @@ const RULES: Record<string, Rule> = {
       : d.value === "gul"
         ? [rankOf(d, 3), "Adressen ligger i gul støysone fra vei, med 55–65 dB"]
         : [5, "Adressen ligger ikke i en støysone fra riks- eller fylkesvei"],
-  roadNoiseStrategic: (d) => [
-    rankOf(d, Number(d.value) >= 55 ? 4 : 6),
-    `Adressen har beregnet veistøy på ${d.display} i det strategiske støykartet`,
-  ],
+  roadNoiseStrategic: (d) => {
+    const { head: band, bracket: year } = splitDisplay(d.display); // "65–70 dB (2021)"
+    return [
+      rankOf(d, Number(d.value) >= 55 ? 4 : 6),
+      `Adressen har beregnet veistøy på ${band} i det strategiske støykartet${year ? ` fra ${year}` : ""}`,
+    ];
+  },
   pollutedGround: (d) =>
     d.warning
       ? [rankOf(d, 3), `Det er registrert forurenset grunn ${d.value} meter fra adressen`]
       : [5, "Det er ikke registrert forurenset grunn innen 100 meter fra adressen"],
   transitStop: nearest("Nærmeste holdeplass", "ingen holdeplass innen 2 km"),
-  // Not in FACTS.md yet (new data point).
   transitDepartures: (d) => {
-    if (!d.value) return [4, "Det er ingen avganger fra holdeplasser innen 500 m i luftlinje på en vanlig hverdag"];
-    const { head, bracket } = splitDisplay(d.display);
-    const stop = bracket ? `, ${bracket.replace(/, ([^,]+)$/, ", $1 unna")},` : "";
-    return [d.effect === "bad" ? 4 : 6, `Den travleste holdeplassen innen 500 m i luftlinje${stop} har ${head.replace(", ", " og ")} på en vanlig hverdag`];
+    if (!d.value) return [4, "Det går ingen kollektivavganger fra holdeplasser innen 500 meter i luftlinje på en vanlig hverdag"];
+    // display: "161 avganger, 2 linjer (Jegeråsen, 212 m)"
+    const lines = Number(/(\d+) linje/.exec(d.display)?.[1]);
+    const stop = /\((.*), ([^,]+)\)$/.exec(d.display);
+    const from = stop ? `Fra ${stop[1]}, ${stop[2]} unna i luftlinje, går` : "Innen 500 meter i luftlinje går";
+    const per = lines === 1 ? "med 1 linje" : `fordelt på ${lines} linjer`;
+    return [d.effect === "bad" ? 4 : 6, `${from} det ${d.value} avganger på en vanlig hverdag ${per}`];
   },
   school: nearest("Nærmeste grunnskole", "ingen grunnskole innen 5 km"),
   kindergarten: nearest("Nærmeste barnehage", "ingen barnehage innen 3 km"),
-  trails: nearest("Nærmeste registrerte tursti eller skiløype", "ingen registrert tursti eller skiløype innen 3 km"),
+  trails: (d) => {
+    // A route with no name comes back as its type ("Tursti", "Skiløype", ...): use the type in the sentence.
+    const { head, bracket } = splitDisplay(d.display);
+    if (d.value != null && bracket && ["Tursti", "Skiløype", "Sykkelrute", "Turrute"].includes(bracket)) {
+      return [6, `Nærmeste registrerte ${bracket.toLowerCase()} er ${head} unna i luftlinje`];
+    }
+    return nearest("Nærmeste registrerte tursti eller skiløype", "ingen registrert tursti eller skiløype innen 3 km")(d);
+  },
   municipality: (d) => {
     const { head, bracket } = splitDisplay(d.display);
     return [6, `Adressen ligger i ${bracket && bracket !== head ? d.display : head}`];
@@ -189,10 +206,10 @@ const SYSTEM = `Du skriver et kort sammendrag om en adresse i Norge for folk som
 Skriv på enkel norsk bokmål. Bruk bare faktaene du får, ingen egen kunnskap.
 
 Faktaene kommer i grupper med tagger. Taggene er bare for deg: ikke skriv tagnavn eller overskrifter i teksten.
-Skriv 4–5 setninger til sammen, hver på høyst 25 ord, i denne rekkefølgen:
-1. <advarsler>: høyst to setninger. Nevn alle, mest alvorlig først. Slå sammen de minst alvorlige.
+Skriv 4–6 setninger til sammen, hver på høyst 30 ord, i denne rekkefølgen:
+1. <advarsler>: én til tre setninger. Hver advarsel skal med, mest alvorlig først. Det er viktigere enn lengden. Slå sammen de minst alvorlige i én setning.
 2. <sjekket_uten_funn>: én setning, for eksempel "Eiendommen ligger ikke i kartlagt faresone for kvikkleire, flom eller snøskred."
-3. <beliggenhet>: én setning med kollektivtilbud og nærmeste skole eller barnehage. Hopp over resten.
+3. <beliggenhet>: én setning med kollektivtilbud og nærmeste skole eller barnehage. Hopp over resten, også grunn, berggrunn og kommunetall.
 4. <mangler_data>: én kort setning, bare hvis gruppen finnes. Finnes den ikke, skriv ingenting om manglende data.
 Hopp over en gruppe som ikke finnes.
 
@@ -230,6 +247,12 @@ async function writeWithAi(address: string, list: Fact[]): Promise<string | unde
   }
 }
 
+/** The page lists sources below the text; drop "(NGU)"-style brackets the model sometimes copies anyway. */
+function dropSourceBrackets(text: string, profile: Profile): string {
+  const owners = new Set(profile.sources.map((s) => s.owner));
+  return text.replace(/ \(([^()]+)\)/g, (m, inner: string) => (owners.has(inner.trim()) ? "" : m));
+}
+
 export async function buildSummary(id: string): Promise<Summary> {
   const profile = await buildProfile(id);
   const list = facts(profile);
@@ -240,9 +263,10 @@ export async function buildSummary(id: string): Promise<Summary> {
     "SELECT text, model, strftime(created, '%Y-%m-%dT%H:%M:%SZ') AS created FROM summaries WHERE address_id = $1 AND facts_hash = $2",
     [addressId, hash],
   );
-  if (hit) return { addressId, text: hit.text, aiGenerated: true, model: hit.model, created: hit.created, facts: list };
+  if (hit) return { addressId, text: dropSourceBrackets(hit.text, profile), aiGenerated: true, model: hit.model, created: hit.created, facts: list };
 
-  const text = await writeWithAi(`${profile.address.text}, ${profile.address.postcode} ${profile.address.place}`, list);
+  const raw = await writeWithAi(`${profile.address.text}, ${profile.address.postcode} ${profile.address.place}`, list);
+  const text = raw && dropSourceBrackets(raw, profile);
   if (!text) return { addressId, text: list.map((f) => f.text).join(" "), aiGenerated: false, facts: list };
 
   const created = new Date().toISOString().replace(/\.\d+Z$/, "Z");

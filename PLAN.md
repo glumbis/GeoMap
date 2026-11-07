@@ -64,8 +64,8 @@ What the demo still needs, most important first:
 1. **Erik:** show the AI summary on the address page (`GET /api/address/<id>/summary`, label "AI-generert" only when `aiGenerated` is true). Works now with the key in `.env`.
 2. **Erik:** quick-clay and flood zones on the map (`/api/nve_kvikkleire`, `/api/flomsoner`). The pitch points at the zone around the pin.
 3. **Even:** update `docs/DEMO.md`. Scores changed (Grevlingåsen 75, Arendalsgata 20), and the bus caveat can go: the busiest stop within 500 m of Grevlingåsen (Jegeråsen, 212 m) has 161 weekday departures.
-4. **Even:** in `docs/FACTS.md`, update radon to the 4 levels (lav, middels, høy, meget høy), fix the #1 check (the strategic noise map gives 65–70 dB there), and add rules for quick clay with faregrad "Ingen", `transitDepartures`, `debrisFlow` and `avalanche` (the code has a sentence for each; check the wording). Add a `transitDepartures` section to `docs/TEXTS.md`. Lukas then matches `api/src/summary.ts`.
-5. **Sverre:** ~~landslide/avalanche~~ done (`jordflomskred`, `snoskred`). Bedrock if there is time. Nothing in the demo waits on it.
+4. ~~**Even:** FACTS.md rules for the new data points~~ Done, and `api/src/summary.ts` matches them. Still open: a FACTS.md rule for `bedrock` (the code says "Berggrunnen er {display}", rank 3 with alum shale, else 6) and a `transitDepartures` section in `docs/TEXTS.md`.
+5. **Sverre:** ~~landslide/avalanche~~ done (`jordflomskred`, `snoskred`). ~~Bedrock~~ done (`berggrunn`, alum shale flag). Nothing in the demo waits on more data.
 
 After these, stop adding data and move to phase 3 (demo).
 
@@ -88,7 +88,7 @@ Each role lists: what you own, your tasks in order, and when a task is done.
    *Done when:* the summary for all 5 test addresses mentions every real hazard and invents nothing.
    Done 2026-11-07: fact sentences follow `docs/FACTS.md` (`RULES` in `api/src/summary.ts`), checked with real Haiku output on all 5 test addresses with every dataset loaded. Every hazard is mentioned, worst first, nothing invented. Cache key includes model and prompt.
 7. **Info texts in the profile:** done for the main text. `api/src/texts.ts` reads each **Forklaring** from `docs/TEXTS.md` into `explanation`. Next: the "Når ..." texts (one per outcome), which need a matching rule per data point.
-8. ~~**Shorter AI summary:** 4–6 sentences.~~ Done 2026-11-07: the AI gets the facts in groups (warnings, checked and not found, location, missing data) with one sentence per group. The rating is left out because the page shows it. All 5 test addresses: 4–6 sentences, 60–95 words, every warning kept, nothing invented. Each fact in the response now has a `rank` (1–8, `docs/FACTS.md`).
+8. ~~**Shorter AI summary:** 4–6 sentences.~~ Done 2026-11-07: the AI gets the facts in groups (warnings, checked and not found, location, missing data) with one sentence per group. The rating is left out because the page shows it. All 5 test addresses: 4–6 sentences, 75–100 words, every warning kept (all 5 for #1), nothing invented. Source names in brackets are stripped in code. Each fact in the response now has a `rank` (1–8, `docs/FACTS.md`).
 9. **All the time:** review what lands on `main`, unblock people, and cut scope when time runs short.
 
 ### Sverre — data pipeline
