@@ -1,14 +1,36 @@
-# GeoMap
+# GeoMap (product name: Omnium)
 
-Hackathon web map: all public info about any property in Norway (start: Oslo + Akershus). Search an address, see data, stats and a rating.
-See `PLAN.md` for product, roles and rating. Collect data sources in `SOURCES.md`.
-4 people, each working with coding agents. Speed over polish.
+Hackathon web app: all public info about any property in Norway (start: Oslo + Akershus). Search an address, see data, stats and a rating.
+See `PLAN.md` for product, roles and tasks, `docs/DESIGN.md` for look and page flow, `docs/PROFILE.md` for the address profile. Collect data sources in `SOURCES.md`.
+4 people, each working with a coding agent. Speed over polish. `README.md` is the guide for humans; this file is for agents.
+
+## You do the chores for your human
+The team wants to think about the product, not about tooling. **You (the agent) do every routine step yourself, without being asked.** Don't tell your human to run a command you can run. Explain what you did in plain, short English.
+
+**At the start of every session:**
+1. Find out who your human is (Lukas, Sverre, Erik or Even). If you don't know, ask once and remember it for the session.
+2. Check the tools: Node 22+ and git. If something is missing, install it if you can (on Windows: `winget install OpenJS.NodeJS.LTS`, `winget install Git.Git`), otherwise give the one exact command.
+3. Sync: commit or stash their open work, then `git pull --rebase`.
+4. If `package-lock.json` changed or `node_modules` is missing: `npm install`.
+5. If `data/geomap.duckdb` is missing, or the pull added or changed files in `data/scripts/`: stop the dev server, then `npm run ingest` (or just the changed scripts).
+6. Start `npm run dev` in the background if it isn't running, and give them the link http://localhost:5173.
+7. Tell them in 3–5 lines: what teammates pushed since last time (`git log`), and their own next task from their role in `PLAN.md`.
+
+**While working:**
+- Stay in your human's folders (see "Roles" in `PLAN.md`). If a task needs a change in someone else's file, say so and suggest the message to send them.
+- Anything people see follows `docs/DESIGN.md` and uses the CSS variables in `web/src/style.css`.
+- When a piece works: run `npm run typecheck`, then commit (small, clear message), `git pull --rebase`, `git push` to `main`. Do this yourself; tell your human what you pushed. Never push code that fails typecheck or breaks `npm run dev`.
+- Merge conflicts: resolve them yourself. In a file your human doesn't own, keep the owner's version and redo your change on top.
+- Keep the docs true as you go: add new sources to `SOURCES.md` (under your human's heading), new commands to "Run it" below, and cross out finished tasks in `PLAN.md` (`~~task~~`) in your human's role only.
+- Need a key (e.g. `ANTHROPIC_API_KEY`)? Ask your human for it and put it in `.env` yourself. Never commit `.env`, keys or data files.
+- Check your work the way a user would: open the page or call the endpoint, try the 5 test addresses in `docs/TEST_ADDRESSES.md`.
 
 ## Run it
 Needs Node 22+. From the repo root:
 ```bash
-npm install                 # once, and after pulling new dependencies
-npm run ingest              # build data/geomap.duckdb from every script in data/scripts/ (or: npm run ingest kommuner)
+npm run setup               # npm install + build the database (first time, or after big data changes)
+npm install                 # after pulling new dependencies
+npm run ingest              # rebuild data/geomap.duckdb from every script in data/scripts/ (or: npm run ingest kommuner)
 npm run dev                 # API on :3000 + web on http://localhost:5173 (open this)
 ```
 - `npm run typecheck` checks api + web. `npm run build` builds the web app to `web/dist/`.
@@ -38,6 +60,8 @@ npm run dev                 # API on :3000 + web on http://localhost:5173 (open 
 web/                 frontend
   src/main.ts        map setup + Kartverket basemap
   src/features/      one file per feature: export default function (map: Map)
+  src/style.css      brand colour tokens (CSS variables), from the logo
+  public/            logo.png, logo-mark.png (favicon)
 api/                 backend
   src/index.ts       Hono app, auto-mounts every file in src/routes/, JSON errors
   src/routes/        one file per dataset/endpoint
@@ -45,6 +69,9 @@ api/                 backend
   src/geojson.ts     layer(): standard bbox/q/limit GeoJSON endpoint for a table
 docs/
   PROFILE.md         standard for the address profile (read before touching rating, profile or the address panel)
+  DESIGN.md          look, page flow, map style (read before touching anything people see)
+  TEST_ADDRESSES.md  the 5 addresses we test and demo with
+  brand/             original logo
 data/
   scripts/           one ingest script per dataset: download -> data/raw/ -> table in geomap.duckdb
                      (run.ts runs them, lib.ts has helpers)

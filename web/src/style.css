@@ -1,8 +1,44 @@
+/* Omnium brand tokens, sampled from web/public/logo.png. See docs/DESIGN.md.
+   Use these variables everywhere; never hard-code colours in features. Erik owns this file. */
+:root {
+  /* Base */
+  --paper: #fcf7f5; /* page background (logo background) */
+  --surface: #ffffff; /* cards, search field */
+  --ink: #15233a; /* text (logo wordmark) */
+  --ink-muted: #5b6676;
+  --line: #e7e0da;
+
+  /* Brand (the gradient ring: orange -> teal -> navy) */
+  --navy: #1a3d57;
+  --teal: #0c5e68;
+  --green: #41aa79;
+  --orange: #ec7f33; /* accent: the map pin. Use sparingly: the one thing to look at */
+  --gold: #b99b5d;
+  --brand-gradient: linear-gradient(135deg, var(--orange) 0%, var(--teal) 55%, var(--navy) 100%);
+
+  /* Map interior (for map layers) */
+  --map-land: #f7efe3;
+  --map-green: #c6d9b0;
+  --map-water: #acdadd;
+
+  /* Status (scores and warnings) */
+  --good: var(--green);
+  --warn: #e0a43a;
+  --bad: #d4553a;
+  --unknown: #9aa3ad; /* "Unavailable": missing data is never shown as good */
+
+  --radius: 16px;
+  --shadow: 0 8px 30px rgb(21 35 58 / 0.08);
+  --font: "Outfit", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
 html,
 body {
   margin: 0;
   height: 100%;
-  font-family: system-ui, sans-serif;
+  font-family: var(--font);
+  color: var(--ink);
+  background: var(--paper);
 }
 
 #map {
