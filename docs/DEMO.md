@@ -32,23 +32,23 @@ Times are a guide. Bold = what you click or show.
 
 **0:45–1:30 — Det rolige eksempelet: Grevlingåsen 17**
 **Type "Grevlingåsen 17", pick the one in 1362 Hosle.** There is also a Grevlingåsen 17 in 1386 Asker: don't pick that one.
-> Her er et vanlig hus på Hosle i Bærum. Samlet karakter 75. Det ligger ikke i noen kartlagt faresone for kvikkleire, flom eller skred, og ikke i støysone. Den eneste advarselen er høy aktsomhet for radon, som er vanlig rundt Oslo. Nærmeste skole er 256 meter unna, og fra Jegeråsen, 200 meter unna, går det 161 avganger på en vanlig hverdag.
+> Her er et vanlig hus på Hosle i Bærum. Samlet karakter 75. Det ligger ikke i noen kartlagt faresone for kvikkleire eller flom, ikke i aktsomhetsområder for skred, og ikke i støysone. Den eneste advarselen er høy aktsomhet for radon, som er vanlig rundt Oslo. Nærmeste skole er 256 meter unna i luftlinje, og fra Jegeråsen, 212 meter unna, går det 161 avganger på en vanlig hverdag.
 **Point at the category cards, then open one data point to show its source and explanation.**
 > Alt vi viser har en kilde. Og vi forklarer hva det betyr for den som bor der.
 
 **1:30–2:15 — Kontrasten: Arendalsgata 22**
 **Go back, type "Arendalsgata 22", pick it.**
-> Så en leilighet på Sagene i Oslo. Like nær buss og skole. Men øverst ser du advarsler, den alvorligste først: eiendommen ligger i en faresone for kvikkleireskred med høy faregrad, fra NVE. I tillegg veistøy på 65–70 dB og forurenset grunn registrert i nærheten.
+> Så ser vi en leilighet på Sagene i Oslo. Like nær buss og skole. Men øverst ser du advarsler, den alvorligste først: eiendommen ligger i en faresone for kvikkleireskred med høy faregrad, fra NVE. I tillegg veistøy på 65–70 dB og et registrert sted med mulig forurenset grunn i nærheten.
 **Point at the warnings and the low Naturfare score.** (Once Erik adds the quick-clay layer to the map, also point at the zone around the pin.)
 **Point at the score and the warnings listed under it.**
 > Samlet karakter faller fra 75 til 20, og naturfare fra 100 til 30. Og siden sier hvorfor: kvikkleiren, radon og støy holder karakteren nede. Den alvorligste risikoen står alltid først, og den kan ikke gjemmes i et snitt.
 
 **2:15–2:40 — Ærlighet om data**
-**Point at a data point shown as "Ikke tilgjengelig".**
-> Når vi mangler data, sier vi det. Vi gjetter aldri, og vi gir ikke en samlet karakter hvis viktige data mangler. Det er derfor du kan stole på det som står der.
+**Open Miljø on Grevlingåsen: "Veistøy (strategisk støykart)" shows "Ikke tilgjengelig" (screenshot 3).**
+> Når vi mangler data, sier vi det. Vi gjetter aldri, og vi gir ikke en samlet karakter hvis viktige data mangler. Derfor vet du alltid hva tallene bygger på.
 
 **2:40–3:00 — Avslutning**
-> Omnium bruker bare åpne, offentlige data, og dekker i dag Oslo og Akershus. Neste steg er hele Norge. Én adresse, alt du trenger å vite, på sekunder.
+> Omnium bruker bare åpne, offentlige data, og dekker i dag Oslo og Akershus. Neste steg er hele Norge. Én adresse, all offentlig informasjon, på sekunder.
 
 If the AI summary works on the day, show it on the Arendalsgata page at 1:30 and say: *"Et kort sammendrag skrevet av AI, bare fra faktaene vi har, og merket som AI-generert."*
 
@@ -61,14 +61,16 @@ What the pitch needs, and who it depends on. Update this as things land.
 | Profile data for both addresses (quick clay, flood, noise, polluted ground, stops, schools, kindergartens, trails, SSB) | Works | Sverre, Even, Lukas |
 | Start page with address search | Works. Search shows two Grevlingåsen 17: pick 1362 Hosle | Erik |
 | Address page: warnings, category cards, data points with source | Works | Erik |
-| "Ikke tilgjengelig" for missing data | Works (e.g. Steinsprang under Naturfare) | Erik |
+| "Ikke tilgjengelig" for missing data | Works (e.g. "Veistøy (strategisk støykart)" under Miljø on Grevlingåsen) | Erik |
 | Quick-clay zone visible on the map | Not yet: data at `/api/nve_kvikkleire`, no map layer | Erik |
 | Overall rating (a number) | Works: Grevlingåsen 75, Arendalsgata 20 (caps stack: high 40, medium 75, minus 10 per extra serious warning) | Lukas |
 | Explanations under each data point | Main text from `docs/TEXTS.md` is in the profile. Per-outcome texts ("Når ...") not yet | Lukas |
 | AI summary | Endpoint works with the key in `.env` and follows `docs/FACTS.md`. Not on the page yet | Erik |
 | Map tiles | Take 3–5 seconds to appear the first time. Open both pages before presenting | — |
 
-For the 2:15 part, open Naturfare on Grevlingåsen: Steinsprang shows "Ikke tilgjengelig".
+For the 2:15 part, open Miljø on Grevlingåsen: the strategic noise map shows "Ikke tilgjengelig".
+
+Timing: the spoken text is about 280 words, about 2:10 at a calm pace, which leaves about 50 seconds for typing and clicks. The two address parts are the tightest (about 80 words in 45 seconds): keep talking while the page loads.
 
 ## Checklist before presenting
 
@@ -97,9 +99,9 @@ Saved in `docs/demo/` at 1440×900. Retake them after big changes (headless Edge
 
 1. `1-start.png`: the start page with the empty address field. **Taken.**
 2. `2-grevlingasen.png`: the Grevlingåsen 17 page, top part (no warnings, scores). **Taken.**
-3. `3-data-point.png`: one data point opened, showing its source and explanation.
+3. `3-data-point.png`: the Miljø card opened on Grevlingåsen, with explanations, sources and one "Ikke tilgjengelig". **Taken.** It also covers 6.
 4. `4-arendalsgata.png`: the Arendalsgata 22 page with the quick-clay warning at the top. **Taken.**
 5. `5-map.png`: the map with the quick-clay zone around Arendalsgata.
 6. `6-missing.png`: a data point shown as "Ikke tilgjengelig".
 
-Not taken yet: 3 and 6 need a click (open a card), so take them by hand. 5 needs the quick-clay map layer.
+Not taken yet: 5 needs the quick-clay map layer.

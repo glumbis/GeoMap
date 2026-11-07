@@ -16,11 +16,11 @@ How to use this file:
 
 ### `soilType` — Løsmasser
 **Forklaring:** Løsmasser er det som ligger over fjellet, for eksempel leire, sand, grus eller morene. Typen sier noe om hvor stabil grunnen er og hvor lett vann renner unna.
-- **Når marin leire:** Marin leire ble avsatt i havet etter siste istid. Den kan gi setninger i bygninger og kan noen steder inneholde kvikkleire.
+- **Når marin leire:** Marin leire ble avsatt i havet etter siste istid. Den kan gi setningsskader på bygninger og kan noen steder inneholde kvikkleire.
 - Kartet er grovt og viser ikke nøyaktig hva som ligger under akkurat denne tomten.
 
 ### `bedrock` — Berggrunn
-**Forklaring:** Berggrunnen er fjellet under løsmassene. Bergarten påvirker blant annet hvor mye radon som kan komme fra grunnen og hvor godt det er å bygge på.
+**Forklaring:** Berggrunnen er fjellet under løsmassene. Bergarten påvirker blant annet hvor mye radon som kan komme fra grunnen og hvor godt egnet grunnen er å bygge på.
 - **Når alunskifer:** Alunskifer kan svelle og skade grunnmurer, gir surt vann når den graves opp, og gir ofte mye radon. Det har mest å si ved graving og bygging.
 - **Når oversiktskart:** Bergarten er hentet fra et grovt kart (1:250 000), så den kan være en annen akkurat på denne tomten.
 
@@ -45,11 +45,11 @@ How to use this file:
 
 ### `rockfall` — Steinsprang
 **Forklaring:** Steinsprang er når stein løsner fra bratte fjellsider og faller eller ruller ned. Aktsomhetsområder viser hvor stein i verste fall kan nå, beregnet ut fra terrenget.
-- **Når i aktsomhetsområde:** Kartet er grovt og ikke sjekket på stedet, så den virkelige faren kan være mindre. Det gir ikke svar for én enkelt tomt.
+- **Når i aktsomhetsområde:** Kartet er grovt og ikke sjekket på stedet, så forholdene på tomten kan avvike fra kartet. Det gir ikke svar for én enkelt tomt.
 
 ### `debrisFlow` — Jord- og flomskred
 **Forklaring:** Jordskred og flomskred er når løsmasser i bratte skråninger eller bekkeløp raser ut, ofte etter mye regn eller snøsmelting. Aktsomhetsområder viser hvor slike skred er mulige, beregnet ut fra terrenget.
-- **Når i aktsomhetsområde:** Kartet er grovt og ikke sjekket på stedet, så den virkelige faren kan være mindre. Det gir ikke svar for én enkelt tomt.
+- **Når i aktsomhetsområde:** Kartet er grovt og ikke sjekket på stedet, så forholdene på tomten kan avvike fra kartet. Det gir ikke svar for én enkelt tomt.
 
 ### `avalanche` — Snøskred
 **Forklaring:** Aktsomhetsområder for snøskred viser hvor snøskred kan løsne og hvor langt de kan nå, beregnet ut fra terrenget. Kartet er grovt og ikke sjekket på stedet.
@@ -60,9 +60,9 @@ How to use this file:
 
 ### `roadNoise` — Veistøy
 **Forklaring:** Støysonene viser beregnet støy fra riks- og fylkesveier, som et snitt over døgnet der kveld og natt teller mer. Kartet er en prognose for om 15–20 år, målt 4 meter over bakken.
-- **Når rød sone (over 65 dB):** Støyen er så høy at området regnes som lite egnet for boliger. Nye boliger skal som hovedregel ikke bygges her.
+- **Når rød sone (65 dB eller mer):** Støyen er så høy at området regnes som lite egnet for boliger. Etter retningslinjen T-1442 bør nye boliger som hovedregel unngås her.
 - **Når gul sone (55–65 dB):** Støyen er merkbar, og kommunen vurderer støy særskilt når det skal bygges nytt.
-- **Når ikke i støysone:** Kartet viser bare støy fra riks- og fylkesveier, ikke fra kommunale veier, tog, trikk eller fly. I sentrum av Oslo har kartet ingen data.
+- **Når ikke i støysone:** Kartet viser bare støy fra riks- og fylkesveier, ikke fra kommunale veier, tog, trikk eller fly. I Oslo har kartet ingen data.
 
 ### `roadNoiseStrategic` — Veistøy (strategisk støykart)
 **Forklaring:** Kartet viser beregnet støy fra veitrafikk i 2021, også fra kommunale veier, som et snitt over døgnet der kveld og natt teller mer. Tallet er et intervall på 5 dB, for eksempel 60–65 dB.
@@ -73,7 +73,7 @@ How to use this file:
 
 ### `pollutedGround` — Forurenset grunn
 **Forklaring:** Miljødirektoratet registrerer steder der grunnen er eller kan være forurenset, for eksempel gamle fyllinger, industritomter og skytebaner.
-- **Når registrert i nærheten:** At et sted er registrert, betyr ikke alltid at det er farlig. Det har mest å si hvis man skal grave, bygge eller dyrke i jorda.
+- **Når registrert i nærheten:** At et sted er registrert, betyr ikke alltid at grunnen faktisk er forurenset. Det har mest å si hvis man skal grave, bygge eller dyrke i jorda.
 
 ## Beliggenhet
 
@@ -90,12 +90,12 @@ How to use this file:
 **Forklaring:** Avstanden er målt i luftlinje til nærmeste barne- eller ungdomsskole. Det er ikke sikkert dette er skolen adressen hører til, for kommunen bestemmer skolekretsen, og skolen kan være privat.
 
 ### `kindergarten` — Nærmeste barnehage
-**Forklaring:** Avstanden er målt i luftlinje til nærmeste barnehage. Barnehageplass får man gjennom kommunens opptak, ikke etter hvor nær man bor.
+**Forklaring:** Avstanden er målt i luftlinje til nærmeste barnehage. Barnehageplass tildeles gjennom kommunens opptak, etter kommunens egne kriterier.
 
 ## Natur og friluft
 
 ### `trails` — Nærmeste tursti eller skiløype
-**Forklaring:** Avstanden er målt i luftlinje til nærmeste registrerte tursti, sykkelrute eller skiløype. Ikke alle stier og løyper er registrert, og skiløyper er bare kjørt når det er snø.
+**Forklaring:** Avstanden er målt i luftlinje til nærmeste registrerte tursti, sykkelrute eller skiløype. Ikke alle stier og løyper er registrert, og skiløyper er bare preparert når det er snø.
 
 ## Område
 

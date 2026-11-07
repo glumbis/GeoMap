@@ -124,7 +124,7 @@ Rockfall, debris-slide and avalanche maps are *aktsomhetsområder*: coarse maps 
 
 | When | Sentence | Rank |
 |---|---|---|
-| value "rød" | Adressen ligger i rød støysone fra vei, med over 65 dB ({src}). | 2 |
+| value "rød" | Adressen ligger i rød støysone fra vei, med 65 dB eller mer ({src}). | 2 |
 | value "gul" | Adressen ligger i gul støysone fra vei, med 55–65 dB ({src}). | 3 |
 | no warning | Adressen ligger ikke i en støysone fra riks- eller fylkesvei ({src}). | 5 |
 
@@ -147,7 +147,7 @@ It only warns in Oslo. Outside Oslo, `roadNoise` already gives the warning: don'
 
 | When | Sentence | Rank |
 |---|---|---|
-| warning | Det er registrert forurenset grunn {value} meter fra adressen ({src}). | 3 |
+| warning | Det er registrert et sted med mulig forurenset grunn {value} meter fra adressen ({src}). | 3 |
 | no warning | Det er ikke registrert forurenset grunn innen 100 meter fra adressen ({src}). | 5 |
 
 ### Location
