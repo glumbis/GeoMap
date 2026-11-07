@@ -24,27 +24,5 @@
 .logo-ring .logo-rim {
   -webkit-mask-image: radial-gradient(circle closest-side, transparent 58%, #000 59%);
   mask-image: radial-gradient(circle closest-side, transparent 58%, #000 59%);
-  animation: logo-rim-spin 1.6s linear infinite;
-  animation-play-state: paused;
-}
-.topbar-logo:hover .logo-rim,
-.topbar-logo:focus-visible .logo-rim,
-.topbar-logo.is-loading .logo-rim,
-.start-logo:hover .logo-rim,
-.start-logo.is-searching .logo-rim {
-  animation-play-state: running;
-}
-.topbar-logo.is-loading .logo-rim,
-.start-logo.is-searching .logo-rim {
-  animation-duration: 1s; /* a bit faster while working */
-}
-@keyframes logo-rim-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .logo-ring .logo-rim {
-    animation: none;
-  }
+  will-change: transform; /* rotated by logo.ts, which eases the spin in and out */
 }
