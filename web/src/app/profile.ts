@@ -53,16 +53,6 @@ export interface Perspective {
   rating: Omit<Rating, "weakestCategory"> & { factors: { dataPointId: string; label: string; weight: number; score: number }[] };
 }
 
-/** "Spør megleren": questions for the viewing, written by hand on the API side (api/src/questions.ts). */
-export interface QuestionGroup {
-  /** Left out on the last group, "Alltid lurt". */
-  dataPointId?: string;
-  categoryId?: string;
-  topic: string;
-  finding?: string;
-  items: string[];
-}
-
 export interface Profile {
   version: number;
   perspectives?: Perspective[];
@@ -83,6 +73,5 @@ export interface Profile {
   /** Common things to check (radon, awareness areas). areaShare: percent of the municipality's area with the same finding. */
   checks?: { text: string; dataPointId: string; categoryId: string; areaShare?: { percent: number; municipality: string } }[];
   categories: Category[];
-  questions?: QuestionGroup[];
   sources: { id: string; name: string; owner: string; url: string; licence: string }[];
 }
