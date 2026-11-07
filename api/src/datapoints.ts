@@ -197,7 +197,7 @@ export const DATA_POINTS: DataPoint[] = [
 
   // Environment.
   {
-    id: "roadNoise", label: "Veistøy", category: "environment", source: "svv-stoy", importance: "normal",
+    id: "roadNoise", label: "Veistøy (riks- og fylkesvei)", category: "environment", source: "svv-stoy", importance: "normal",
     table: "veistoy", find: { kind: "within" }, // data/scripts/veistoy.ts (Even): stoysone 'rød' | 'gul'
     read: (rows, address) => {
       if (!rows.length) {

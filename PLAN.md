@@ -72,7 +72,7 @@ Each role lists: what you own, your tasks in order, and when a task is done.
    First version is in. On fake rows: #1-like scores 40 (capped by quick clay), #4-like 92. Re-check with real data once Sverre's NVE and NGU tables land. Until then every address says "insufficient data", which is correct.
 6. **AI summary:** `GET /api/address/:id/summary` (see "AI summary" above). Use Even's fact-sentence rules. Cache in table `summaries`.
    *Done when:* the summary for all 5 test addresses mentions every real hazard and invents nothing.
-   First version is in (`api/src/summary.ts`, `GET /api/address/:id/summary`). It returns `text`, `aiGenerated`, and the `facts` behind it. Without `ANTHROPIC_API_KEY` it returns the fact sentences with `aiGenerated: false`. Fact sentences follow Even's `docs/FACTS.md`. Checked with real Haiku output on all 5 test addresses (2026-11-07): quick clay (#1) and red noise (#2, #3) come first, nothing invented. Re-check #2 once flood data lands. Cache key includes the prompt, so prompt changes regenerate.
+   First version is in (`api/src/summary.ts`, `GET /api/address/:id/summary`). It returns `text`, `aiGenerated`, and the `facts` behind it. Without `ANTHROPIC_API_KEY` it returns the fact sentences with `aiGenerated: false`. Fact sentences follow Even's `docs/FACTS.md`. Checked with real Haiku output on all 5 test addresses (2026-11-07): quick clay (#1) and red noise (#2, #3) come first, nothing invented. Flood (#2) and strategic noise checked too. Cache key includes the prompt, so prompt changes regenerate.
 7. **All the time:** review what lands on `main`, unblock people, and cut scope when time runs short.
 
 ### Sverre — data pipeline

@@ -85,6 +85,10 @@ const RULES: Record<string, Rule> = {
       : d.value === "gul"
         ? [rankOf(d, 3), "Adressen ligger i gul støysone fra vei, med 55–65 dB"]
         : [5, "Adressen ligger ikke i en støysone fra riks- eller fylkesvei"],
+  roadNoiseStrategic: (d) => [
+    rankOf(d, Number(d.value) >= 55 ? 4 : 6),
+    `Adressen har beregnet veistøy på ${d.display} i det strategiske støykartet`,
+  ],
   pollutedGround: (d) =>
     d.warning
       ? [rankOf(d, 3), `Det er registrert forurenset grunn ${d.value} meter fra adressen`]
