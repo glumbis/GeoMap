@@ -386,6 +386,9 @@ h3 { font-size: 13pt; margin: 7mm 0 2.5mm; font-weight: 600; border-top: 1px sol
 h3.mini { font-size: 11pt; margin-top: 5mm; }
 p { margin: 0 0 2mm; }
 .page { break-before: page; }
+/* Nothing may hang below a section's last element: even 1 px spilled over a forced page break makes an empty page. */
+.page > :last-child, .page > :last-child > :last-child { margin-bottom: 0 !important; padding-bottom: 0 !important; }
+h2 + h3 { border-top: 0; padding-top: 0; margin-top: 3mm; } /* no double rule under a section title */
 .kicker { text-transform: uppercase; letter-spacing: .14em; font-size: 7.5pt; font-weight: 600; color: ${C.teal}; margin: 0 0 1mm; }
 .lead { color: ${C.muted}; margin-bottom: 3mm; }
 .note { color: ${C.muted}; font-size: 8pt; margin-top: 2mm; }
@@ -436,7 +439,7 @@ p { margin: 0 0 2mm; }
 .w-cat { color: ${C.muted}; font-size: 8pt; }
 
 /* summary */
-.summary { font-size: 11.5pt; line-height: 1.6; }
+.summary { font-size: 11pt; line-height: 1.55; }
 .facts { padding-left: 5mm; margin: 0; } .facts li { margin-bottom: 1mm; }
 
 /* bars and tables */
@@ -445,7 +448,7 @@ p { margin: 0 0 2mm; }
 .bar.empty { background: repeating-linear-gradient(90deg, ${C.line} 0 3px, transparent 3px 6px); }
 table { width: 100%; border-collapse: collapse; }
 th { text-align: left; font-size: 7pt; text-transform: uppercase; letter-spacing: .08em; color: ${C.muted}; font-weight: 600; padding: 1mm 0; border-bottom: 1px solid ${C.ink}; }
-td { padding: 2mm 0; border-bottom: 1px solid ${C.line}; vertical-align: middle; }
+td { padding: 1.6mm 0; border-bottom: 1px solid ${C.line}; vertical-align: middle; }
 .cats td:first-child { width: 38%; } .cats .barcol { width: 40%; padding: 0 5mm; } .cats .score { font-size: 14pt; }
 .capnote { color: ${C.bad}; }
 .plain td { font-size: 8.5pt; padding: 1.4mm 2mm 1.4mm 0; }
