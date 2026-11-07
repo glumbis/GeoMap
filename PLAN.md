@@ -68,8 +68,8 @@ Scores now: #4 Grevlingåsen 75, #5 Holmenkollveien 75, #2 Rælingen 65, #3 Sand
 
 What the demo still needs, most important first:
 1. **Erik:** never call a capped score "God". In `web/src/app/address.ts` `scoreWord()`, when `rating.cappedBy` is present, show the cap reason instead of the word (rule in `docs/PROFILE.md` → "What the overall score means").
-2. **Erik:** show the AI summary on the address page (`GET /api/address/<id>/summary`, label "AI-generert" only when `aiGenerated` is true).
-3. **Erik:** ~~quick clay and flood on the map~~ done (`web/src/features/hazards.ts`). Still open: road noise `/api/veistoy` and `/api/stoy_strategisk`.
+2. ~~**Erik:** show the AI summary on the address page (`GET /api/address/<id>/summary`, label "AI-generert" only when `aiGenerated` is true).~~ Done (`web/src/app/summary.ts`).
+3. **Erik:** ~~quick clay and flood on the map~~ done (`web/src/features/hazards.ts`), plus flood low points, rockfall, debris slides, avalanches, radon, soil and bedrock in the "Kartlag" panel. Still open: road noise `/api/veistoy` and `/api/stoy_strategisk`.
 4. **Erik:** search misses addresses. It asks Geonorge for 50 hits nationwide, then keeps Oslo/Akershus, so common street names give "no results". Geonorge filters on only one `kommunenummer` per request. Fix that works today: `treffPerSide=1000` plus `filtrer=adresser.adressetekst,adresser.kommunenummer,adresser.adressekode,adresser.nummer,adresser.bokstav,adresser.postnummer,adresser.poststed,adresser.kommunenavn,adresser.objtype` (about 0.5 s), then filter as now.
 5. **Erik:** show "Ikke kartlagt her" (value `ikkeKartlagt`, effect neutral) as neutral grey, never green.
 6. **Sverre + Even:** check radon and soil type for the 5 test addresses against NGU's own map (radon: geo.ngu.no aktsomhetskart, soil: løsmassekart) and write the result in `docs/TEST_ADDRESSES.md`. The test notes say this is not checked yet.

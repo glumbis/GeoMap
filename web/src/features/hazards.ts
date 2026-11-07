@@ -2,26 +2,37 @@ import { Popup, type ExpressionSpecification, type GeoJSONSource, type Map, type
 import { cssVar, h } from "../app/dom";
 import "./hazards.css";
 
-// NVE hazard zones on the address map: quick clay (GET /api/nve_kvikkleire) and flood zones (GET /api/flomsoner),
-// plus the "Kartlag" panel to switch them on and off. Both tables are large, so we fetch only the current view,
-// refetch on moveend (debounced), and only from MIN_ZOOM and closer.
+// Hazard and ground layers on the address map, plus the "Kartlag" panel to switch them on and off.
+// Naturfare (NVE): quick clay, flood, rockfall, debris slides, snow avalanches. Start ON.
+// Grunn og geologi (NGU): radon, soil, bedrock. They cover everything, so they start OFF.
+// The tables are large: we fetch only the current view, refetch on moveend (debounced), and only from MIN_ZOOM in.
+// To add a layer: one entry in layerGroups(). Map layers, panel row, legend and popup are built from it.
 
 const MIN_ZOOM = 11;
 const LIMIT = 1000;
 const FILL_OPACITY = 0.3;
 
-type LayerId = "kvikkleire" | "flom";
-type Cls = { label: string; color: string };
-type HazardLayer = {
-  id: LayerId;
+type Cls = { label: string; color: string; hatched?: boolean };
+type MapLayer = {
+  id: string;
   label: string;
   endpoint: string;
+  on: boolean;
   classes: Cls[];
-  fillColor: ExpressionSpecification;
-  lineColor?: ExpressionSpecification;
+  fillColor: ExpressionSpecification | string;
+  lineColor?: ExpressionSpecification | string;
+  fillOpacity?: ExpressionSpecification;
+  /** Features matching this get a diagonal hatch on top, in hatchColor. */
+  hatch?: { filter: ExpressionSpecification; color: string };
   filter?: ExpressionSpecification;
   sortKey?: ExpressionSpecification;
+  /** Thinner, fainter outlines for layers made of many small polygons. */
+  faintLines?: boolean;
+  /** Which of several overlapping hits to show in the popup (default: the top one). */
+  pick?: (hits: MapGeoJSONFeature[]) => MapGeoJSONFeature;
+  facts: (f: MapGeoJSONFeature) => HTMLElement;
 };
+type Group = { title: string; layers: MapLayer[] };
 
 /** Mix two hex colours: t = 0 gives a, t = 1 gives b. */
 function mix(a: string, b: string, t: number): string {
@@ -34,15 +45,24 @@ function mix(a: string, b: string, t: number): string {
   return "#" + ca.map((v, i) => Math.round(v + (cb[i] - v) * t).toString(16).padStart(2, "0")).join("");
 }
 
-function hazardLayers(): HazardLayer[] {
+const str = (key: string): ExpressionSpecification => ["to-string", ["get", key]];
+const isTrue = (key: string): ExpressionSpecification => ["==", ["get", key], true];
+
+function layerGroups(): Group[] {
   const bad = cssVar("--bad");
   const warn = cssVar("--warn");
   const surface = cssVar("--surface");
   const teal = cssVar("--teal");
+  const navy = cssVar("--navy");
+  const gold = cssVar("--gold");
   const water = cssVar("--map-water");
+  const unknown = cssVar("--unknown");
 
+  // ---- Quick clay ----
   const clay = { hoy: bad, middels: warn, lav: mix(warn, surface, 0.45) };
-  // Darker for the more frequent floods: 10-year is teal, 200-year is the map water colour.
+  const faregrad: ExpressionSpecification = ["downcase", str("faregrad")];
+
+  // ---- Flood: darker for the more frequent floods, 10-year teal, 200-year the map water colour ----
   const flood: [number, string][] = [
     [10, teal],
     [20, mix(teal, water, 0.25)],
@@ -50,40 +70,186 @@ function hazardLayers(): HazardLayer[] {
     [100, mix(teal, water, 0.7)],
     [200, mix(teal, water, 0.85)],
   ];
+  const interval: ExpressionSpecification = ["to-number", ["get", "gjentaksintervall"], 0];
   const floodStep = (colors: [number, string][]): ExpressionSpecification => [
     "step",
     interval,
     colors[0][1],
     ...colors.slice(1).flatMap(([years, color]) => [years, color] as [number, string]),
   ];
-  const faregrad: ExpressionSpecification = ["downcase", ["to-string", ["get", "faregrad"]]];
-  const interval: ExpressionSpecification = ["to-number", ["get", "gjentaksintervall"], 0];
+
+  // ---- Rockfall, debris slides, avalanches ----
+  const rock = { release: mix(bad, navy, 0.3), runout: mix(bad, surface, 0.35) };
+  const debris = mix(gold, navy, 0.3);
+  const snow = { forest: navy, open: mix(navy, surface, 0.5) };
+
+  // ---- Radon ----
+  const radon = { lav: mix(warn, surface, 0.55), middels: warn, hoy: bad, megetHoy: mix(bad, navy, 0.35) };
+  const aktsomhet = str("aktsomhet");
 
   return [
     {
-      id: "kvikkleire",
-      label: "Kvikkleire",
-      endpoint: "/api/nve_kvikkleire",
-      classes: [
-        { label: "Høy faregrad", color: clay.hoy },
-        { label: "Middels faregrad", color: clay.middels },
-        { label: "Lav faregrad", color: clay.lav },
+      title: "Naturfare",
+      layers: [
+        {
+          id: "kvikkleire",
+          label: "Kvikkleire",
+          endpoint: "/api/nve_kvikkleire",
+          on: true,
+          classes: [
+            { label: "Høy faregrad", color: clay.hoy },
+            { label: "Middels faregrad", color: clay.middels },
+            { label: "Lav faregrad", color: clay.lav },
+          ],
+          fillColor: ["match", faregrad, "høy", clay.hoy, "middels", clay.middels, clay.lav],
+          filter: ["match", faregrad, ["høy", "middels", "lav"], true, false],
+          sortKey: ["match", faregrad, "høy", 3, "middels", 2, 1], // highest hazard on top
+          facts: clayFacts,
+        },
+        {
+          id: "flom",
+          label: "Flom",
+          endpoint: "/api/flomsoner",
+          on: true,
+          classes: [
+            ...flood.map(([years, color]) => ({ label: `${years}-årsflom`, color })),
+            { label: "Lavpunkt", color: teal, hatched: true },
+          ],
+          fillColor: floodStep(flood),
+          // The pale zones need a darker outline to read on the cream land and the blue water.
+          lineColor: floodStep(flood.map(([years, color]) => [years, mix(color, teal, 0.5)])),
+          // Low points (below flood level, not directly connected to the river): lighter fill plus a hatch.
+          fillOpacity: ["case", isTrue("lowPoint"), FILL_OPACITY / 2, FILL_OPACITY],
+          hatch: { filter: isTrue("lowPoint"), color: teal },
+          sortKey: ["-", 0, interval], // larger return periods first, so the 10-year zone ends up on top
+          pick: (hits) => [...hits].sort((a, b) => Number(a.properties.gjentaksintervall) - Number(b.properties.gjentaksintervall))[0],
+          facts: floodFacts,
+        },
+        {
+          id: "steinsprang",
+          label: "Steinsprang",
+          endpoint: "/api/steinsprang",
+          on: true,
+          classes: [
+            { label: "Utløsning (steinen løsner)", color: rock.release },
+            { label: "Utløp (steinen lander)", color: rock.runout },
+          ],
+          fillColor: ["match", str("zone"), "utløsning", rock.release, rock.runout],
+          sortKey: ["match", str("zone"), "utløsning", 2, 1],
+          facts: (f) =>
+            item(
+              f.properties.zone === "utløsning" ? "Steinsprang, utløsningsområde" : "Steinsprang, utløpsområde",
+              f.properties.zone === "utløsning" ? "Her kan stein løsne fra fjellet." : "Her kan stein som løsner, lande.",
+              "Aktsomhetsområde: mulig fare, ikke kartlagt i detalj.",
+              f.properties.quality ? `Kvalitet på kartet: ${String(f.properties.quality).toLowerCase()}` : null,
+              sourceLine(f),
+            ),
+        },
+        {
+          id: "jordflomskred",
+          label: "Jord- og flomskred",
+          endpoint: "/api/jordflomskred",
+          on: true,
+          classes: [{ label: "Aktsomhetsområde", color: debris }],
+          fillColor: debris,
+          facts: (f) =>
+            item(
+              "Jord- og flomskred",
+              "Område der jord, stein og vann kan skli ut, ofte etter mye regn.",
+              "Aktsomhetsområde: mulig fare, ikke kartlagt i detalj.",
+              sourceLine(f),
+            ),
+        },
+        {
+          id: "snoskred",
+          label: "Snøskred",
+          endpoint: "/api/snoskred",
+          on: true,
+          classes: [
+            { label: "Med dagens skog", color: snow.forest },
+            { label: "Bare uten skog", color: snow.open },
+          ],
+          fillColor: ["case", isTrue("forestEffect"), snow.forest, snow.open],
+          sortKey: ["case", isTrue("forestEffect"), 2, 1],
+          facts: (f) =>
+            item(
+              "Snøskred",
+              f.properties.forestEffect === true
+                ? "Snøskred kan nå hit selv med skogen som står her i dag."
+                : "Snøskred kan nå hit bare hvis skogen blir borte.",
+              "Aktsomhetsområde: mulig fare, ikke kartlagt i detalj.",
+              sourceLine(f),
+            ),
+        },
       ],
-      fillColor: ["match", faregrad, "høy", clay.hoy, "middels", clay.middels, clay.lav],
-      filter: ["match", faregrad, ["høy", "middels", "lav"], true, false],
-      // Highest hazard on top.
-      sortKey: ["match", faregrad, "høy", 3, "middels", 2, 1],
     },
     {
-      id: "flom",
-      label: "Flom",
-      endpoint: "/api/flomsoner",
-      classes: flood.map(([years, color]) => ({ label: `${years}-årsflom`, color })),
-      fillColor: floodStep(flood),
-      // The pale zones need a darker outline to read on the cream land and the blue water.
-      lineColor: floodStep(flood.map(([years, color]) => [years, mix(color, teal, 0.5)])),
-      // Larger return periods first, so the 10-year zone ends up on top.
-      sortKey: ["-", 0, interval],
+      title: "Grunn og geologi",
+      layers: [
+        {
+          id: "radon",
+          label: "Radon",
+          endpoint: "/api/radon",
+          on: false,
+          classes: [
+            { label: "Lav", color: radon.lav },
+            { label: "Middels", color: radon.middels },
+            { label: "Høy", color: radon.hoy },
+            { label: "Meget høy", color: radon.megetHoy },
+          ],
+          fillColor: ["match", aktsomhet, "megetHøy", radon.megetHoy, "høy", radon.hoy, "middels", radon.middels, radon.lav],
+          facts: (f) =>
+            item(
+              `Radon, aktsomhet ${radonLabel(String(f.properties.aktsomhet ?? f.properties.name ?? "")).toLowerCase()}`,
+              "Hvor sannsynlig det er med mye radon i inneluften. Bare en måling i boligen gir svaret.",
+              f.properties.method ? `Metode: ${String(f.properties.method)}` : null,
+              sourceLine(f),
+            ),
+        },
+        {
+          id: "losmasser",
+          label: "Løsmasser",
+          endpoint: "/api/losmasser",
+          on: false,
+          classes: [
+            { label: "Marin leire", color: warn },
+            { label: "Andre løsmasser", color: unknown },
+          ],
+          fillColor: ["case", isTrue("marineClay"), warn, unknown],
+          sortKey: ["case", isTrue("marineClay"), 2, 1],
+          faintLines: true,
+          facts: (f) =>
+            item(
+              f.properties.marineClay === true ? "Løsmasser: marin leire" : "Løsmasser",
+              f.properties.name ? String(f.properties.name) : null,
+              f.properties.marineClay === true ? "Leire avsatt i havet. Det er her kvikkleire kan finnes." : null,
+              sourceLine(f),
+            ),
+        },
+        {
+          id: "berggrunn",
+          label: "Berggrunn",
+          endpoint: "/api/berggrunn",
+          on: false,
+          classes: [
+            { label: "Bergart (NGUs farger)", color: gold },
+            { label: "Alunskifer", color: bad, hatched: true },
+          ],
+          // NGU's own map colour per rock type: the one exception to the "tokens only" rule.
+          fillColor: ["to-color", ["coalesce", ["get", "color"], unknown]],
+          hatch: { filter: isTrue("alumShale"), color: bad },
+          faintLines: true,
+          facts: (f) =>
+            item(
+              f.properties.alumShale === true ? "Berggrunn: alunskifer" : "Berggrunn",
+              f.properties.name ? String(f.properties.name) : null,
+              f.properties.alumShale === true
+                ? "Alunskifer kan svelle og skade grunnmuren, og gir sur avrenning når den graves opp."
+                : null,
+              sourceLine(f),
+            ),
+        },
+      ],
     },
   ];
 }
@@ -91,37 +257,22 @@ function hazardLayers(): HazardLayer[] {
 const emptyData = { type: "FeatureCollection" as const, features: [] };
 
 export default function (map: Map) {
-  const layers = hazardLayers();
-  const visible: Record<LayerId, boolean> = { kvikkleire: true, flom: true };
-  const aborts: Partial<Record<LayerId, AbortController>> = {};
+  const groups = layerGroups();
+  const layers = groups.flatMap((g) => g.layers);
+  const visible: Record<string, boolean> = Object.fromEntries(layers.map((L) => [L.id, L.on]));
+  const aborts: Record<string, AbortController | undefined> = {};
+  const status: Record<string, HTMLElement> = {};
 
-  // Flood below quick clay: quick clay is the sharper warning.
-  for (const L of [...layers].reverse()) {
-    map.addSource(`hz-${L.id}`, { type: "geojson", data: emptyData });
-    map.addLayer({
-      id: `hz-${L.id}-fill`,
-      type: "fill",
-      source: `hz-${L.id}`,
-      ...(L.filter ? { filter: L.filter } : {}),
-      layout: L.sortKey ? { "fill-sort-key": L.sortKey } : {},
-      paint: { "fill-color": L.fillColor, "fill-opacity": FILL_OPACITY },
-    });
-    map.addLayer({
-      id: `hz-${L.id}-line`,
-      type: "line",
-      source: `hz-${L.id}`,
-      ...(L.filter ? { filter: L.filter } : {}),
-      layout: L.sortKey ? { "line-sort-key": L.sortKey } : {},
-      paint: { "line-color": L.lineColor ?? L.fillColor, "line-width": 1, "line-opacity": 0.9 },
-    });
-  }
+  // Bottom to top: ground layers first, quick clay last (the sharpest warning).
+  for (const L of [...layers].reverse()) addMapLayers(map, L, visible[L.id]);
   const fillIds = layers.map((L) => `hz-${L.id}-fill`);
 
   // ---------- Data ----------
-  async function load(L: HazardLayer) {
+  async function load(L: MapLayer) {
     aborts[L.id]?.abort();
     const source = map.getSource<GeoJSONSource>(`hz-${L.id}`);
     if (!source) return;
+    setStatus(L, "");
     if (!visible[L.id] || map.getZoom() < MIN_ZOOM) {
       source.setData(emptyData);
       return;
@@ -132,15 +283,30 @@ export default function (map: Map) {
     aborts[L.id] = ctrl;
     try {
       const res = await fetch(`${L.endpoint}?bbox=${bbox}&limit=${LIMIT}`, { signal: ctrl.signal });
+      if (res.status === 503) {
+        // Table not loaded yet on this machine (npm run ingest <name>).
+        setStatus(L, "Ikke tilgjengelig");
+        source.setData(emptyData);
+        return;
+      }
       if (!res.ok) {
         console.warn(`${L.id}: HTTP ${res.status}`, await res.text());
         return;
       }
       const data = await res.json();
-      if (!ctrl.signal.aborted) source.setData(data);
+      if (ctrl.signal.aborted) return;
+      source.setData(data);
+      if (Array.isArray(data.features) && data.features.length >= LIMIT) setStatus(L, "Zoom inn for alle");
     } catch (err) {
       if ((err as Error).name !== "AbortError") console.warn(`${L.id}: fetch failed`, err);
     }
+  }
+
+  function setStatus(L: MapLayer, text: string) {
+    const el = status[L.id];
+    if (!el) return;
+    el.textContent = text;
+    el.hidden = !text;
   }
 
   const loadAll = () => {
@@ -148,11 +314,10 @@ export default function (map: Map) {
     updateZoomNote();
   };
   let timer: ReturnType<typeof setTimeout> | undefined;
-  const onMoveEnd = () => {
+  map.on("moveend", () => {
     clearTimeout(timer);
     timer = setTimeout(loadAll, 250);
-  };
-  map.on("moveend", onMoveEnd);
+  });
 
   // ---------- Popup ----------
   const popup = new Popup({ className: "hz-popup", maxWidth: "18rem" });
@@ -160,12 +325,12 @@ export default function (map: Map) {
   map.on("click", (e) => {
     const hits = map.queryRenderedFeatures(e.point, { layers: fillIds.filter((id) => map.getLayer(id)) });
     if (!hits.length) return;
-    // One line per layer: the most serious zone of each (top of the sort order).
-    const clay = hits.find((f) => f.layer.id === "hz-kvikkleire-fill");
-    const floods = hits.filter((f) => f.layer.id === "hz-flom-fill");
-    const flood = floods.sort((a, b) => Number(a.properties.gjentaksintervall) - Number(b.properties.gjentaksintervall))[0];
-    const body = h("div", { class: "hz-popup__body" }, clay && clayFacts(clay), flood && floodFacts(flood));
-    popup.setLngLat(e.lngLat).setDOMContent(body).addTo(map);
+    // One block per layer, in panel order: the most serious zone of each.
+    const blocks = layers.flatMap((L) => {
+      const mine = hits.filter((f) => f.layer.id === `hz-${L.id}-fill`);
+      return mine.length ? [L.facts(L.pick ? L.pick(mine) : mine[0])] : [];
+    });
+    popup.setLngLat(e.lngLat).setDOMContent(h("div", { class: "hz-popup__body" }, ...blocks)).addTo(map);
   });
   for (const id of fillIds) {
     map.on("mouseenter", id, () => (map.getCanvas().style.cursor = "pointer"));
@@ -180,35 +345,47 @@ export default function (map: Map) {
     "section",
     { class: "hz-panel", "aria-labelledby": "hz-panel-title" },
     h("h2", { class: "hz-panel__title", id: "hz-panel-title" }, "Kartlag"),
-    h(
-      "fieldset",
-      { class: "hz-panel__group" },
-      h("legend", { class: "hz-panel__group-title" }, "Naturfare"),
-      ...layers.map((L) => layerRow(L)),
+    ...groups.map((g) =>
+      h(
+        "fieldset",
+        { class: "hz-panel__group" },
+        h("legend", { class: "hz-panel__group-title" }, g.title),
+        ...g.layers.map((L) => layerRow(L)),
+      ),
     ),
     zoomNote,
   );
   container.append(panel);
 
-  function layerRow(L: HazardLayer): HTMLElement {
+  function layerRow(L: MapLayer): HTMLElement {
     const input = h("input", { type: "checkbox", id: `hz-toggle-${L.id}`, checked: visible[L.id] });
     input.addEventListener("change", () => {
       visible[L.id] = input.checked;
       const v = input.checked ? "visible" : "none";
-      map.setLayoutProperty(`hz-${L.id}-fill`, "visibility", v);
-      map.setLayoutProperty(`hz-${L.id}-line`, "visibility", v);
+      for (const part of ["fill", "line", "hatch"]) {
+        if (map.getLayer(`hz-${L.id}-${part}`)) map.setLayoutProperty(`hz-${L.id}-${part}`, "visibility", v);
+      }
       if (!input.checked) popup.remove();
       void load(L);
     });
-    const legend = h(
-      "ul",
-      { class: "hz-panel__legend", "aria-label": `Klasser for ${L.label.toLowerCase()}` },
-      ...L.classes.map((c) => h("li", {}, swatch(c.color), c.label)),
-    );
+    status[L.id] = h("span", { class: "hz-panel__status", hidden: true });
+    // A single-class layer needs no legend: the swatch in the row says it all.
+    const legend =
+      L.classes.length > 1
+        ? h(
+            "ul",
+            {
+              // Long lists of short labels go in two columns.
+              class: L.classes.length > 3 ? "hz-panel__legend hz-panel__legend--cols" : "hz-panel__legend",
+              "aria-label": `Klasser for ${L.label.toLowerCase()}`,
+            },
+            ...L.classes.map((c) => h("li", {}, swatch(c), c.label)),
+          )
+        : null;
     return h(
       "div",
       { class: "hz-panel__layer" },
-      h("label", { class: "hz-panel__row", for: `hz-toggle-${L.id}` }, input, swatch(L.classes[0].color), L.label),
+      h("label", { class: "hz-panel__row", for: `hz-toggle-${L.id}` }, input, swatch(L.classes[0]), L.label, status[L.id]),
       legend,
     );
   }
@@ -226,31 +403,106 @@ export default function (map: Map) {
   loadAll();
 }
 
-function swatch(color: string): HTMLElement {
-  const el = h("span", { class: "hz-swatch", "aria-hidden": "true" });
-  el.style.setProperty("--hz-color", color);
+function addMapLayers(map: Map, L: MapLayer, on: boolean) {
+  const visibility = on ? "visible" : "none";
+  const filter = L.filter ? { filter: L.filter } : {};
+  map.addSource(`hz-${L.id}`, { type: "geojson", data: emptyData });
+  map.addLayer({
+    id: `hz-${L.id}-fill`,
+    type: "fill",
+    source: `hz-${L.id}`,
+    ...filter,
+    layout: { visibility, ...(L.sortKey ? { "fill-sort-key": L.sortKey } : {}) },
+    paint: { "fill-color": L.fillColor, "fill-opacity": L.fillOpacity ?? FILL_OPACITY },
+  });
+  if (L.hatch) {
+    const image = `hz-hatch-${L.id}`;
+    if (!map.hasImage(image)) map.addImage(image, hatchImage(L.hatch.color), { pixelRatio: 2 });
+    map.addLayer({
+      id: `hz-${L.id}-hatch`,
+      type: "fill",
+      source: `hz-${L.id}`,
+      filter: L.filter ? ["all", L.filter, L.hatch.filter] : L.hatch.filter,
+      layout: { visibility },
+      paint: { "fill-pattern": image, "fill-opacity": 0.8 },
+    });
+  }
+  map.addLayer({
+    id: `hz-${L.id}-line`,
+    type: "line",
+    source: `hz-${L.id}`,
+    ...filter,
+    layout: { visibility, ...(L.sortKey ? { "line-sort-key": L.sortKey } : {}) },
+    paint: {
+      "line-color": L.lineColor ?? L.fillColor,
+      "line-width": L.faintLines ? 0.5 : 1,
+      "line-opacity": L.faintLines ? 0.6 : 0.9,
+    },
+  });
+}
+
+/** Diagonal stripes on transparent, drawn at 2x for sharp lines. */
+function hatchImage(color: string): ImageData {
+  const size = 16;
+  const ctx = document.createElement("canvas").getContext("2d")!;
+  ctx.canvas.width = ctx.canvas.height = size;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.lineCap = "square";
+  ctx.beginPath();
+  // One stripe through the middle plus the two corner pieces, so the tiles join seamlessly.
+  ctx.moveTo(0, size);
+  ctx.lineTo(size, 0);
+  ctx.moveTo(-size / 2, size / 2);
+  ctx.lineTo(size / 2, -size / 2);
+  ctx.moveTo(size / 2, size * 1.5);
+  ctx.lineTo(size * 1.5, size / 2);
+  ctx.stroke();
+  return ctx.getImageData(0, 0, size, size);
+}
+
+function swatch(c: Cls): HTMLElement {
+  const el = h("span", { class: c.hatched ? "hz-swatch hz-swatch--hatched" : "hz-swatch", "aria-hidden": "true" });
+  el.style.setProperty("--hz-color", c.color);
   return el;
+}
+
+function item(title: string, ...lines: (string | HTMLElement | null)[]): HTMLElement {
+  return h(
+    "div",
+    { class: "hz-popup__item" },
+    h("strong", {}, title),
+    ...lines.map((l) => (typeof l === "string" ? h("span", {}, l) : l)),
+  );
+}
+
+function sourceLine(f: MapGeoJSONFeature): HTMLElement | null {
+  return f.properties.source ? h("span", { class: "hz-popup__source" }, `Kilde: ${String(f.properties.source)}`) : null;
+}
+
+function radonLabel(a: string): string {
+  return ({ lav: "Lav", middels: "Middels", høy: "Høy", megetHøy: "Meget høy" } as Record<string, string>)[a] ?? a;
 }
 
 function clayFacts(f: MapGeoJSONFeature): HTMLElement {
   const p = f.properties;
-  const grad = String(p.faregrad ?? "").toLowerCase();
   const link =
     typeof p.reportUrl === "string" && /^https?:\/\//.test(p.reportUrl)
       ? h("a", { href: p.reportUrl, target: "_blank", rel: "noopener" }, "Les rapporten hos NVE")
       : null;
-  return h(
-    "div",
-    { class: "hz-popup__item" },
-    h("strong", {}, `Kvikkleire, faregrad ${grad}`),
-    p.name ? h("span", {}, String(p.name)) : null,
-    p.konsekvens ? h("span", {}, `Konsekvens: ${String(p.konsekvens).toLowerCase()}`) : null,
-    p.risikoklasse !== undefined && p.risikoklasse !== null ? h("span", {}, `Risikoklasse ${p.risikoklasse} av 5`) : null,
+  return item(
+    `Kvikkleire, faregrad ${String(p.faregrad ?? "").toLowerCase()}`,
+    p.name ? String(p.name) : null,
+    p.konsekvens ? `Konsekvens: ${String(p.konsekvens).toLowerCase()}` : null,
+    p.risikoklasse !== undefined && p.risikoklasse !== null ? `Risikoklasse ${p.risikoklasse} av 5` : null,
     link,
   );
 }
 
 function floodFacts(f: MapGeoJSONFeature): HTMLElement {
   // The name is only "20-årsflom (fs002_37)": the interval plus an internal id, so we leave it out.
-  return h("div", { class: "hz-popup__item" }, h("strong", {}, `Flomsone, ${f.properties.gjentaksintervall}-årsflom`));
+  return item(
+    `Flomsone, ${f.properties.gjentaksintervall}-årsflom`,
+    f.properties.lowPoint === true ? "Lavpunkt: lavere enn flomnivået, men ikke direkte knyttet til elva." : null,
+  );
 }
