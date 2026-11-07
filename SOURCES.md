@@ -42,6 +42,12 @@ Terms for all Kartverket free data: CC BY 4.0, credit "© Kartverket". Details i
   - Columns: `id` (NVE skredomrid), `name`, `faregrad` (Lav/Middels/Høy/Ingen), `konsekvens`, `risikoklasse` (0–5), `kommune`, `reportUrl`, `source`, `geom`.
   - Checked: test address #1 is in "Myraløkka" (Høy, risikoklasse 5), backup Kjelsåsveien 162 is in "Kjelsås" (Middels), and #2–#5 are in no zone.
   - Licence NLOD, credit "NVE". Only mapped zones: outside a zone can mean "not mapped".
+- **NVE Flomsoner** (see Even's entry below for the source) → table `flomsoner`, script `data/scripts/flomsoner.ts`, API `/api/flomsoner` (2026-11-07).
+  - 10, 20, 50, 100 and 200-year zones (layers 13–17 of `Flomsoner2`), flooded land only (no river/lake polygons). Left out: 500/1000-year and climate-adjusted zones.
+  - 2427 rows, one per NVE part (not merged: merged zones were up to 374k vertices). Outlines simplified to ~1 m.
+  - Columns: `id`, `name`, `flomsoneId`, `gjentaksintervall` (years), `lowPoint` (lavpunkt: below flood level, not directly connected to the river), `statusDate`, `source`, `geom`.
+  - Checked: test address #2 is in the 200-year zone `fs002_37` and not in the 10-year zone. Backup Strandvegen 81 is in both the 20- and 200-year zone (confirmed against NVE). #1, #3, #4 and #5 are in no zone.
+  - Licence NLOD, credit "NVE". Only mapped rivers: outside a zone can mean "not mapped".
 
 - **Name:** Eiendom REST-API (property lookup)
   - Owner: Kartverket

@@ -168,12 +168,15 @@ export const DATA_POINTS: DataPoint[] = [
   },
   {
     id: "flood200", label: "Flomsone (200-årsflom)", category: "hazards", source: "nve-flomsoner", importance: "critical",
-    table: "flomsoner", find: { kind: "within" }, // proposed column: gjentaksintervall (years, e.g. 10, 200)
+    table: "flomsoner", find: { kind: "within" }, // data/scripts/flomsoner.ts (Sverre): gjentaksintervall (10/20/50/100/200), lowPoint
     read: (rows) => {
       if (!rows.length) return { value: false, display: "Ikke i kartlagt flomsone", effect: "good" };
       const years = Math.min(...rows.map((r) => Number(r.gjentaksintervall) || 200));
+      // lavpunkt: below the flood level but not directly connected to the river
+      const lowPoint = rows.filter((r) => Number(r.gjentaksintervall) === years).every((r) => r.lowPoint === true);
       return {
-        value: years, unit: "år", display: `I ${years}-årsflomsone`, effect: "bad", score: years <= 10 ? 0 : 20,
+        value: years, unit: "år", display: `I ${years}-årsflomsone${lowPoint ? " (lavpunkt)" : ""}`, effect: "bad", score: years <= 10 ? 0 : 20,
+        ...(lowPoint && { explanation: "Lavpunkt: området ligger lavere enn flomvannstanden, men har ikke direkte forbindelse til elva. Det kan likevel bli oversvømt gjennom kummer, rør eller grunnvann." }),
         warning: { severity: years <= 10 ? "high" : "medium", text: `Ligger i ${years}-årsflomsone` },
       };
     },
