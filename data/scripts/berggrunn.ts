@@ -34,7 +34,9 @@ const codes = [...sld.matchAll(/<se:Rule>([\s\S]*?)<\/se:Rule>/g)].flatMap(([, r
   const code = rule.match(/PropertyIsEqualTo>\s*<ogc:PropertyName>hovedbergart<\/ogc:PropertyName>\s*<ogc:Literal>\s*(\d+)/);
   const name = rule.match(/<se:Name>([^<]+)<\/se:Name>/);
   const color = rule.match(/name="fill">(#[0-9a-fA-F]{6})/);
-  return code && name ? [{ code: Number(code[1]), name: name[1].trim(), color: color?.[1] ?? null }] : [];
+  // NGU's style file spells 426 "Glimmersgneis"; their map service (BerggrunnWMS3) says "Glimmergneis".
+  const fixed = name?.[1].trim().replace(/^Glimmersgneis$/, "Glimmergneis");
+  return code && fixed ? [{ code: Number(code[1]), name: fixed, color: color?.[1] ?? null }] : [];
 });
 if (codes.length < 50) throw new Error(`Rock code list looks wrong: ${codes.length} codes`);
 const codesFile = rawPath("berggrunn_codes.json");

@@ -43,7 +43,22 @@ Checked 2026-11-07 at each address point, compared with what the app shows.
 
 - Soil: NGU WMS `https://geo.ngu.no/mapserver/LosmasserWMS2`, layer `Losmasse_flate` (GetFeatureInfo, scale 1:50 000). Independent of the file we ingest (`LosmasseLokalt.gpkg`).
 - Radon: NGU API `https://geo.ngu.no/api/features/radonaktsomhet/collections/radonaktsomhet/items` ("Radon aktsomhet versjon 2", September 2026). This is the same service `radon.ts` ingests, so it confirms the ingest, not the data. NGU's older radon WMS (`RadonWMS2`, layer `Radon_aktsomhet`) still shows the old classes ("Moderat til lav", "Usikker") and does not match version 2: don't use it to check.
-- Not checked: whether any point lies close to a polygon boundary.
+
+### Independent check of radon and bedrock, and distance to the nearest edge (Sverre, 2026-11-07)
+
+Radon checked against NGU's map service **`RadonUranAktsomhetWMS`**, layer `Radon_aktsomhet` (GetFeatureInfo). It serves version 2 (`versjonId 2`) from a different server than the API we ingest, so this checks the data, not just the ingest. Bedrock (Sverre's `berggrunn`) checked against **`BerggrunnWMS3`**, layer `Berggrunn_lokal_hovedbergarter_fullzoom` (1:50 000). "Edge" is the distance from the address point to the boundary of the polygon it lies in, in our tables.
+
+| # | NGU radon (WMS, v2) | NGU bedrock (WMS) | Matches the app | Edge: radon / soil / bedrock |
+|---|---|---|---|---|
+| 1 | Meget høy | Kalkstein (321) | Yes, both | 2328 m / 59 m / **7 m** |
+| 2 | Middels | Glimmergneis (426) | Yes, both | 4624 m / 32 m / 1104 m |
+| 3 | Meget høy | Leirskifer (401) | Yes, both | 81 m / 34 m / 101 m |
+| 4 | Høy | Leirskifer (401) | Yes, both | 156 m / 182 m / 69 m |
+| 5 | Høy | Syenitt (107) | Yes, both | 116 m / 335 m / 142 m |
+
+- A 1:50 000 map line is only accurate to roughly ±25 m. **#1's bedrock (Kalkstein) is 7 m from a boundary, so treat it as uncertain** and don't make it a point in the demo. Every other value is at least 30 m inside its polygon, radon at least 80 m.
+- Alum shale example: Edelvoldveien 16, Asker (`3203-1386-16`). The app shows "Grafittskifer, med alunskifer". NGU's WMS gives Grafittskifer with the legend "Skifer, karbonholdig, med konkresjoner av stinkkalk (et. 1b - 3aß)". Those are the alum shale beds, which is what `alumShale` matches on.
+- Found while checking: NGU's style file spells rock 426 "Glimmersgneis", while their map service says "Glimmergneis". `berggrunn.ts` now uses the map service's spelling.
 
 ## Not checked yet
 
