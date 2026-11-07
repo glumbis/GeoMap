@@ -25,18 +25,19 @@ Three pages: the start page, the address page and the map page (`/kart`, full-wi
 
 ### 1. Start page (the first thing anyone sees)
 
-The start page should feel like the logo: a round window onto a soft, living map.
+The start page has two equal halves: an editorial search column on the left and an interactive map on the right.
 
-- **Background:** a live, interactive map opening on all of Oslo + Akershus (drag and scroll-zoom; no rotate or tilt). It pans slowly within the region after a few seconds without input and stops as soon as you touch it (`web/src/app/startmap.ts`). It is faded into the paper colour on the left so the content sits on calm paper. Outside the content blocks, a circular lens follows the cursor and shows a separate, synchronised map in full colour at a slightly closer zoom, inside a crisp ink ring. The lens is decorative, passes clicks through and is disabled for touch and reduced motion. When the cursor rests, a small label shows the place name (Geonorge stedsnavn). Clicking the map zooms in and offers "Sjekk nærmeste adresse". With "reduce motion" the map stands still and nothing animates.
-- **Centred, top to bottom:**
+- **Map on the right:** a live map confined to the right half, opening on all of mainland Norway, including the far north. It stays at that view until the user pans or zooms. Drag, scroll-zoom and zoom buttons work only inside this half; no map is drawn beneath the content. No rotation or tilt. A full-colour magnifying lens and place-name tip stay clipped to the map pane; the lens is disabled for touch and reduced motion. Clicking the map zooms in and offers "Sjekk nærmeste adresse". Address profiles still cover Oslo + Akershus only.
+- **Left column, top to bottom:**
   - The logo mark (ring turns into place once on load, then a thin gradient ring circles it slowly) next to the serif word mark "Omnium".
-  - A line saying who Omnium is for and what they get: "For " + audience + ": " + what, e.g. "For byggere: grunnforhold og løsmasser før du graver". 16 phrases (boligkjøpere, boligeiere, byggere, utbyggere, arkitekter, eiendomsmeglere, takstmenn, banker, forsikring, kommuneplanleggere, barnefamilier, leietakere, graveentreprenører, borettslag, journalister, studenter), each max ~55 characters and only about data we have or plan to have (no prices, no permits). The audience word is teal italic serif. The line fades to the next phrase every 3 s (200 ms fade, one line only). Screen readers get the full list once; with "reduce motion" the line stands still. CSS in `web/src/app/start.css`. The start page is left-aligned like a masthead, with the map fading in from the right.
-  - **One big search field** (40 rem wide). Placeholder: "Skriv inn en adresse".
+  - A line saying who Omnium is for and what they get: "For " + audience + ": " + what, e.g. "For byggere: grunnforhold og løsmasser før du graver". 16 phrases (boligkjøpere, boligeiere, byggere, utbyggere, arkitekter, eiendomsmeglere, takstmenn, banker, forsikring, kommuneplanleggere, barnefamilier, leietakere, graveentreprenører, borettslag, journalister, studenter), each max ~55 characters and only about data we have or plan to have (no prices, no permits). The audience word is teal italic serif. The line fades to the next phrase every few seconds and can wrap within the left column; space is reserved so the controls stay still. Screen readers get the full list once; with "reduce motion" the line stands still. CSS in `web/src/app/start.css`. The start page is left-aligned like a masthead on opaque paper.
+  - **One big search field** (fills the left column within its padding). Placeholder: "Skriv inn en adresse".
   - One short line under the field: "Alt offentlig tilgjengelig om en eiendom i Oslo og Akershus".
-- Autocomplete as you type, from Geonorge `https://ws.geonorge.no/adresser/v1/sok?sok=<text>&fuzzy=true&treffPerSide=50`.
+- Autocomplete as you type, from Geonorge `https://ws.geonorge.no/adresser/v1/sok?sok=<text>&fuzzy=true&treffPerSide=1000`.
   - Keep only `objtype` `Vegadresse` in Oslo (`0301`) and Akershus (`32xx`); Geonorge can't filter on several municipalities at once, so filter in the browser. Show at most 8.
   - Show street, number, postcode and place.
   - Arrow keys + Enter + Escape work. Debounce ~150 ms.
+  - Results appear in document flow below the input, in a bounded scrolling list. They move the map button down instead of overlapping it. The left column scrolls independently when needed; the right map stays in place.
 - One quiet secondary button under the field: "Gå til kartet →" (opens `/kart`). Content is left-aligned with generous space between the groups (logo, slogan, search + button, tagline). The blocks fade in one after another on load.
 
 ### 2. Address page (after picking an address)

@@ -107,7 +107,10 @@ export function createSearch(opts: { size: "large" | "compact"; onPick: (hit: Hi
   function setActive(i: number) {
     active = i;
     [...list.children].forEach((li, j) => li.classList.toggle("is-active", j === i));
-    if (i >= 0) input.setAttribute("aria-activedescendant", `search-opt-${i}`);
+    if (i >= 0) {
+      input.setAttribute("aria-activedescendant", `search-opt-${i}`);
+      list.children[i]?.scrollIntoView({ block: "nearest" });
+    }
   }
 
   function pick(i: number) {
@@ -135,13 +138,11 @@ export function createSearch(opts: { size: "large" | "compact"; onPick: (hit: Hi
   });
 
   input.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowDown" && hits.length) {
+    if ((e.key === "ArrowDown" || e.key === "ArrowUp") && hits.length) {
       e.preventDefault();
-      if (list.hidden) list.hidden = false;
-      setActive((active + 1) % hits.length);
-    } else if (e.key === "ArrowUp" && hits.length) {
-      e.preventDefault();
-      setActive(active <= 0 ? hits.length - 1 : active - 1);
+      list.hidden = false;
+      input.setAttribute("aria-expanded", "true");
+      setActive(e.key === "ArrowDown" ? (active + 1) % hits.length : active <= 0 ? hits.length - 1 : active - 1);
     } else if (e.key === "Enter") {
       e.preventDefault();
       pick(active >= 0 ? active : 0);

@@ -1,5 +1,5 @@
 // Start page (docs/DESIGN.md): an animated logo, a rolling "For <who>: <what they get>" line, one big search field
-// and a quiet link to the map, on top of a live, draggable map of Oslo faded into the paper colour.
+// and a quiet link to the map on the left, alongside an independent, draggable map of Norway on the right.
 import { h } from "./dom";
 import { navigate } from "./router";
 import { createSearch } from "./search";
@@ -44,7 +44,7 @@ export function renderStart(app: HTMLElement) {
   document.title = "Omnium";
   app.className = "page-start";
 
-  const mapEl = h("div", { class: "start-map", "aria-hidden": "true" });
+  const mapEl = h("div", { class: "start-map" });
   const roller = ideaRoller();
   const go = (path: string) => {
     cleanup();
@@ -76,7 +76,10 @@ export function renderStart(app: HTMLElement) {
   const tagline = h("p", { class: "start-tagline start-block sl-in" }, "Alt offentlig tilgjengelig om en eiendom i Oslo og Akershus");
   [logo, roller.el, search, actions, tagline].forEach((el, i) => el.style.setProperty("--i", String(i)));
 
-  app.replaceChildren(mapEl, h("div", { class: "start-fade", "aria-hidden": "true" }), h("main", { class: "start" }, logo, roller.el, search, actions, tagline));
+  app.replaceChildren(
+    h("main", { class: "start" }, h("div", { class: "start-content" }, logo, roller.el, search, actions, tagline)),
+    h("div", { class: "start-map-pane", role: "region", "aria-label": "Kart over Norge" }, mapEl),
+  );
 
   const stopMap = createStartMap(app, mapEl, (id) => go(`/a/${id}`));
   stop = () => {

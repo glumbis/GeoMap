@@ -1,13 +1,17 @@
 /* Start page: animated logo, rolling slogan, map button, live map with a cursor lens. Variables only (theme.css). */
 
-/* ---- Layers: map < paper fade < magnified map lens < content ---- */
+/* Two independent halves: paper content on the left, a clipped interactive map on the right. */
+.page-start .start-map-pane {
+  position: absolute;
+  inset: 0 0 0 50%;
+  overflow: hidden;
+  border-left: 1px solid var(--line);
+  background: var(--map-land);
+}
 .page-start .start-map {
   inset: 0;
   animation: none;
   will-change: auto;
-}
-.page-start .start-fade {
-  z-index: 1;
 }
 .start-lens {
   position: absolute;
@@ -35,18 +39,59 @@
   opacity: 1;
 }
 .page-start .start {
-  z-index: 3;
-  pointer-events: none; /* clicks in the gaps reach the map; the blocks below switch it back on */
-  gap: 0; /* spacing set per block below: big steps between groups, small within */
+  width: 50%;
+  height: 100%;
+  min-width: 0;
+  padding: 2rem clamp(2rem, 4vw, 4rem);
+  align-items: stretch;
+  justify-content: flex-start;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  background: var(--paper);
+  pointer-events: auto;
+  gap: 0;
 }
-.page-start .start > .search {
-  margin-top: 3rem;
+.start-content {
+  flex: none;
+  width: 100%;
+  min-width: 0;
+  margin-block: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
-.page-start .start-actions {
+.start-content > * {
+  flex-shrink: 0;
+  max-width: 100%;
+}
+.page-start .start .search {
+  width: 100%;
+  min-width: 0;
   margin-top: 1.5rem;
 }
+/* Suggestions take up space, so the map link always follows them instead of sitting underneath. */
+.page-start .search-list {
+  position: static;
+  margin-top: 0.5rem;
+  max-height: min(14rem, 28vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-shadow: none;
+}
+.page-start .search-hit {
+  flex-direction: column;
+  gap: 0.125rem;
+  overflow-wrap: anywhere;
+}
+.page-start .search-hit-sub {
+  font-size: 0.8125rem;
+}
+.page-start .start-actions {
+  margin-top: 1rem;
+}
 .page-start .start-tagline {
-  margin-top: 3rem;
+  margin-top: 2rem;
 }
 .start-block {
   pointer-events: auto;
@@ -108,10 +153,11 @@
 
 /* ---- Slogan: "For" is fixed; only the audience word rolls ---- */
 .page-start .start-for {
-  min-height: 1.4em; /* one line; long phrases may wrap */
-  margin: 3rem 0 0;
+  min-height: 2.8em; /* reserve two lines so slogans can wrap within the left half without shifting the field */
+  margin: 2rem 0 0;
   padding: 0;
-  max-width: 44rem;
+  width: 100%;
+  font-size: 1.5rem;
   line-height: 1.4;
 }
 .sf-line {

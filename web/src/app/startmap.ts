@@ -1,18 +1,11 @@
-// The interactive map behind the start page: drag + zoom, a slow idle pan, a full-colour magnifying lens,
+// The right-hand start map: Norway at first, user-controlled drag + zoom, a full-colour magnifying lens,
 // a place-name tooltip when the cursor rests, and click-to-zoom with "Sjekk nærmeste adresse".
-import { Map, Popup } from "maplibre-gl";
+import { Map, NavigationControl, Popup } from "maplibre-gl";
 import { basemapStyle } from "./basemap";
 import { h, titleCase } from "./dom";
 
-const AREA: [[number, number], [number, number]] = [[10.0, 59.45], [11.95, 60.55]];
-const WAYPOINTS: [number, number][] = [
-  [10.99, 60.02],
-  [10.95, 59.98],
-  [10.975, 60],
-];
-const IDLE_START_MS = 4000;
-const IDLE_RESUME_MS = 6000;
-const LEG_MS = 30000;
+// Mainland Norway, including the far north and the eastern border in Finnmark.
+const AREA: [[number, number], [number, number]] = [[4.5, 57.8], [31.5, 71.5]];
 const REST_MS = 400;
 const LENS_REM = 7; // lens radius: 14 rem across
 const LERP = 0.16;
@@ -31,54 +24,35 @@ export function createStartMap(app: HTMLElement, mapEl: HTMLElement, onAddress: 
     style: basemapStyle(),
     bounds: AREA,
     fitBoundsOptions: { padding: 48 },
-    minZoom: 5,
+    minZoom: 2,
     maxZoom: 17,
     dragRotate: false,
     pitchWithRotate: false,
     keyboard: false,
     attributionControl: { compact: true },
+    locale: {
+      "NavigationControl.ZoomIn": "Zoom inn",
+      "NavigationControl.ZoomOut": "Zoom ut",
+    },
   });
   map.touchZoomRotate.disableRotation();
+  map.touchPitch.disable();
+  map.addControl(new NavigationControl({ showCompass: false }), "top-right");
   map.getCanvas().removeAttribute("tabindex"); // never take focus from the search field
+  map.getCanvas().setAttribute("role", "img");
+  map.getCanvas().setAttribute("aria-label", "Norgeskart");
 
-  // ---- Idle pan: small movements within Oslo + Akershus ----
-  let drifting = false;
-  let wi = 0;
-  let idleTimer: number | undefined;
+  // Leave Norway in view until the user chooses to explore; there is no automatic pan.
   let popup: Popup | undefined;
-  const driftNext = () => {
-    if (!drifting) return;
-    map.easeTo({ center: WAYPOINTS[wi++ % WAYPOINTS.length], duration: LEG_MS, easing: (t) => 0.5 - Math.cos(Math.PI * t) / 2, essential: false });
-  };
-  const startDrift = () => {
-    if (still || popup || document.hidden) return;
-    drifting = true;
-    driftNext();
-  };
-  const scheduleIdle = (ms: number) => {
-    clearTimeout(idleTimer);
-    idleTimer = window.setTimeout(startDrift, ms);
-  };
-  map.on("moveend", () => driftNext());
-  const touched = () => {
-    if (drifting) {
-      drifting = false;
-      map.stop();
-    }
-    scheduleIdle(IDLE_RESUME_MS);
-  };
-  mapEl.addEventListener("pointerdown", touched);
-  mapEl.addEventListener("wheel", touched, { passive: true });
-  mapEl.addEventListener("touchstart", touched, { passive: true });
   // Keep the search focused (and the slogan paused) while the map is dragged; MapLibre still gets the event.
-  mapEl.addEventListener("mousedown", (e) => {
+  const keepSearchFocus = (e: MouseEvent) => {
     if (document.activeElement instanceof HTMLInputElement) e.preventDefault();
-  });
-  scheduleIdle(IDLE_START_MS);
+  };
+  mapEl.addEventListener("mousedown", keepSearchFocus);
 
   // ---- Lens: an independent full-colour map stays centred on the cursor's geographic point ----
   const ring = h("div", { class: "start-lens", "aria-hidden": "true" });
-  app.append(ring);
+  mapEl.append(ring);
   let lensMap: Map | undefined;
   if (!still && matchMedia("(any-hover: hover)").matches) {
     const lensEl = h("div", { class: "start-lens__map" });
@@ -107,8 +81,7 @@ export function createStartMap(app: HTMLElement, mapEl: HTMLElement, onAddress: 
   let overMap = false;
   const syncLens = () => {
     if (!lensMap || r <= 0.5) return;
-    const box = mapEl.getBoundingClientRect();
-    lensMap.jumpTo({ center: map.unproject([x - box.left, y - box.top]), zoom: map.getZoom() + 0.75 });
+    lensMap.jumpTo({ center: map.unproject([x, y]), zoom: map.getZoom() + 0.75 });
   };
   map.on("move", syncLens);
   const frame = () => {
@@ -117,10 +90,10 @@ export function createStartMap(app: HTMLElement, mapEl: HTMLElement, onAddress: 
     x += (tx - x) * k;
     y += (ty - y) * k;
     r += (tr - r) * (still ? 1 : 0.2);
-    app.style.setProperty("--lx", `${x.toFixed(1)}px`);
-    app.style.setProperty("--ly", `${y.toFixed(1)}px`);
-    app.style.setProperty("--lr", `${r.toFixed(1)}px`);
-    app.style.setProperty("--ls", (r / (LENS_REM * rem())).toFixed(3)); // 0..1 for the ring's scale
+    mapEl.style.setProperty("--lx", `${x.toFixed(1)}px`);
+    mapEl.style.setProperty("--ly", `${y.toFixed(1)}px`);
+    mapEl.style.setProperty("--lr", `${r.toFixed(1)}px`);
+    mapEl.style.setProperty("--ls", (r / (LENS_REM * rem())).toFixed(3)); // 0..1 for the ring's scale
     app.classList.toggle("lens-on", r > 0.5);
     syncLens();
     if (Math.abs(tx - x) > 0.3 || Math.abs(ty - y) > 0.3 || Math.abs(tr - r) > 0.3) raf = requestAnimationFrame(frame);
@@ -142,6 +115,7 @@ export function createStartMap(app: HTMLElement, mapEl: HTMLElement, onAddress: 
     nameCtrl?.abort();
     tip.hidden = true;
   };
+  map.on("movestart", hideTip);
   async function showName(cx: number, cy: number) {
     const box = mapEl.getBoundingClientRect();
     const p = map.unproject([cx - box.left, cy - box.top]);
@@ -156,7 +130,7 @@ export function createStartMap(app: HTMLElement, mapEl: HTMLElement, onAddress: 
       const kommune: string | undefined = hit?.kommuner?.[0]?.kommunenavn;
       tip.replaceChildren(h("strong", {}, name));
       if (kommune) tip.append(h("span", {}, titleCase(kommune)));
-      tip.style.left = `${Math.min(cx + 14, innerWidth - 200)}px`;
+      tip.style.left = `${Math.max(box.left + 8, Math.min(cx + 14, box.right - 200))}px`;
       tip.style.top = `${Math.min(cy + 18, innerHeight - 60)}px`;
       tip.hidden = false;
     } catch {
@@ -167,8 +141,9 @@ export function createStartMap(app: HTMLElement, mapEl: HTMLElement, onAddress: 
   const onMove = (e: PointerEvent) => {
     const t = e.target as Element | null;
     overMap = !!t && !t.closest(".start-block, .start-tip, .maplibregl-popup, .maplibregl-ctrl");
-    tx = e.clientX;
-    ty = e.clientY;
+    const box = mapEl.getBoundingClientRect();
+    tx = e.clientX - box.left;
+    ty = e.clientY - box.top;
     if (r < 1) {
       x = tx;
       y = ty;
@@ -181,7 +156,6 @@ export function createStartMap(app: HTMLElement, mapEl: HTMLElement, onAddress: 
       tipX = e.clientX;
       tipY = e.clientY;
       restTimer = window.setTimeout(() => {
-        if (drifting) touched(); // a resting cursor pauses the idle pan, so the name can show
         if (!map.isMoving()) void showName(tipX, tipY);
       }, REST_MS);
     }
@@ -200,8 +174,8 @@ export function createStartMap(app: HTMLElement, mapEl: HTMLElement, onAddress: 
   const onUp = () => {
     down = false;
   };
-  app.addEventListener("pointermove", onMove);
-  app.addEventListener("pointerleave", onLeave);
+  mapEl.addEventListener("pointermove", onMove);
+  mapEl.addEventListener("pointerleave", onLeave);
   mapEl.addEventListener("pointerdown", onDown);
   addEventListener("pointerup", onUp);
 
@@ -241,22 +215,21 @@ export function createStartMap(app: HTMLElement, mapEl: HTMLElement, onAddress: 
     mine.on("close", () => {
       if (popup === mine) popup = undefined;
       addrCtrl?.abort();
-      scheduleIdle(IDLE_RESUME_MS);
     });
     const zoom = Math.min(17, Math.max(map.getZoom() + 1, 15));
     map.easeTo({ center: e.lngLat, zoom, duration: still ? 0 : 900 });
   });
 
   return () => {
-    clearTimeout(idleTimer);
     clearTimeout(restTimer);
     cancelAnimationFrame(raf);
     nameCtrl?.abort();
     addrCtrl?.abort();
-    drifting = false;
     removeEventListener("pointerup", onUp);
-    app.removeEventListener("pointermove", onMove);
-    app.removeEventListener("pointerleave", onLeave);
+    mapEl.removeEventListener("pointermove", onMove);
+    mapEl.removeEventListener("pointerleave", onLeave);
+    mapEl.removeEventListener("pointerdown", onDown);
+    mapEl.removeEventListener("mousedown", keepSearchFocus);
     lensMap?.remove();
     ring.remove();
     tip.remove();
