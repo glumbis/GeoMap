@@ -42,7 +42,7 @@ npm run dev                 # API on :3000 + web on http://localhost:5173 (open 
 ## Add things (no shared file to edit)
 - **Dataset:** `data/scripts/<name>.ts` (copy `kommuner.ts`). Helpers in `data/scripts/lib.ts`: `download`, `getJson`, `rawPath`. Use `conn` from `api/src/db.ts`. Clip to Oslo + Akershus with `WHERE ST_Intersects(geom, (SELECT ST_Union_Agg(geom) FROM kommuner))`.
 - **Endpoint:** `api/src/routes/<name>.ts` exporting a Hono app is auto-mounted at `/api/<name>`. For a map layer, one line: `export default new Hono().get("/", (c) => layer(c, "<table>"));` (`api/src/geojson.ts` handles bbox, q, limit and GeoJSON). Throw `HTTPException` for JSON errors.
-- **Data point in the address profile:** one entry in `DATA_POINTS` in `api/src/datapoints.ts` (and its source in `SOURCES`). Rating and web app pick it up.
+- **Data point in the address profile:** one entry in `DATA_POINTS` in `api/src/datapoints.ts` (and its source in `SOURCES`). Rating and web app pick it up. Then tell Even, who adds its info text to `docs/TEXTS.md` and its fact sentence to `docs/FACTS.md`; Lukas adds the matching rule to `RULES` in `api/src/summary.ts`. Until then the summary uses a plain fallback sentence and the data point has no info text.
 - **Map feature:** `web/src/features/<name>.ts` exporting `default function (map: Map)` is auto-loaded after the map loads (copy `kommuner.ts`).
 
 ## Stack
@@ -60,6 +60,7 @@ npm run dev                 # API on :3000 + web on http://localhost:5173 (open 
 ```
 web/                 frontend
   src/main.ts        map setup + Kartverket basemap
+  src/app/           pages: start.ts (search), address.ts (address page), router.ts, map.ts, search.ts
   src/features/      one file per feature: export default function (map: Map)
   src/style.css      brand colour tokens (CSS variables), from the logo
   public/            logo.png, logo-mark.png (favicon)
@@ -70,10 +71,15 @@ api/                 backend
   src/geojson.ts     layer(): standard bbox/q/limit GeoJSON endpoint for a table
   src/datapoints.ts  categories, sources and data points of the address profile (one entry each)
   src/profile.ts     builds the address profile (rating.ts scores it, address.ts looks up ids)
+  src/texts.ts       reads info texts from docs/TEXTS.md at startup (restart the API after editing it)
+  src/summary.ts     AI summary: fact sentences (rules from docs/FACTS.md) + Claude Haiku, cached in table summaries
 docs/
   PROFILE.md         standard for the address profile (read before touching rating, profile or the address panel)
   DESIGN.md          look, page flow, map style (read before touching anything people see)
   TEST_ADDRESSES.md  the 5 addresses we test and demo with
+  TEXTS.md           info text per data point (shown when a data point is opened)
+  FACTS.md           fact-sentence rules for the AI summary
+  DEMO.md            demo story, pitch, readiness table and checklist
   brand/             original logo
 data/
   scripts/           one ingest script per dataset: download -> data/raw/ -> table in geomap.duckdb

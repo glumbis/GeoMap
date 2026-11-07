@@ -55,6 +55,20 @@ We build in three phases. Don't polish phase 1 work before phase 1 works end to 
 
 **The contract between people** is the address profile (`docs/PROFILE.md`) and the table rules in `AGENTS.md`. If you need to change one, tell the owner first.
 
+## Status (2026-11-07, updated by Lukas)
+
+Phase 1 is done. Phase 2 is well along: 14 datasets loaded, and all 5 test addresses have full hazard data, a real score, an AI summary and info texts.
+Scores now: #4 Grevlingåsen 75, #5 Holmenkollveien 75, #2 Rælingen 65, #3 Sandvika 65, #1 Arendalsgata 20.
+
+What the demo still needs, most important first:
+1. **Erik:** show the AI summary on the address page (`GET /api/address/<id>/summary`, label "AI-generert" only when `aiGenerated` is true). Works now with the key in `.env`.
+2. **Erik:** quick-clay and flood zones on the map (`/api/nve_kvikkleire`, `/api/flomsoner`). The pitch points at the zone around the pin.
+3. **Even:** update `docs/DEMO.md`. Scores changed (Grevlingåsen 75, Arendalsgata 20), and the bus caveat can go: the busiest stop within 500 m of Grevlingåsen (Jegeråsen, 212 m) has 161 weekday departures.
+4. **Even:** in `docs/FACTS.md`, update radon to the 4 levels (lav, middels, høy, meget høy), fix the #1 check (the strategic noise map gives 65–70 dB there), and add rules for quick clay with faregrad "Ingen" and for `transitDepartures`. Add a `transitDepartures` section to `docs/TEXTS.md`. Lukas then matches `api/src/summary.ts`.
+5. **Sverre:** bedrock, then landslide/avalanche if there is time. Nothing in the demo waits on it.
+
+After these, stop adding data and move to phase 3 (demo).
+
 ## Roles
 
 Each role lists: what you own, your tasks in order, and when a task is done.
@@ -66,14 +80,16 @@ Each role lists: what you own, your tasks in order, and when a task is done.
 1. ~~Scaffold the stack and push it.~~ Done.
 2. ~~**Decide the address id**~~ Done: `<kommunenummer>-<adressekode>-<nummer><bokstav>`, see "Address id" in `docs/PROFILE.md`. Erik's tasks below say how to build it.
 3. ~~**Profile endpoint, first version:** `GET /api/address/:id/profile`~~ Done (`api/src/profile.ts`, `api/src/routes/address.ts`). All 5 test addresses return valid profiles; everything not ingested yet is listed as `notLoaded`.
-4. ~~**Data-point list for Sverre and Even**~~ Done: `api/src/datapoints.ts`. One entry per data point: id, label, category, source, critical/normal, table, how to find it (`within`, `nearest`, `count`) and a `read()` that turns rows into a value, score and warning.
-5. **Rating model** in `api/src/rating.ts`: category scores, overall score, severity caps and "worst category first" (see `suggestions.md`), "insufficient data" rules from `docs/PROFILE.md`.
+4. ~~**Data-point list for Sverre and Even**~~ Done: `api/src/datapoints.ts`. One entry per data point: id, label, category, source, critical/normal, table, how to find it (`within`, `nearest`, `around`) and a `read()` that turns rows into a value, score and warning.
+5. ~~**Rating model** in `api/src/rating.ts`: category scores, overall score, severity caps and "worst category first" (see `suggestions.md`), "insufficient data" rules from `docs/PROFILE.md`.~~
    *Done when:* test address #1 (quick clay) scores clearly worse than #4 (quiet suburb), and every score explains why.
-   First version is in. On fake rows: #1-like scores 40 (capped by quick clay), #4-like 92. Re-check with real data once Sverre's NVE and NGU tables land. Until then every address says "insufficient data", which is correct.
-6. **AI summary:** `GET /api/address/:id/summary` (see "AI summary" above). Use Even's fact-sentence rules. Cache in table `summaries`.
+   Done 2026-11-07 with real data for all 5 test addresses: #4 Grevlingåsen 75, #5 Holmenkollveien 75, #2 Rælingen 65, #3 Sandvika 65, #1 Arendalsgata 20. Overall caps now stack (high 40, medium 75, minus 10 per extra serious warning), because a flat medium cap of 60 made 4 of 5 addresses tie at 60. Every capped score lists its warnings, worst first. Rules: "Severity caps" in `docs/PROFILE.md`.
+6. ~~**AI summary:** `GET /api/address/:id/summary` (see "AI summary" above). Use Even's fact-sentence rules. Cache in table `summaries`.~~
    *Done when:* the summary for all 5 test addresses mentions every real hazard and invents nothing.
-   First version is in (`api/src/summary.ts`, `GET /api/address/:id/summary`). It returns `text`, `aiGenerated`, and the `facts` behind it. Without `ANTHROPIC_API_KEY` it returns the fact sentences with `aiGenerated: false`. Fact sentences follow Even's `docs/FACTS.md`. Checked with real Haiku output on all 5 test addresses (2026-11-07): quick clay (#1) and red noise (#2, #3) come first, nothing invented. Flood (#2) and strategic noise checked too. Cache key includes the prompt, so prompt changes regenerate.
-7. **All the time:** review what lands on `main`, unblock people, and cut scope when time runs short.
+   Done 2026-11-07: fact sentences follow `docs/FACTS.md` (`RULES` in `api/src/summary.ts`), checked with real Haiku output on all 5 test addresses with every dataset loaded. Every hazard is mentioned, worst first, nothing invented. Cache key includes model and prompt. Known: Haiku writes 7–9 sentences, not 4–6.
+7. **Info texts in the profile:** done for the main text. `api/src/texts.ts` reads each **Forklaring** from `docs/TEXTS.md` into `explanation`. Next: the "Når ..." texts (one per outcome), which need a matching rule per data point.
+8. **Shorter AI summary:** 4–6 sentences. Try sending only the 3 nearest-place facts that matter, or a tighter prompt. Check the 5 test addresses again after.
+9. **All the time:** review what lands on `main`, unblock people, and cut scope when time runs short.
 
 ### Sverre — data pipeline
 
@@ -117,7 +133,7 @@ Each role lists: what you own, your tasks in order, and when a task is done.
 ## Agreed decisions
 
 - Product name: **Omnium**. UI text in Norwegian (bokmål); code and docs in English.
-- Rating: severity caps + always show the weakest category (`suggestions.md`, Lukas to confirm).
+- Rating: severity caps + always show the weakest category (`suggestions.md`). Confirmed by Lukas 2026-11-07, with stacked overall caps (see `docs/PROFILE.md`).
 - Missing data is never shown as good, and is never faked (`docs/PROFILE.md`).
 
 ## Where to look

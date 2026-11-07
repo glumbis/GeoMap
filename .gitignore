@@ -4,4 +4,5 @@ dist
 # Data is too big for git. Rebuild it with scripts in data/scripts/.
 data/raw/
 data/*.duckdb
+data/*.duckdb.wal
 data/*.pmtiles
