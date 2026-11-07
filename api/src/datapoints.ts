@@ -120,15 +120,28 @@ const metres = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).t
 
 const decimal = (n: number) => String(Math.round(n * 10) / 10).replace(".", ",");
 
-/** SSB crime per 1000 residents for the municipality (krim_kommuner), with Norway next to it. Neutral: info only. */
+/**
+ * SSB crime per 1000 residents for the municipality (krim_kommuner), with Norway next to it.
+ * Scored against the national rate (ratio = municipality / Norway): at most 0.6× = 100, ... over 1.8× = 15.
+ * Municipal numbers, so no warning and no cap: they say nothing certain about the street. Weighed most in "Familie".
+ * Without a national rate there is nothing to compare with: neutral, not scored.
+ */
+const CRIME_STEPS: [number, number][] = [[0.6, 100], [0.85, 85], [1.1, 70], [1.4, 50], [1.8, 30]];
+
 function crimeReading(rows: Row[], type: "total" | "violence"): Reading | null {
   const v = rows[0]?.[`${type}Per1000`];
   if (v == null) return null;
   const norway = rows[0][`${type}Per1000Norway`];
   const country = norway != null ? `, landet ${decimal(Number(norway))}` : "";
   // Ullensaker (3209) counts crime at Oslo lufthavn Gardermoen (e.g. smuggling), which lifts its numbers.
-  const airport = rows[0].kommunenummer === "3209" ? ", inkl. Gardermoen" : "";
-  return { value: Number(v), unit: "per 1000 innbyggere", display: `${decimal(Number(v))} per 1000 innbyggere (${rows[0].period})${country}${airport}`, effect: "neutral" };
+  const isAirport = rows[0].kommunenummer === "3209";
+  const airport = isAirport ? ", inkl. Gardermoen" : "";
+  const reading: Reading = { value: Number(v), unit: "per 1000 innbyggere", display: `${decimal(Number(v))} per 1000 innbyggere (${rows[0].period})${country}${airport}`, effect: "neutral" };
+  // Ullensaker's total is mostly airport cases (smuggling, customs), not life in the municipality: shown, not scored.
+  if (norway == null || Number(norway) <= 0 || (isAirport && type === "total")) return reading;
+  const ratio = Number(v) / Number(norway);
+  const score = CRIME_STEPS.find(([max]) => ratio <= max)?.[1] ?? 15;
+  return { ...reading, effect: score >= 70 ? "good" : "bad", score };
 }
 
 /** "Nearest X" data point: score falls with distance. steps = [[maxMetres, score], ...] ascending. */
@@ -442,19 +455,22 @@ export const DATA_POINTS: DataPoint[] = [
     },
   },
   {
-    // data/scripts/friluftsomrader.ts (Even): state-secured outdoor recreation areas (beaches, parks, forest). Info only.
+    // data/scripts/friluftsomrader.ts (Even): state-secured outdoor recreation areas (beaches, parks, forest).
+    // Close = good. None within 3 km is neutral, not bad: only 182 areas, so many parks and forests are not in this set.
     id: "recreationArea", label: "Nærmeste sikra friluftsområde", category: "nature", source: "mdir-friluft", importance: "normal",
     table: "friluftsomrader", find: { kind: "nearest", maxM: 3000 },
     read: (rows) => {
       if (!rows.length) return { value: null, display: "Ingen innen 3 km", effect: "neutral" };
       const d = Number(rows[0].distanceM);
-      if (d === 0) return { value: 0, unit: "m", display: `Inne i ${rows[0].name}`, effect: "neutral" };
-      return { value: Math.round(d), unit: "m", display: `${rows[0].name}, ${metres(d)}`, effect: "neutral" };
+      const score = d <= 500 ? 100 : d <= 1000 ? 80 : d <= 2000 ? 50 : 30;
+      const effect: Effect = score >= 50 ? "good" : "bad";
+      if (d === 0) return { value: 0, unit: "m", display: `Inne i ${rows[0].name}`, effect, score };
+      return { value: Math.round(d), unit: "m", display: `${rows[0].name}, ${metres(d)}`, effect, score };
     },
   },
 
   // Area. kommuner: data/scripts/kommuner.ts. ssb_kommuner: data/scripts/ssb.ts (Even), one row per municipality with its geom.
-  // Stats are information, not judgement: neutral, not scored.
+  // Stats are information, not judgement: neutral, not scored. Exception: crime, scored against Norway's rate.
   {
     id: "municipality", label: "Kommune", category: "area", source: "kartverket-kommuner", importance: "normal",
     table: "kommuner", find: { kind: "within" },
@@ -478,7 +494,7 @@ export const DATA_POINTS: DataPoint[] = [
   },
   {
     // data/scripts/ssb_krim.ts (Even): krim_kommuner, SSB 08487, per 1000 residents, two-year average (period "2024–2025").
-    // Info only (neutral, not scored). Lukas may use crimeRate/violentCrime in the family perspective.
+    // Scored against Norway's rate (crimeReading). Weighed most in the family perspective (api/src/perspectives.ts).
     id: "crimeRate", label: "Anmeldte lovbrudd i kommunen", category: "area", source: "ssb-krim", importance: "normal",
     table: "krim_kommuner", find: { kind: "within" },
     read: (rows) => crimeReading(rows, "total"),

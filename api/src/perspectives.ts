@@ -19,8 +19,9 @@ export const PERSPECTIVES: Perspective[] = [
     question: "Hvordan er det å bo her til daglig?",
     weights: {
       radon: 3, quickClay: 2, flood200: 2, stormSurge: 1, rockfall: 1, debrisFlow: 1, avalanche: 1,
-      roadNoise: 2, roadNoiseStrategic: 2, pollutedGround: 1,
+      roadNoise: 2, roadNoiseStrategic: 2, aircraftNoise: 2, pollutedGround: 1,
       transitDepartures: 2, transitStop: 1, school: 1, kindergarten: 1, trails: 2,
+      recreationArea: 1, violentCrime: 1, crimeRate: 1,
     },
     required: ["radon", "quickClay", "flood200"],
   },
@@ -39,8 +40,8 @@ export const PERSPECTIVES: Perspective[] = [
     name: "Familie",
     question: "Hvor godt passer stedet for barnefamilier?",
     weights: {
-      school: 3, kindergarten: 3, trails: 2, roadNoise: 2, roadNoiseStrategic: 2, radon: 2,
-      quickClay: 1, flood200: 1, pollutedGround: 1, transitDepartures: 1,
+      school: 3, kindergarten: 3, violentCrime: 3, trails: 2, roadNoise: 2, roadNoiseStrategic: 2, aircraftNoise: 2, radon: 2,
+      crimeRate: 1, recreationArea: 1, quickClay: 1, flood200: 1, pollutedGround: 1, transitDepartures: 1,
     },
     required: ["school", "kindergarten", "radon"],
   },
