@@ -8,3 +8,9 @@ services:
     plan: free
     region: frankfurt
     healthCheckPath: /api/health
+    envVars:
+      # 512 MB instance: keep DuckDB small so Chromium fits for the PDF report.
+      - key: DUCKDB_MEMORY_LIMIT
+        value: 160MB
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=128

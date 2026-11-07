@@ -6,9 +6,11 @@ import { chromium, type Browser, type LaunchOptions } from "playwright-core";
 let browser: Promise<Browser> | undefined;
 
 async function launch(): Promise<Browser> {
+  // Containers have a tiny /dev/shm and no GPU; these flags keep Chromium small and stable there.
+  const args = ["--disable-dev-shm-usage", "--disable-gpu", "--no-zygote", "--renderer-process-limit=1"];
   const tries: LaunchOptions[] = process.env.CHROME_PATH
-    ? [{ executablePath: process.env.CHROME_PATH }]
-    : [{ channel: "chrome" }, { channel: "msedge" }];
+    ? [{ executablePath: process.env.CHROME_PATH, args }]
+    : [{ channel: "chrome", args }, { channel: "msedge", args }];
   for (const opts of tries) {
     try {
       const b = await chromium.launch(opts);
