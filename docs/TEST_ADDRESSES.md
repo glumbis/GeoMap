@@ -11,16 +11,16 @@ The id is the address id from `docs/PROFILE.md` (`<kommunenummer>-<adressekode>-
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | Quick clay | Arendalsgata 22, 0463 Oslo | `0301-10223-22` | Oslo (0301) | 221/19 | 59.937586 | 10.758173 | Inside quick clay hazard zone "Myraløkka", faregrad **Høy**, risiko 5. Strategic noise map: **65–70 dB** (checked 2026-11-07) | NVE `SkredKvikkleire2` layer 0 (KvikkleireFaregrad) |
 | 2 | Flood zone | Nedre Rælingsveg 148, 2005 Rælingen | `3224-8900-148` | Rælingen (3224) | 104/771 | 59.949070 | 11.045545 | Inside **200-year** flood zone (flomsone `fs002_37`), not inside 10-year zone. Also inside a **red** road noise zone (checked 2026-11-07) | NVE `Flomsoner2` layer 17 (Flomsone_200arsflom) |
-| 3 | Noisy road | Gamle Drammensvei 207, 1337 Sandvika | `3201-1101-207` | Bærum (3201) | 7/61 | 59.892180 | 10.534069 | **Red** road noise zone (Lden > 65 dB), next to E18 | Statens vegvesen WMS `norstoy_1_0`, layer `Stoyvarselkart` |
-| 4 | Quiet suburb | Grevlingåsen 17, 1362 Hosle | `3201-1574-17` | Bærum (3201) | 21/309 | 59.939649 | 10.590461 | **No** quick clay zone, no 200-year flood zone, no road noise zone | All three services above |
-| 5 | Ski area | Holmenkollveien 196, 0791 Oslo | `0301-13070-196` | Oslo (0301) | 34/16 | 59.977219 | 10.676161 | Next to Frognerseteren / Nordmarka ski tracks. **No** quick clay, flood or road noise zone. Strategic noise map: 50–55 dB, below the yellow level (checked 2026-11-07) | All three services above |
+| 3 | Noisy road | Gamle Drammensvei 207, 1337 Sandvika | `3201-1101-207` | Bærum (3201) | 7/61 | 59.892180 | 10.534069 | **Red** road noise zone (Lden > 65 dB), next to E18. Outside NVE's quick-clay and flood mapping: "Ikke kartlagt her" for both | Statens vegvesen WMS `norstoy_1_0`, layer `Stoyvarselkart` |
+| 4 | Quiet suburb | Grevlingåsen 17, 1362 Hosle | `3201-1574-17` | Bærum (3201) | 21/309 | 59.939649 | 10.590461 | **No** quick clay zone, no 200-year flood zone, no road noise zone. Outside NVE's quick-clay and flood mapping, so the app shows "Ikke kartlagt her" for both (since 2026-11-07) | All three services above |
+| 5 | Ski area | Holmenkollveien 196, 0791 Oslo | `0301-13070-196` | Oslo (0301) | 34/16 | 59.977219 | 10.676161 | Next to Frognerseteren / Nordmarka ski tracks. **No** quick clay, flood or road noise zone. Strategic noise map: 50–55 dB, below the yellow level (checked 2026-11-07). Outside NVE's quick-clay and flood mapping: "Ikke kartlagt her" for both | All three services above |
 
 ## Backups
 
 | Case | Address | Id | Kommune (nr) | lat | lng | Expected result |
 |---|---|---|---|---|---|---|
 | Quick clay | Kjelsåsveien 162, 0491 Oslo | `0301-13747-162` | Oslo (0301) | 59.965764 | 10.776008 | Quick clay zone "Kjelsås", faregrad Middels. App on 2026-11-07: overall 64, warnings quick clay (middels), høy radon, strategic noise 55–60 dB |
-| Flood zone | Strandvegen 81, 2005 Rælingen | `3224-11700-81` | Rælingen (3224) | 59.947770 | 11.047739 | Inside 200-year flood zone `fs002_37`, and also inside the **20-year** flood zone (NVE `Flomsoner2` layer 14, checked 2026-11-07). The app shows only "I 20-årsflomsone": the most frequent zone wins. Overall 71. Also inside a yellow road noise zone (checked 2026-11-07) |
+| Flood zone | Strandvegen 81, 2005 Rælingen | `3224-11700-81` | Rælingen (3224) | 59.947770 | 11.047739 | Inside 200-year flood zone `fs002_37`, and also inside the **20-year** flood zone (NVE `Flomsoner2` layer 14, checked 2026-11-07). The app shows only "I 20-årsflomsone": the most frequent zone wins. Overall 40 (a 20-year flood zone is a high warning since 2026-11-07, TEK17 §7-2). Also inside a yellow road noise zone (checked 2026-11-07) |
 
 ## Source endpoints used
 
@@ -29,12 +29,30 @@ The id is the address id from `docs/PROFILE.md` (`<kommunenummer>-<adressekode>-
 - Road noise: `https://www.vegvesen.no/kart/ogc/norstoy_1_0/ows` (WMS GetFeatureInfo)
 - Address lookup: `https://ws.geonorge.no/adresser/v1/sok`
 
+## Radon and soil checked against NGU
+
+Checked 2026-11-07 at each address point, compared with what the app shows.
+
+| # | Address | NGU radon | NGU soil type | Matches the app |
+|---|---|---|---|---|
+| 1 | Arendalsgata 22 | Meget høy | Hav- og fjordavsetning, sammenhengende dekke, stedvis med stor mektighet | Yes, both |
+| 2 | Nedre Rælingsveg 148 | Middels | Elve- og bekkeavsetning (fluvial avsetning) | Yes, both |
+| 3 | Gamle Drammensvei 207 | Meget høy | Forvitringsmateriale, ikke inndelt etter mektighet | Yes, both |
+| 4 | Grevlingåsen 17 | Høy | Fyllmasse (antropogent materiale) | Yes, both |
+| 5 | Holmenkollveien 196 | Høy | Bart fjell | Yes, both |
+
+- Soil: NGU WMS `https://geo.ngu.no/mapserver/LosmasserWMS2`, layer `Losmasse_flate` (GetFeatureInfo, scale 1:50 000). Independent of the file we ingest (`LosmasseLokalt.gpkg`).
+- Radon: NGU API `https://geo.ngu.no/api/features/radonaktsomhet/collections/radonaktsomhet/items` ("Radon aktsomhet versjon 2", September 2026). This is the same service `radon.ts` ingests, so it confirms the ingest, not the data. NGU's older radon WMS (`RadonWMS2`, layer `Radon_aktsomhet`) still shows the old classes ("Moderat til lav", "Usikker") and does not match version 2: don't use it to check.
+- Not checked: whether any point lies close to a polygon boundary.
+
 ## Not checked yet
 
 - Ski tracks at #5: Turrutebasen (`turruter`) has a trail 45 m away but the nearest ski track 1.2 km away (TRY-løypa). Turrutebasen lacks most Nordmarka ski tracks, so this does not show the ski area well.
 - Polluted ground (`grunnforurensning`) on 2026-11-07: #1 has a registered site 17 m away ("Arendalsgata 3-22", påvirkningsgrad 2: acceptable with today's use). The others have none within 100 m.
-- Radon and soil type (from Sverre's `radon` and `losmasser`) on 2026-11-07: #1 meget høy radon, marine clay (hav- og fjordavsetning). #2 middels radon, fluvial deposit. #3 meget høy radon. #4 høy radon, fill (fyllmasse). #5 høy radon, bare rock. Not checked against NGU's own map.
-- Overall rating on 2026-11-07 (after Lukas's stacked caps): #1 20, #2 65, #3 65, #4 75, #5 75.
+- Radon and soil type (from Sverre's `radon` and `losmasser`) on 2026-11-07: #1 meget høy radon, marine clay (hav- og fjordavsetning). #2 middels radon, fluvial deposit. #3 meget høy radon. #4 høy radon, fill (fyllmasse). #5 høy radon, bare rock. **Checked against NGU on 2026-11-07: all 5 match** for both radon and soil type (see "Radon and soil checked against NGU" below).
+- Overall rating on 2026-11-07 (after Lukas's stacked caps and NVE mapping coverage): #1 20, #2 65, #3 65, #4 75, #5 75. Backups: Kjelsåsveien 162 64, Strandvegen 81 40.
+- NVE mapping coverage (`nve_kartlagt`) on 2026-11-07: #3, #4 and #5 are outside both NVE's quick-clay and flood mapping ("Ikke kartlagt her"). #1 is inside the quick-clay mapping but outside the flood mapping. #2 and Strandvegen 81 are inside both.
+- Storm surge (Sverre's `stormflo`) on 2026-11-07: none of the 5 addresses or the backups is in a storm-surge zone.
 - Busiest stop within 500 m (`transitDepartures`): #1 Sagene 1154, #2 Lillestrøm stasjon 363, #3 Sandvika stasjon 444, #4 Jegeråsen 161 (212 m), #5 Frognerseteren 76.
 - Rockfall, debris slide and avalanche (Sverre's `steinsprang`, `jordflomskred`, `snoskred`): none of the 5 addresses is in an area.
 - Departures at the nearest stop (Tue 2026-11-10, `stops.departures`): #1 Arendalsgata 929 (3 lines), #2 Dammensvika 152, #3 Lakseberget 230, #4 Grevlingbakken **5** (1 line), #5 Frognerseteren 76 (metro + bus).

@@ -6,15 +6,15 @@ Addresses and ids come from `docs/TEST_ADDRESSES.md`. The pitch is in Norwegian 
 
 ## The story in one line
 
-Two homes, both in Bærum/Oslo, both near a bus and a school. On paper they look alike. Omnium shows in seconds that one sits in a quick-clay hazard zone and the other doesn't, and it says where every fact comes from.
+Two homes, both in Bærum/Oslo, both near a bus and a school. On paper they look alike. Omnium shows in seconds that one sits in a quick-clay hazard zone, says plainly where the public maps have gaps, and says where every fact comes from.
 
 ## The two addresses
 
 | Role | Address | Id | What it shows |
 |---|---|---|---|
-| Start: the calm case | Grevlingåsen 17, 1362 Hosle | `3201-1574-17` | Overall **75**. Naturfare 100: no quick clay, flood, rockfall, debris-slide or avalanche zone, no noise zone. One warning: høy radonaktsomhet (common around Oslo). Busiest stop within 500 m: Jegeråsen, 212 m, 161 departures a weekday. School 256 m, kindergarten 226 m. |
+| Start: the calm case | Grevlingåsen 17, 1362 Hosle | `3201-1574-17` | Overall **75**. Naturfare 100: no rockfall, debris-slide, avalanche or storm-surge area, no noise zone. NVE has not mapped quick clay or flood here, so both show "Ikke kartlagt her" (neutral, not scored). One warning: høy radonaktsomhet (common around Oslo). Busiest stop within 500 m: Jegeråsen, 212 m, 161 departures a weekday. School 256 m, kindergarten 226 m. |
 | Contrast: the hidden risk | Arendalsgata 22, 0463 Oslo | `0301-10223-22` | Overall **20**, held down by three serious warnings: quick-clay zone with faregrad **høy** (NVE), meget høy radonaktsomhet and road noise 65–70 dB. Also marine clay and a polluted-ground site 17 m away. Naturfare 30. Busiest stop within 500 m: Sagene, 1154 departures. |
-| Backup / extra | Nedre Rælingsveg 148, 2005 Rælingen | `3224-8900-148` | Two warnings: 200-year flood zone and red road noise zone. |
+| Backup / extra | Nedre Rælingsveg 148, 2005 Rælingen | `3224-8900-148` | Overall 65. Two warnings: 200-year flood zone and red road noise zone. |
 
 Numbers above are from the profile on 2026-11-07. Check them again before the demo (see checklist): they change when data or the rating changes.
 
@@ -32,7 +32,7 @@ Times are a guide. Bold = what you click or show.
 
 **0:45–1:30 — Det rolige eksempelet: Grevlingåsen 17**
 **Type "Grevlingåsen 17", pick the one in 1362 Hosle.** There is also a Grevlingåsen 17 in 1386 Asker: don't pick that one.
-> Her er et vanlig hus på Hosle i Bærum. Samlet karakter 75. Det ligger ikke i noen kartlagt faresone for kvikkleire eller flom, ikke i aktsomhetsområder for skred, og ikke i støysone. Den eneste advarselen er høy aktsomhet for radon, som er vanlig rundt Oslo. Nærmeste skole er 256 meter unna i luftlinje, og fra Jegeråsen, 212 meter unna, går det 161 avganger på en vanlig hverdag.
+> Her er et vanlig hus på Hosle i Bærum. Samlet karakter 75. Det ligger ikke i aktsomhetsområder for skred og ikke i støysone. Kvikkleire og flom har NVE ikke kartlagt her, og det står rett ut på siden. Den eneste advarselen er høy aktsomhet for radon, som er vanlig rundt Oslo. Nærmeste skole er 256 meter unna i luftlinje, og fra Jegeråsen, 212 meter unna, går det 161 avganger på en vanlig hverdag.
 **Point at the category cards, then open one data point to show its source and explanation.**
 > Alt vi viser har en kilde. Og vi forklarer hva det betyr for den som bor der.
 

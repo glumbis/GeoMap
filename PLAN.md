@@ -72,8 +72,8 @@ What the demo still needs, most important first:
 3. **Erik:** ~~quick clay and flood on the map~~ done (`web/src/features/hazards.ts`), plus flood low points, rockfall, debris slides, avalanches, radon, soil and bedrock in the "Kartlag" panel. Still open: road noise `/api/veistoy` and `/api/stoy_strategisk`.
 4. **Erik:** search misses addresses. It asks Geonorge for 50 hits nationwide, then keeps Oslo/Akershus, so common street names give "no results". Geonorge filters on only one `kommunenummer` per request. Fix that works today: `treffPerSide=1000` plus `filtrer=adresser.adressetekst,adresser.kommunenummer,adresser.adressekode,adresser.nummer,adresser.bokstav,adresser.postnummer,adresser.poststed,adresser.kommunenavn,adresser.objtype` (about 0.5 s), then filter as now.
 5. **Erik:** show "Ikke kartlagt her" (value `ikkeKartlagt`, effect neutral) as neutral grey, never green.
-6. **Sverre + Even:** check radon and soil type for the 5 test addresses against NGU's own map (radon: geo.ngu.no aktsomhetskart, soil: løsmassekart) and write the result in `docs/TEST_ADDRESSES.md`. The test notes say this is not checked yet.
-7. **Even:** update `docs/DEMO.md` and `docs/TEST_ADDRESSES.md`: scores above, Strandvegen 81 now 40, the bus caveat can go (Jegeråsen, 212 m, 161 weekday departures), and #3–#5 show "Ikke kartlagt her" for quick clay and flood. (FACTS.md rules for `ikkeKartlagt` are done, and the code matches them.)
+6. ~~**Sverre + Even:** check radon and soil type for the 5 test addresses against NGU's own map (radon: geo.ngu.no aktsomhetskart, soil: løsmassekart) and write the result in `docs/TEST_ADDRESSES.md`. The test notes say this is not checked yet.~~ Done 2026-11-07: all 5 match NGU (`docs/TEST_ADDRESSES.md`).
+7. ~~**Even:** update `docs/DEMO.md` and `docs/TEST_ADDRESSES.md`: scores above, Strandvegen 81 now 40, the bus caveat can go (Jegeråsen, 212 m, 161 weekday departures), and #3–#5 show "Ikke kartlagt her" for quick clay and flood. (FACTS.md rules for `ikkeKartlagt` are done, and the code matches them.)~~ Done 2026-11-07.
 
 After these, stop adding data and move to phase 3 (demo).
 

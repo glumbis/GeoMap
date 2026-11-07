@@ -83,7 +83,7 @@ Write `{display}` with a lower-case first letter inside the sentence: "Grunnen b
 | warning, value "lav" | Eiendommen ligger i en faresone for kvikkleireskred med lav faregrad ({src}). | 3 |
 | value "ingen" (zone without faregrad) | Eiendommen ligger i en kartlagt kvikkleiresone der NVE ikke har satt noen faregrad ({src}). | 6 |
 | no zone | Eiendommen ligger ikke i en kartlagt faresone for kvikkleireskred ({src}). | 5 |
-| not mapped (NVE has not mapped quick clay here) | NVE har ikke kartlagt faresoner for kvikkleireskred i området der eiendommen ligger, så kartet sier ingenting om kvikkleire her ({src}). | 7 |
+| value "ikkeKartlagt" (NVE has not mapped quick clay here) | NVE har ikke kartlagt faresoner for kvikkleireskred i området der eiendommen ligger, så kartet sier ingenting om kvikkleire her ({src}). | 7 |
 
 "ingen" is neither a risk nor an all-clear: never write "faresone" or "trygt" for it, and don't add a faregrad.
 
@@ -93,10 +93,10 @@ Write `{display}` with a lower-case first letter inside the sentence: "Grunnen b
 
 | When | Sentence | Rank |
 |---|---|---|
-| warning, value ≤ 10 | Eiendommen ligger i en flomsone som kan bli oversvømt ved en {value}-årsflom ({src}). | 1 |
+| warning, value ≤ 20 | Eiendommen ligger i en flomsone som kan bli oversvømt ved en {value}-årsflom ({src}). | 1 |
 | warning, other value | Eiendommen ligger i en flomsone som kan bli oversvømt ved en {value}-årsflom ({src}). | 2 |
 | no warning | Eiendommen ligger ikke i en kartlagt flomsone ({src}). | 5 |
-| not mapped (NVE has no flood zone map here) | NVE har ikke laget flomsonekart for området der eiendommen ligger, så kartet sier ingenting om flomfare her ({src}). | 7 |
+| value "ikkeKartlagt" (NVE has no flood zone map here) | NVE har ikke laget flomsonekart for området der eiendommen ligger, så kartet sier ingenting om flomfare her ({src}). | 7 |
 
 NVE flood zone maps cover only selected rivers and towns. Like quick clay, "not mapped" gets its own sentence and never merges with the rank 5 sentences.
 
@@ -121,6 +121,17 @@ NVE flood zone maps cover only selected rivers and towns. Like quick clay, "not 
 | value "medSkog" (warning medium) | Eiendommen ligger i et aktsomhetsområde for snøskred ({src}). | 2 |
 | value "utenSkog" (warning low) | Eiendommen ligger i et område der snøskred bare kan nå fram hvis skogen over blir borte ({src}). | 3 |
 | no warning | Eiendommen ligger ikke i et aktsomhetsområde for snøskred ({src}). | 5 |
+
+**`stormSurge` (Stormflo)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| warning high (value ≤ 20) | Eiendommen ligger i et område som kan bli oversvømt fra sjøen ved en {value}-årsstormflo i dag ({src}). | 1 |
+| warning medium (value 200) | Eiendommen ligger i et område som kan bli oversvømt fra sjøen ved en {value}-årsstormflo i dag ({src}). | 2 |
+| value 2100 (warning low) | Eiendommen kan bli oversvømt fra sjøen ved en 200-årsstormflo med havnivået som er ventet i år 2100 ({src}). | 3 |
+| no warning | Eiendommen ligger ikke i et område som kan bli oversvømt ved stormflo ifølge Kartverkets beregninger ({src}). | 5 |
+
+Value 2100 is a year, not a return period: never write "2100-årsstormflo".
 
 Rockfall, debris-slide and avalanche maps are *aktsomhetsområder*: coarse maps of where a slide is possible, made from a terrain model. Always write "aktsomhetsområde", never "faresone", so the summary doesn't make them sound like the mapped quick-clay or flood zones.
 

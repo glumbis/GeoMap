@@ -36,12 +36,14 @@ How to use this file:
 **Forklaring:** Kvikkleire er leire som kan bli flytende når den blir forstyrret, og da kan store områder gli ut. NVE har kartlagt soner der et slikt skred kan skje.
 - **Når i faresone:** Faregraden (lav, middels eller høy) sier hvor sannsynlig et skred er, ikke hvor stor skaden blir. Kommunen kan stille krav til grunnundersøkelser før det bygges eller graves.
 - **Når i kartlagt sone uten faregrad:** NVE har kartlagt kvikkleire her, men ikke vurdert hvor sannsynlig et skred er. Kommunen kan likevel kreve grunnundersøkelser før det bygges eller graves.
-- **Når ikke i kartlagt faresone:** NVE har ikke registrert noen faresone her. Det kan likevel finnes kvikkleire i områder som ikke er kartlagt.
+- **Når ikke i faresone (kartlagt område):** NVE har kartlagt området og ikke registrert noen faresone der adressen ligger.
+- **Når ikke kartlagt:** NVE har ikke kartlagt kvikkleire i dette området, så kartet sier ingenting om grunnen her. Der det er marin leire i grunnen, kan det likevel finnes kvikkleire.
 
 ### `flood200` — Flomsone (200-årsflom)
 **Forklaring:** En 200-årsflom er en flom som i snitt kommer én gang i løpet av 200 år. Det betyr omtrent 0,5 % sjanse hvert år, eller rundt 1 av 5 i løpet av 50 år.
 - **Når i flomsone:** Området kan bli oversvømt ved en slik flom. Nye boliger skal som hovedregel være sikret mot 200-årsflom.
-- **Når ikke i kartlagt flomsone:** NVE har bare laget flomsonekart langs noen elver og vassdrag. At adressen ikke er i en sone, betyr ikke at den aldri kan få vann fra elv, bekk eller kraftig regn.
+- **Når ikke i flomsone (kartlagt område):** NVE har laget flomsonekart her, og adressen ligger utenfor sonene. Adressen kan likevel få vann fra bekker, overvann eller kraftig regn.
+- **Når ikke kartlagt:** NVE har bare laget flomsonekart langs noen elver og vassdrag, og ikke her. Kartet sier derfor ingenting om flomfare på denne adressen.
 
 ### `rockfall` — Steinsprang
 **Forklaring:** Steinsprang er når stein løsner fra bratte fjellsider og faller eller ruller ned. Aktsomhetsområder viser hvor stein i verste fall kan nå, beregnet ut fra terrenget.
@@ -55,6 +57,12 @@ How to use this file:
 **Forklaring:** Aktsomhetsområder for snøskred viser hvor snøskred kan løsne og hvor langt de kan nå, beregnet ut fra terrenget. Kartet er grovt og ikke sjekket på stedet.
 - **Når i aktsomhetsområde:** Snøskred kan i verste fall nå hit, også med skogen som står i dag.
 - **Når bare uten skog:** Skogen over beskytter i dag. Hvis skogen hogges eller dør, kan snøskred nå hit.
+
+### `stormSurge` — Stormflo
+**Forklaring:** Stormflo er når havet stiger over vanlig høyvann, ofte på grunn av sterk vind og lavt lufttrykk. Kartverket har beregnet hvilke områder langs kysten som kan bli oversvømt ved 20-års- og 200-årsstormflo, i dag og med havnivået som er ventet i år 2100.
+- **Når i stormflosone i dag:** Området kan bli oversvømt fra sjøen ved en slik stormflo. Nye boliger skal som hovedregel være sikret mot 200-årsstormflo.
+- **Når bare i år 2100:** Området er ikke utsatt i dag, men kan bli det når havet stiger.
+- **Når ikke i stormflosone:** Adressen ligger utenfor sonene Kartverket har beregnet. Kartet gjelder bare vann fra sjøen, ikke fra elver eller regn.
 
 ## Miljø
 
