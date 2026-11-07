@@ -15,9 +15,12 @@ RUN npm ci
 # Ingest scripts only need db.ts from the API. Raw downloads are deleted after; only the database is kept.
 COPY api/src/db.ts api/src/
 COPY data/scripts data/scripts
-RUN npm run ingest && rm -rf data/raw
+RUN INGEST_SKIP=zz_omradescore npm run ingest && rm -rf data/raw
 
 COPY . .
+# The 500 m area grid scores every square with the API's own rules (datapoints.ts, profile.ts), so it needs the
+# full API code and runs after it is copied in (~2 min). A change to the scoring rules re-scores the grid.
+RUN npm run ingest zz_omradescore && rm -rf data/raw
 RUN npm run build
 
 FROM node:22-bookworm-slim
