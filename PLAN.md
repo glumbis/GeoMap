@@ -95,7 +95,7 @@ Each role lists: what you own, your tasks in order, and when a task is done.
 6. ~~**AI summary:** `GET /api/address/:id/summary` (see "AI summary" above). Use Even's fact-sentence rules. Cache in table `summaries`.~~
    *Done when:* the summary for all 5 test addresses mentions every real hazard and invents nothing.
    Done 2026-11-07: fact sentences follow `docs/FACTS.md` (`RULES` in `api/src/summary.ts`), checked with real Haiku output on all 5 test addresses with every dataset loaded. Every hazard is mentioned, worst first, nothing invented. Cache key includes model and prompt.
-7. **Info texts in the profile:** done for the main text. `api/src/texts.ts` reads each **Forklaring** from `docs/TEXTS.md` into `explanation`. Next: the "Når ..." texts (one per outcome), which need a matching rule per data point.
+7. ~~**Info texts in the profile:**~~ Done 2026-11-07: `explanation` = **Forklaring** + every matching **Når ...** text from `docs/TEXTS.md` (rules in `OUTCOMES`, `api/src/texts.ts`; `npm test` checks the two lists match).
 8. ~~**Shorter AI summary:** 4–6 sentences.~~ Done 2026-11-07: the AI gets the facts in groups (warnings, checked and not found, location, missing data) with one sentence per group. The rating is left out because the page shows it. All 5 test addresses: 4–6 sentences, 75–100 words, every warning kept (all 5 for #1), nothing invented. Source names in brackets are stripped in code. Each fact in the response now has a `rank` (1–8, `docs/FACTS.md`).
 9. **All the time:** review what lands on `main`, unblock people, and cut scope when time runs short.
 

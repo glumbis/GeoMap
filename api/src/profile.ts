@@ -2,7 +2,7 @@
 import { lookupAddress, type Address } from "./address.ts";
 import { CATEGORIES, DATA_POINTS, SOURCES, type DataPoint, type Find, type Reading, type Row, type Severity } from "./datapoints.ts";
 import { query } from "./db.ts";
-import { INFO_TEXTS } from "./texts.ts";
+import { infoText } from "./texts.ts";
 import { rateCategory, rateOverall, type MissingPoint, type Rating, type Scored } from "./rating.ts";
 
 export const PROFILE_VERSION = 1;
@@ -100,8 +100,8 @@ export async function buildProfile(id: string): Promise<Profile> {
     for (const { dp, reading, reason } of mine) {
       const base = { id: dp.id, label: dp.label, importance: dp.importance, source: dp.source };
       if (reading) {
-        // explanation = the general info text (docs/TEXTS.md), then anything read() adds for this result.
-        const explanation = [INFO_TEXTS.get(dp.id), reading.explanation].filter(Boolean).join(" ");
+        // explanation = the info text (docs/TEXTS.md: main text + matching "Når ..." texts), then anything read() adds.
+        const explanation = [infoText(dp.id, reading), reading.explanation].filter(Boolean).join(" ");
         dataPoints.push({ ...base, ...reading, ...(explanation && { explanation }) });
       }
       else missing.push({ ...base, reason: reason! });

@@ -172,7 +172,6 @@ export const DATA_POINTS: DataPoint[] = [
         return {
           value: r.name, display: `${display}, med alunskifer`, effect: "bad", score: 40,
           warning: { severity: "low", text: "Alunskifer i berggrunnen" },
-          explanation: "Alunskifer kan svelle og skade grunnmur, gir surt avrenningsvann når den graves opp, og gir ofte mye radon.",
         };
       }
       // The rock type itself is information, not a judgement: neutral, not scored.
@@ -240,7 +239,6 @@ export const DATA_POINTS: DataPoint[] = [
       return {
         value: true, display: `I aktsomhetsområde for steinsprang (${where})`, effect: "bad", score: 30,
         warning: { severity: "medium", text: "Aktsomhetsområde for steinsprang" },
-        explanation: "Oversiktskart laget fra terrengmodell: viser hvor steinsprang er mulig, ikke hvor det vil skje.",
       };
     },
   },
@@ -252,7 +250,6 @@ export const DATA_POINTS: DataPoint[] = [
         ? {
             value: true, display: "I aktsomhetsområde for jord- og flomskred", effect: "bad", score: 30,
             warning: { severity: "medium", text: "Aktsomhetsområde for jord- og flomskred" },
-            explanation: "Oversiktskart laget fra terrengmodell: viser hvor jord- og flomskred er mulig, ikke hvor det vil skje.",
           }
         : { value: false, display: "Ikke i aktsomhetsområde", effect: "good" },
   },
@@ -265,14 +262,12 @@ export const DATA_POINTS: DataPoint[] = [
         return {
           value: "medSkog", display: "I aktsomhetsområde for snøskred", effect: "bad", score: 30,
           warning: { severity: "medium", text: "Aktsomhetsområde for snøskred" },
-          explanation: "Oversiktskart (NAKSIN) laget fra terrengmodell: viser hvor snøskred er mulig, ikke hvor det vil skje.",
         };
       }
       // Only in the zone without forest: today's forest protects, but the risk comes back if it is cut.
       return {
         value: "utenSkog", display: "I aktsomhetsområde for snøskred bare uten skog", effect: "bad", score: 70,
         warning: { severity: "low", text: "Snøskred mulig hvis skogen over blir borte" },
-        explanation: "Skogen i løsneområdet beskytter i dag. Hvis skogen hogges eller dør, kan snøskred nå hit.",
       };
     },
   },
@@ -312,7 +307,7 @@ export const DATA_POINTS: DataPoint[] = [
       if (!rows.length) {
         // T-1442 has no data in Oslo: an empty result there means "unknown", not "quiet".
         if (address.municipalityNumber === "0301") return null;
-        return { value: null, display: "Ikke i støysone", effect: "good", explanation: "Kartet dekker bare riks- og fylkesveier, ikke kommunale veier." };
+        return { value: null, display: "Ikke i støysone", effect: "good" };
       }
       const red = rows.some((r) => String(r.stoysone).toLowerCase().startsWith("r"));
       return red
@@ -372,7 +367,6 @@ export const DATA_POINTS: DataPoint[] = [
       return {
         value: n, unit: "avganger", display: `${n} avganger, ${lines} ${lines === 1 ? "linje" : "linjer"}${where}`,
         effect: score >= 50 ? "good" : "bad", score,
-        explanation: "Travleste holdeplass innen 500 m i luftlinje, avganger på en vanlig hverdag.",
       };
     },
   },

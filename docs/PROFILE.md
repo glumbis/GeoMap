@@ -62,7 +62,7 @@ Each category has:
 
 ## Data points
 
-**A data point we have** has an id, a label, the raw value (for logic), a display text (for people), an optional unit, its importance, its effect on the score (good, neutral or bad), its source, and an optional plain-language explanation of what it means (Even writes these).
+**A data point we have** has an id, a label, the raw value (for logic), a display text (for people), an optional unit, its importance, its effect on the score (good, neutral or bad), its source, and an optional plain-language explanation of what it means (Even writes these). The explanation is the data point's **Forklaring** from `docs/TEXTS.md`, then each **Når ...** text whose outcome matches this result (rules in `OUTCOMES`, `api/src/texts.ts`), then any extra note the data point adds itself.
 
 **Importance** is either *critical* or *normal*. Critical points decide whether a category can be rated at all.
 
