@@ -19,7 +19,7 @@ The team wants to think about the product, not about tooling. **You (the agent) 
 **While working:**
 - Stay in your human's folders (see "Roles" in `PLAN.md`). If a task needs a change in someone else's file, say so and suggest the message to send them.
 - Anything people see follows `docs/DESIGN.md` and uses the CSS variables in `web/src/style.css`.
-- When a piece works: run `npm run typecheck`, then commit (small, clear message), `git pull --rebase`, `git push` to `main`. Do this yourself; tell your human what you pushed. Never push code that fails typecheck or breaks `npm run dev`.
+- When a piece works: run `npm run typecheck` and `npm test`. If you touched data, data points, rating, profile or summary, also run `npm run test:addresses` (needs `npm run dev`). Then commit (small, clear message), `git pull --rebase`, `git push` to `main`. Do this yourself; tell your human what you pushed. Never push code that fails typecheck or tests, or breaks `npm run dev`. If a data change makes an address test fail on purpose, update `api/test/addresses.test.ts` and `docs/TEST_ADDRESSES.md` in the same commit.
 - Merge conflicts: resolve them yourself. In a file your human doesn't own, keep the owner's version and redo your change on top.
 - Keep the docs true as you go: add new sources to `SOURCES.md` (under your human's heading), new commands to "Run it" below, and cross out finished tasks in `PLAN.md` (`~~task~~`) in your human's role only.
 - Need a key (e.g. `ANTHROPIC_API_KEY`)? Ask your human for it and put it in `.env` yourself. Never commit `.env`, keys or data files.
@@ -34,6 +34,8 @@ npm run ingest              # rebuild data/geomap.duckdb from every script in da
 npm run dev                 # API on :3000 + web on http://localhost:5173 (open this)
 ```
 - `npm run typecheck` checks api + web. `npm run build` builds the web app to `web/dist/`.
+- `npm test`: rating rules, no database needed (also runs in CI on every push, `.github/workflows/ci.yml`).
+- `npm run test:addresses`: checks the 5 test addresses (hazards, scores, caps, summary facts) against the running API. Needs `npm run dev`.
 - Stop `npm run dev` before running an ingest: DuckDB lets only one process write the file.
 - AI summaries need `ANTHROPIC_API_KEY` in `.env` (copy `.env.example`). Everything else runs without keys.
 - Check the API: `http://localhost:5173/api/health` lists loaded tables. Address profile: `http://localhost:5173/api/address/0301-10223-22/profile`.

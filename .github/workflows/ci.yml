@@ -1,0 +1,21 @@
+# Typecheck and rating tests on every push and pull request.
+# The address regression tests (npm run test:addresses) need the built database and a running API,
+# so they run locally, not here. See "Run it" in AGENTS.md.
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test

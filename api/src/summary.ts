@@ -62,12 +62,14 @@ const yearly = (sentence: (value: string, year: string) => string): Rule => (d) 
 };
 
 const RULES: Record<string, Rule> = {
-  soilType: (d) =>
-    d.warning
-      ? [3, `Grunnen består av ${d.display}, som er marin leire`]
+  soilType: (d) => {
+    const soil = d.display.charAt(0).toLowerCase() + d.display.slice(1);
+    return d.warning
+      ? [3, `Grunnen består av ${soil}, som er marin leire`]
       : d.value === "Bart fjell"
         ? [6, "Det er bart fjell eller bare et tynt lag løsmasser på stedet"]
-        : [6, `Grunnen består av ${d.display}`],
+        : [6, `Grunnen består av ${soil}`];
+  },
   bedrock: (d) => {
     // display: "Leirskifer", "Syenitt (oversiktskart)", "... , med alunskifer"
     const coarse = d.display.includes("(oversiktskart)") ? " ifølge et oversiktskart" : "";
@@ -77,13 +79,17 @@ const RULES: Record<string, Rule> = {
   radon: (d) => [rankOf(d, d.value === "lav" ? 5 : 6), `Adressen ligger i et område med ${d.display.toLowerCase()} for radon`],
   quickClay: (d) => {
     if (d.warning) return [rankOf(d, 1), `Eiendommen ligger i en faresone for kvikkleireskred med ${d.value} faregrad`];
+    // Not in FACTS.md yet: no zone, and NVE has not mapped quick clay here.
+    if (d.value === "ikkeKartlagt") return [7, "NVE har ikke kartlagt kvikkleire der eiendommen ligger, så vi vet ikke om det finnes kvikkleire her"];
     if (d.value === "ingen") return [6, "Eiendommen ligger i en kartlagt kvikkleiresone der NVE ikke har satt noen faregrad"];
     return [5, "Eiendommen ligger ikke i en kartlagt faresone for kvikkleireskred"];
   },
   flood200: (d) =>
     d.warning
       ? [rankOf(d, 2), `Eiendommen ligger i en flomsone som kan bli oversvømt ved en ${d.value}-årsflom`]
-      : [5, "Eiendommen ligger ikke i en kartlagt flomsone"],
+      : d.value === "ikkeKartlagt" // not in FACTS.md yet
+        ? [7, "NVE har ikke laget flomsonekart der eiendommen ligger, så vi vet ikke om den kan bli oversvømt"]
+        : [5, "Eiendommen ligger ikke i en kartlagt flomsone"],
   rockfall: (d) =>
     d.warning
       ? [rankOf(d, 2), "Eiendommen ligger i et aktsomhetsområde for steinsprang"]
@@ -100,7 +106,7 @@ const RULES: Record<string, Rule> = {
         : [5, "Eiendommen ligger ikke i et aktsomhetsområde for snøskred"],
   roadNoise: (d) =>
     d.value === "rød"
-      ? [rankOf(d, 2), "Adressen ligger i rød støysone fra vei, med over 65 dB"]
+      ? [rankOf(d, 2), "Adressen ligger i rød støysone fra vei, med 65 dB eller mer"]
       : d.value === "gul"
         ? [rankOf(d, 3), "Adressen ligger i gul støysone fra vei, med 55–65 dB"]
         : [5, "Adressen ligger ikke i en støysone fra riks- eller fylkesvei"],
@@ -113,7 +119,7 @@ const RULES: Record<string, Rule> = {
   },
   pollutedGround: (d) =>
     d.warning
-      ? [rankOf(d, 3), `Det er registrert forurenset grunn ${d.value} meter fra adressen`]
+      ? [rankOf(d, 3), `Det er registrert et sted med mulig forurenset grunn ${d.value} meter fra adressen`]
       : [5, "Det er ikke registrert forurenset grunn innen 100 meter fra adressen"],
   transitStop: nearest("Nærmeste holdeplass", "ingen holdeplass innen 2 km"),
   transitDepartures: (d) => {

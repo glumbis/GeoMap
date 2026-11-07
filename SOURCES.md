@@ -31,6 +31,11 @@ Info on all soil and ground. In different datasets easy to install, incorporate 
 https://kartkatalog.nve.no/#metadata
 Good data on slides, avalanches, and more. These should be important but probably dont impact most places. 
 
+**NVE mapped areas (coverage)**, in use: `data/scripts/nve_kartlagt.ts` -> tables `kvikkleire_kartlagt`, `flom_kartlagt`.
+`https://kart.nve.no/enterprise/rest/services/SkredKvikkleire2/MapServer/2` (KvikkleireKartlagtOmrade) and
+`https://kart.nve.no/enterprise/rest/services/Flomsoner2/MapServer/0` (FlomsoneAnalyseomraade). NLOD 2.0, credit "NVE", no key.
+Where NVE has looked for quick clay and computed flood zones. Outside these areas "no zone" means "not mapped", not "safe".
+
 https://www.kulturminnesok.no/ 
 Cultural heritage and monument. Couldnt find an easy download site or database, but take a look and see if its possible. This is only one service as the other cultural history and herritage info was only available to employees of the government. 
 ## Sverre

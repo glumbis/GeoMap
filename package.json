@@ -14,7 +14,9 @@
     "dev": "concurrently -k -n api,web -c blue,green \"npm run dev -w api\" \"npm run dev -w web\"",
     "build": "npm run build -w web",
     "typecheck": "npm run typecheck -w api && npm run typecheck -w web",
-    "ingest": "tsx data/scripts/run.ts"
+    "ingest": "tsx data/scripts/run.ts",
+    "test": "npm run test -w api",
+    "test:addresses": "npm run test:addresses -w api"
   },
   "devDependencies": {
     "concurrently": "^10.0.6",

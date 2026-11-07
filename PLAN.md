@@ -57,15 +57,23 @@ We build in three phases. Don't polish phase 1 work before phase 1 works end to 
 
 ## Status (2026-11-07, updated by Lukas)
 
-Phase 1 is done. Phase 2 is well along: 14 datasets loaded, and all 5 test addresses have full hazard data, a real score, an AI summary and info texts.
-Scores now: #4 Grevlingåsen 75, #5 Holmenkollveien 75, #2 Rælingen 65, #3 Sandvika 65, #1 Arendalsgata 20.
+Phase 1 is done. Phase 2 is well along: 19 datasets loaded, and all 5 test addresses have full hazard data, a real score, an AI summary and info texts.
+Scores now: #4 Grevlingåsen 75, #5 Holmenkollveien 75, #2 Rælingen 65, #3 Sandvika 65, #1 Arendalsgata 20. Backup Strandvegen 81: 40 (20-year flood zone is now high, see TEK17 note in `api/src/datapoints.ts`).
+
+**Review 2026-11-07: done by Lukas**
+- Scores no longer tie: stacked caps (`docs/PROFILE.md` → "Severity caps"). PROFILE.md now says what the overall number means, and that a capped score must not be labelled "God".
+- "Not in a zone" only counts as good where NVE has mapped the area (`nve_kartlagt` ingest, `coverage` on a data point). Elsewhere quick clay and flood show "Ikke kartlagt her", neutral, not scored. #3, #4 and #5 are outside NVE's quick-clay and flood mapping.
+- Info texts from `docs/TEXTS.md` are in the profile (`explanation`).
+- Tests: `npm test` (rating rules, also in CI on every push) and `npm run test:addresses` (5 test addresses: hazards, scores, caps, summary facts; needs `npm run dev`).
 
 What the demo still needs, most important first:
-1. **Erik:** show the AI summary on the address page (`GET /api/address/<id>/summary`, label "AI-generert" only when `aiGenerated` is true). Works now with the key in `.env`.
-2. **Erik:** quick-clay and flood zones on the map (`/api/nve_kvikkleire`, `/api/flomsoner`). The pitch points at the zone around the pin.
-3. **Even:** update `docs/DEMO.md`. Scores changed (Grevlingåsen 75, Arendalsgata 20), and the bus caveat can go: the busiest stop within 500 m of Grevlingåsen (Jegeråsen, 212 m) has 161 weekday departures.
-4. ~~**Even:** FACTS.md rules for the new data points~~ Done, and `api/src/summary.ts` matches them. Bedrock and `transitDepartures` texts are in too.
-5. **Sverre:** ~~landslide/avalanche~~ done (`jordflomskred`, `snoskred`). ~~Bedrock~~ done (`berggrunn`, alum shale flag). Nothing in the demo waits on more data.
+1. **Erik:** never call a capped score "God". In `web/src/app/address.ts` `scoreWord()`, when `rating.cappedBy` is present, show the cap reason instead of the word (rule in `docs/PROFILE.md` → "What the overall score means").
+2. **Erik:** show the AI summary on the address page (`GET /api/address/<id>/summary`, label "AI-generert" only when `aiGenerated` is true).
+3. **Erik:** hazard overlays on the map: quick clay `/api/nve_kvikkleire`, flood `/api/flomsoner`, road noise `/api/veistoy` and `/api/stoy_strategisk`. One file each in `web/src/features/`. The pitch points at the quick-clay zone around the pin.
+4. **Erik:** search misses addresses. It asks Geonorge for 50 hits nationwide, then keeps Oslo/Akershus, so common street names give "no results". Geonorge filters on only one `kommunenummer` per request. Fix that works today: `treffPerSide=1000` plus `filtrer=adresser.adressetekst,adresser.kommunenummer,adresser.adressekode,adresser.nummer,adresser.bokstav,adresser.postnummer,adresser.poststed,adresser.kommunenavn,adresser.objtype` (about 0.5 s), then filter as now.
+5. **Erik:** show "Ikke kartlagt her" (value `ikkeKartlagt`, effect neutral) as neutral grey, never green.
+6. **Sverre + Even:** check radon and soil type for the 5 test addresses against NGU's own map (radon: geo.ngu.no aktsomhetskart, soil: løsmassekart) and write the result in `docs/TEST_ADDRESSES.md`. The test notes say this is not checked yet.
+7. **Even:** update `docs/DEMO.md` and `docs/TEST_ADDRESSES.md`: scores above, Strandvegen 81 now 40, the bus caveat can go (Jegeråsen, 212 m, 161 weekday departures), and #3–#5 show "Ikke kartlagt her" for quick clay and flood. Add FACTS.md rules for quick clay and flood value `ikkeKartlagt` (code: rank 7, "NVE har ikke kartlagt …, så vi vet ikke …").
 
 After these, stop adding data and move to phase 3 (demo).
 

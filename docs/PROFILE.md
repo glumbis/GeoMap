@@ -43,6 +43,12 @@ Every address has one id, used in the URL (`/a/<id>` in the web app, `/api/addre
 - **Reason:** plain-language explanation. Only present when the status is not ok.
 - **Coverage:** how many data points we have, how many we expected, and how many critical ones are missing. The UI can show this as "8 of 10 data points".
 
+**What the overall score means.** It is a summary of what the public data we have says about the address. It is not a safety rating, a price signal or a promise that a risk is absent.
+- The number comes from two steps. First, a weighted average of the rated categories gives everyday quality. Then serious warnings cap it, so one serious hazard can never be averaged away.
+- Severity says how serious a finding is. The cap is the scoring penalty that follows from it. A warning's severity never changes; only the cap rules below turn it into points.
+- When `cappedBy` is present, the hazard decides the number, not the everyday quality. The UI must then show the cap reason next to the number. It must not show a word like "God" (good) for a capped score.
+- A hazard map only counts as good where the source has mapped the area (see "Mapped area" under Data points). "Not mapped" is shown, but not scored.
+
 ## Categories are not fixed
 
 Categories can be added, removed or renamed at any time without changing the web app.
@@ -64,6 +70,11 @@ Each category has:
 - *no coverage*: the source has no data for this place
 - *source unavailable*: the source is down or not responding
 - *not loaded*: we have not ingested that dataset yet
+
+**Mapped area.** Some hazard maps only cover part of the region (NVE quick clay and flood zones). For these, "no zone found" means two different things:
+- inside an area the source has mapped: *not in a mapped zone*. This is real data and counts as good.
+- outside it: *not mapped here*. Value `ikkeKartlagt`, effect neutral, no score, and an explanation that this does not mean safe. The AI summary lists it with the missing data.
+A data point declares its mapped-area table with `coverage` in `api/src/datapoints.ts`.
 
 ## When can we rate? (draft defaults, Lukas decides)
 

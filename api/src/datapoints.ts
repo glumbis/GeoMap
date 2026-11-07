@@ -62,9 +62,21 @@ export interface DataPoint {
   importance: "critical" | "normal";
   table: string;
   find: Find;
+  /**
+   * Optional table of the areas the source has mapped (e.g. kvikkleire_kartlagt). The profile then passes
+   * `mapped` to read(): true inside a mapped area, false outside, undefined when the table isn't loaded.
+   * Use it so "no zone found" only counts as good where someone actually looked.
+   */
+  coverage?: string;
   /** rows is [] when nothing was found. Return null when the source has no coverage here. */
-  read: (rows: Row[], address: Address) => Reading | null;
+  read: (rows: Row[], address: Address, mapped?: boolean) => Reading | null;
 }
+
+/** Hazard map with a coverage table: no zone outside the mapped area is unknown, not good. Not scored. */
+const notMapped = (what: string): Reading => ({
+  value: "ikkeKartlagt", display: "Ikke kartlagt her", effect: "neutral",
+  explanation: `NVE har ikke kartlagt ${what} der adressen ligger. At det ikke finnes en faresone her, betyr derfor ikke at det er trygt.`,
+});
 
 export const CATEGORIES: Category[] = [
   { id: "ground", name: "Grunn og geologi", weight: 20, required: true },
@@ -167,12 +179,16 @@ export const DATA_POINTS: DataPoint[] = [
     },
   },
 
-  // Natural hazards. Proposed tables from NVE (Sverre). No zone = "not in a mapped zone": that is real data.
+  // Natural hazards. Proposed tables from NVE (Sverre). No zone inside an area NVE has mapped = "not in a
+  // mapped zone", which is real data (good). No zone outside it = not mapped: unknown, never good.
   {
     id: "quickClay", label: "Kvikkleire faresone", category: "hazards", source: "nve-kvikkleire", importance: "critical",
     table: "nve_kvikkleire", find: { kind: "within" }, // data/scripts/nve_kvikkleire.ts (Sverre): name, faregrad ('Høy' | 'Middels' | 'Lav' | 'Ingen'), risikoklasse
-    read: (rows) => {
-      if (!rows.length) return { value: null, display: "Ikke i kartlagt faresone", effect: "good" };
+    coverage: "kvikkleire_kartlagt", // data/scripts/nve_kartlagt.ts
+    read: (rows, _address, mapped) => {
+      if (!rows.length) {
+        return mapped ? { value: null, display: "Ikke i faresone (kartlagt område)", effect: "good" } : notMapped("kvikkleire");
+      }
       const order = ["høy", "middels", "lav"];
       const graded = rows.filter((r) => order.includes(String(r.faregrad).toLowerCase()));
       if (!graded.length) {
@@ -195,15 +211,20 @@ export const DATA_POINTS: DataPoint[] = [
   {
     id: "flood200", label: "Flomsone (200-årsflom)", category: "hazards", source: "nve-flomsoner", importance: "critical",
     table: "flomsoner", find: { kind: "within" }, // data/scripts/flomsoner.ts (Sverre): gjentaksintervall (10/20/50/100/200), lowPoint
-    read: (rows) => {
-      if (!rows.length) return { value: false, display: "Ikke i kartlagt flomsone", effect: "good" };
+    coverage: "flom_kartlagt", // data/scripts/nve_kartlagt.ts
+    read: (rows, _address, mapped) => {
+      if (!rows.length) {
+        return mapped ? { value: false, display: "Ikke i flomsone (kartlagt område)", effect: "good" } : notMapped("flomfare");
+      }
       const years = Math.min(...rows.map((r) => Number(r.gjentaksintervall) || 200));
       // lavpunkt: below the flood level but not directly connected to the river
       const lowPoint = rows.filter((r) => Number(r.gjentaksintervall) === years).every((r) => r.lowPoint === true);
+      // TEK17 §7-2: homes must withstand a 200-year flood, garages and the like a 20-year flood; a 20-year zone fails even the lowest class.
+      const high = years <= 20;
       return {
-        value: years, unit: "år", display: `I ${years}-årsflomsone${lowPoint ? " (lavpunkt)" : ""}`, effect: "bad", score: years <= 10 ? 0 : 20,
+        value: years, unit: "år", display: `I ${years}-årsflomsone${lowPoint ? " (lavpunkt)" : ""}`, effect: "bad", score: high ? 0 : 20,
         ...(lowPoint && { explanation: "Lavpunkt: området ligger lavere enn flomvannstanden, men har ikke direkte forbindelse til elva. Det kan likevel bli oversvømt gjennom kummer, rør eller grunnvann." }),
-        warning: { severity: years <= 10 ? "high" : "medium", text: `Ligger i ${years}-årsflomsone` },
+        warning: { severity: high ? "high" : "medium", text: `Ligger i ${years}-årsflomsone` },
       };
     },
   },

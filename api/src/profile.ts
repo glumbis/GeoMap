@@ -63,6 +63,14 @@ async function findRows(table: string, find: Find, lng: number, lat: number): Pr
   return query(`SELECT * FROM (${near}) WHERE distanceM <= $7 ORDER BY distanceM LIMIT 500`, params);
 }
 
+/** Is the point inside an area the source has mapped? undefined when the coverage table isn't loaded. */
+async function isMapped(table: string, loaded: Set<string>, lng: number, lat: number): Promise<boolean | undefined> {
+  if (!/^[a-z0-9_]+$/.test(table)) throw new Error(`bad coverage table name: ${table}`);
+  if (!loaded.has(table)) return undefined;
+  const rows = await query(`SELECT 1 FROM ${table} WHERE ST_Intersects(geom, ST_Point($1, $2)) LIMIT 1`, [lng, lat]);
+  return rows.length > 0;
+}
+
 export async function buildProfile(id: string): Promise<Profile> {
   const address = await lookupAddress(id);
   const loaded = new Set((await query<{ t: string }>("SELECT table_name AS t FROM duckdb_tables()")).map((r) => r.t));
@@ -75,7 +83,8 @@ export async function buildProfile(id: string): Promise<Profile> {
       continue;
     }
     try {
-      const reading = dp.read(await findRows(dp.table, dp.find, address.lng, address.lat), address);
+      const mapped = dp.coverage ? await isMapped(dp.coverage, loaded, address.lng, address.lat) : undefined;
+      const reading = dp.read(await findRows(dp.table, dp.find, address.lng, address.lat), address, mapped);
       results.push(reading ? { dp, reading } : { dp, reason: "noCoverage" });
     } catch (err) {
       // A broken entry must not break the whole profile. Show it as missing and log why.
