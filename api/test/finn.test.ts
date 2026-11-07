@@ -1,7 +1,7 @@
 // Reverse search criteria (api/src/finnCriteria.ts). No database needed: `npm test`.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { CriteriaError, criteriaWhere, parseBbox, parseLimit, parseQuery, sanitizeAi } from "../src/finnCriteria.ts";
+import { CriteriaError, criteriaWhere, matchKommune, parseBbox, parseLimit, parseQuery, sanitizeAi } from "../src/finnCriteria.ts";
 
 test("query params: numbers, flags and kommune are parsed; empty params ignored", () => {
   const c = parseQuery({ minFamily: "60", quiet: "1", noHazard: "true", maxSchoolM: "1000", minTransitDepartures: "50", kommune: " Bærum ", minScore: "" });
@@ -47,4 +47,19 @@ test("SQL: each criterion becomes one comparison with a numbered param; flags ne
   assert.deepEqual(where, ["score >= $1", "schoolM <= $2", "hazard = false", "quiet = true", "(kommunenummer = $3 OR lower(kommune) = lower($3))"]);
   assert.deepEqual(params, [70, 1000, "Oslo"]);
   assert.deepEqual(criteriaWhere({}), { where: [], params: [] });
+});
+
+test("kommune: forgiving match (case, ae/oe/aa, trailing 'kommune'), written as in the list", () => {
+  const list = ["Oslo", "0301", "Bærum", "3201", "Lørenskog", "3222", "Ås", "3218", "Nordre Follo"];
+  assert.equal(matchKommune("Baerum", list), "Bærum");
+  assert.equal(matchKommune("bærum kommune", list), "Bærum");
+  assert.equal(matchKommune("Lorenskog", list), "Lørenskog");
+  assert.equal(matchKommune("Loerenskog", list), "Lørenskog");
+  assert.equal(matchKommune("Oslo kommune", list), "Oslo");
+  assert.equal(matchKommune("aas", list), "Ås");
+  assert.equal(matchKommune("nordre-follo", list), "Nordre Follo");
+  assert.equal(matchKommune("3201", list), "3201");
+  assert.equal(matchKommune("lør", list), undefined);
+  assert.equal(matchKommune("Bergen", list), undefined);
+  assert.deepEqual(sanitizeAi({ kommune: "Baerum kommune" }, list), { kommune: "Bærum" });
 });

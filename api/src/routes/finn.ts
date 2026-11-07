@@ -5,14 +5,18 @@
 //   &maxSchoolM=&maxKindergartenM=&maxGroceryM=&maxTransitStopM=&maxTrailsM=&maxDoctorM=&minTransitDepartures=
 //   &kommune=<name or number>&bbox=minLng,minLat,maxLng,maxLat&limit=5000 (max 10000)
 //   -> GeoJSON FeatureCollection of matching squares + matched (before limit), total (all squares), criteria (parsed).
+//   kommune is forgiving ("baerum", "Lorenskog", "Oslo kommune" all work); one we don't know matches nothing.
+//   Each square has place (grunnkrets name) and, in Oslo, bydel.
 //   A NULL value never satisfies a criterion: unknown is not "fits". A NULL distance means nothing within the
 //   data point's search radius, so it fails any max-distance criterion.
+// GET /api/finn/kommuner -> { kommuner: [{ name, number, squares }] } the municipalities in the data, by name.
 // GET /api/finn/tolk?q=<free Norwegian text> -> { criteria, explanation } via Claude Haiku. 503 without ANTHROPIC_API_KEY.
+// GET /api/finn/tolk/status -> { available } whether the free-text search can work (ANTHROPIC_API_KEY is set).
 import Anthropic from "@anthropic-ai/sdk";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { query, tableExists } from "../db.ts";
-import { CriteriaError, criteriaWhere, parseBbox, parseLimit, parseQuery, sanitizeAi, type Criteria } from "../finnCriteria.ts";
+import { CriteriaError, criteriaWhere, matchKommune, parseBbox, parseLimit, parseQuery, sanitizeAi, type Criteria } from "../finnCriteria.ts";
 
 const TABLE = "omradescore";
 const MODEL = "claude-haiku-5-5";
@@ -30,10 +34,25 @@ function bad(err: unknown): never {
 
 const PROPS = [
   "cid", "score", "living", "building", "family", "commuter", "hazard", "quiet", "noiseDb",
-  "schoolM", "kindergartenM", "groceryM", "transitStopM", "trailsM", "doctorM", "transitDepartures", "kommune", "capText",
+  "schoolM", "kindergartenM", "groceryM", "transitStopM", "trailsM", "doctorM", "transitDepartures", "kommune", "place", "bydel", "capText",
 ];
 
 const app = new Hono();
+
+type Kommune = { name: string; number: string; squares: number };
+async function kommuner(): Promise<Kommune[]> {
+  return query<Kommune>(
+    `SELECT kommune AS name, kommunenummer AS number, count(*)::INTEGER AS squares FROM ${TABLE}
+     WHERE kommune IS NOT NULL GROUP BY 1, 2 ORDER BY 1`,
+  );
+}
+
+app.get("/kommuner", async (c) => {
+  await needTable();
+  return c.json({ kommuner: await kommuner() });
+});
+
+app.get("/tolk/status", (c) => c.json({ available: !!process.env.ANTHROPIC_API_KEY }));
 
 app.get("/", async (c) => {
   await needTable();
@@ -46,6 +65,12 @@ app.get("/", async (c) => {
     bad(err);
   }
 
+  if (criteria.kommune) {
+    // Forgiving match against the names and numbers we have; unknown stays as given (and matches nothing).
+    const list = await kommuner();
+    const hit = matchKommune(criteria.kommune, list.flatMap((k) => [k.name, k.number]));
+    if (hit) criteria.kommune = hit;
+  }
   const { where, params } = criteriaWhere(criteria);
   const all: (string | number)[] = [...params];
   if (bbox) {
@@ -118,9 +143,7 @@ app.get("/tolk", async (c) => {
     throw new HTTPException(503, { message: "Kan ikke tolke teksten nå: AI-nøkkelen mangler på serveren. Bruk filtrene i stedet." });
   }
   await needTable();
-  const kommuner = (await query<{ kommune: string; kommunenummer: string }>(
-    `SELECT DISTINCT kommune, kommunenummer FROM ${TABLE} WHERE kommune IS NOT NULL`,
-  )).flatMap((k) => [k.kommune, k.kommunenummer]);
+  const known = (await kommuner()).flatMap((k) => [k.name, k.number]);
 
   let text: string;
   try {
@@ -148,7 +171,7 @@ app.get("/tolk", async (c) => {
     console.error(`finn/tolk: not JSON: ${text.slice(0, 200)}`);
     throw new HTTPException(503, { message: "Kan ikke tolke teksten nå: fikk et uventet svar. Prøv å skrive det på en annen måte." });
   }
-  const criteria = sanitizeAi(parsed.criteria, kommuner);
+  const criteria = sanitizeAi(parsed.criteria, known);
   const explanation = typeof parsed.explanation === "string" && parsed.explanation.trim()
     ? parsed.explanation.trim().slice(0, 300)
     : "Fant ingen kriterier i teksten.";
