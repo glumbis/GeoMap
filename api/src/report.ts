@@ -510,14 +510,40 @@ const HEADER = (address: string) => `<div style="width:100%;font:7pt 'Segoe UI',
 const FOOTER = `<div style="width:100%;font:7pt 'Segoe UI',sans-serif;color:${C.muted};padding:0 16mm;display:flex;justify-content:space-between">
   <span>Offentlige data. Ikke en tilstandsrapport eller takst.</span><span>Side <span class="pageNumber"></span> av <span class="totalPages"></span></span></div>`;
 
-/** The report as a PDF. Throws the same 400/404/503 errors as the profile. */
-export async function buildReport(id: string): Promise<{ pdf: Uint8Array; addressId: string }> {
+async function reportHtml(id: string) {
   const [profile, summary] = await Promise.all([buildProfile(id), buildSummary(id)]);
   const a = profile.address;
   const zones = await hazardZones(frame(a.lng, a.lat, 15, 672, 400));
-  const pdf = await htmlToPdf(render(profile, summary, zones), {
-    header: HEADER(`${a.text}, ${a.postcode} ${titleCase(a.place)}`),
-    footer: FOOTER,
-  });
-  return { pdf, addressId: a.id };
+  return { html: render(profile, summary, zones), addressId: a.id, title: `${a.text}, ${a.postcode} ${titleCase(a.place)}` };
+}
+
+/** The report as a PDF. Throws the same 400/404/503 errors as the profile. */
+export async function buildReport(id: string): Promise<{ pdf: Uint8Array; addressId: string }> {
+  const { html, addressId, title } = await reportHtml(id);
+  const pdf = await htmlToPdf(html, { header: HEADER(title), footer: FOOTER });
+  return { pdf, addressId };
+}
+
+// Printed by the visitor's own browser instead of our Chromium (hosts with too little memory, docs/REPORT.md).
+// On screen: the A4 pages on grey with a print button. In print: page margins, the toolbar hidden.
+const PAGE_CSS = `
+@page { margin: 20mm 16mm 18mm; }
+@media screen {
+  html { background: #e9e6df; }
+  body { max-width: 210mm; margin: 0 auto; padding: 16mm; background: #fff; }
+  .print-bar { position: sticky; top: 0; z-index: 10; display: flex; gap: 3mm; align-items: center; justify-content: space-between;
+    max-width: 210mm; margin: 0 auto; padding: 3mm 16mm; background: ${C.ink}; color: #fff; font: 10pt "IBM Plex Sans", sans-serif; }
+  .print-bar button { font: inherit; font-weight: 600; padding: 1.5mm 4mm; border: 0; border-radius: 4px; background: #fff; color: ${C.ink}; cursor: pointer; }
+}
+@media print { .print-bar { display: none; } }`;
+
+/** The report as a printable HTML page; the browser's print dialog saves it as PDF. `print` opens the dialog on load. */
+export async function buildReportPage(id: string, print: boolean): Promise<string> {
+  const { html, title } = await reportHtml(id);
+  const bar = `<div class="print-bar"><span>Omnium-rapport · ${esc(title)}</span><button type="button" onclick="print()">Lagre som PDF / skriv ut</button></div>`;
+  // Wait for map tiles (load) and web fonts before the dialog, or the PDF prints half-empty.
+  const script = print ? `<script>addEventListener("load", () => document.fonts.ready.then(() => setTimeout(print, 300)));</script>` : "";
+  return html
+    .replace("</head>", `<title>Omnium-rapport · ${esc(title)}</title><style>${PAGE_CSS}</style>${script}</head>`)
+    .replace("<body>", `<body>${bar}`);
 }

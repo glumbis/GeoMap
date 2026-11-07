@@ -101,7 +101,7 @@ data/
 
 ## API conventions
 - **Every API response is JSON.** No HTML, CSV or plain text. This keeps every endpoint usable the same way by the web app, other agents and scripts.
-  - **One exception:** `GET /api/address/:id/report.pdf` returns the PDF report (`docs/REPORT.md`). Its errors are still JSON. No other non-JSON endpoints without asking Lukas.
+  - **One exception:** `GET /api/address/:id/report.pdf` returns the PDF report (`docs/REPORT.md`), and `GET /api/address/:id/report.html` the same report as a page the browser prints (for small hosts). Their errors are still JSON. No other non-JSON endpoints without asking Lukas.
   - Map layers return GeoJSON (it is JSON). Everything else returns plain JSON objects.
   - Field names in `camelCase`. Coordinates as numbers in EPSG:4326 (`lng`, `lat`). Dates as ISO 8601 strings.
   - Errors are JSON too: an error code and a readable message, with a matching HTTP status.

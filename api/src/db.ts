@@ -8,10 +8,7 @@ import { fileURLToPath } from "node:url";
 export const DB_PATH = resolve(dirname(fileURLToPath(import.meta.url)), "../../data/geomap.duckdb");
 
 mkdirSync(dirname(DB_PATH), { recursive: true });
-// Small hosts (e.g. Render free, 512 MB) set DUCKDB_MEMORY_LIMIT so DuckDB leaves room for Chromium (PDF report).
-// Default: DuckDB's own, 80% of RAM.
-const limit = process.env.DUCKDB_MEMORY_LIMIT;
-const instance = await DuckDBInstance.create(DB_PATH, limit ? { memory_limit: limit } : undefined);
+const instance = await DuckDBInstance.create(DB_PATH);
 export const conn = await instance.connect();
 await conn.run("INSTALL spatial; LOAD spatial;");
 

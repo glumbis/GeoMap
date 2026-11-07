@@ -17,8 +17,8 @@ Optional: AI summaries with `-e ANTHROPIC_API_KEY=...` (without it the page show
 
 **https://omnium-e7ps.onrender.com** (Render free plan, Frankfurt, set up from `render.yaml`).
 - Sleeps after 15 minutes without visitors; the first visit after that takes about a minute.
-- **PDF report does not work there yet:** 512 MB is too little for Chromium next to the database, and a PDF
-  request restarts the instance (the site is back after ~30 s). Everything else works.
+- **PDF report:** 512 MB is too little for Chromium next to the database, so `render.yaml` sets
+  `REPORT_PRINT=browser`: the PDF button opens a printable page and the visitor's browser saves it as PDF (`docs/REPORT.md`).
 - New image -> new deploy: GitHub calls Render's deploy hook after each build, once the hook is saved as the
   repo secret `RENDER_DEPLOY_HOOK` (Render: omnium -> Settings -> Deploy Hook; GitHub: repo -> Settings ->
   Secrets and variables -> Actions). Until then: Render -> omnium -> Manual Deploy.

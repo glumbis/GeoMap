@@ -12,9 +12,16 @@ Free for now. Later the full report can become a paid extra (see `extra_features
 - File name: `omnium-rapport-<id>.pdf`.
 - Takes about 5–10 s: it builds the profile and summary, loads map tiles, then prints. Not cached.
 - Errors are JSON like every other endpoint: 400 bad id, 404 unknown address, 503 when no browser is found or Geonorge is down.
-- **This is the one exception to "every API response is JSON"** (`AGENTS.md` → "API conventions"), agreed by Lukas 2026-11-07. A PDF can't be JSON. Don't add other non-JSON endpoints without asking Lukas.
+- **This (and `report.html` below) is the exception to "every API response is JSON"** (`AGENTS.md` → "API conventions"), agreed by Lukas 2026-11-07. A PDF can't be JSON. Don't add other non-JSON endpoints without asking Lukas.
 
 Try it: http://localhost:5173/api/address/0301-10223-22/report.pdf
+
+### Printed by the browser: `report.html`
+
+`GET /api/address/<id>/report.html` is the same report as a web page that the visitor's own browser saves as PDF
+(`?print` opens the print dialog once map tiles and fonts are loaded). It exists for hosts with too little memory
+for Chromium next to the database (Render free, 512 MB). Those set `REPORT_PRINT=browser`, and then `report.pdf`
+redirects to `report.html?print`, so the button on the website works unchanged.
 
 ## How it is made
 
