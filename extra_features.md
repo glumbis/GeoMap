@@ -58,7 +58,7 @@ Pick 2–3 addresses and see them side by side: overall score, category scores, 
 ## 3. Visning checklist ("Spør megleren")
 
 Turn each warning and missing data point into a concrete question to ask at the viewing or the seller. Example: quick clay zone → "Er det gjort geoteknisk vurdering av tomten?"; radon high → "Er det målt radon, og når?"; flood zone → "Har kjelleren hatt vann inn?". Rules written by hand per data point (like `docs/FACTS.md`), not invented by AI. Cheap, very practical, and something people share.
-**Status 2026-11-07 (Sverre):** built. The questions moved from `report.ts` to `api/src/questions.ts` and are in the profile as `questions`; the PDF report shows them under "Spørsmål å stille". An address-page version ("Spør megleren" with checkboxes) was built and then removed again on 2026-11-07 at Sverre's request.
+**Status 2026-11-07 (Sverre):** built. The questions moved from `report.ts` to `api/src/questions.ts` and are in the profile as `questions`; the address page shows them as "Spør megleren" with checkboxes (kept in the browser) and "Kopier listen" (`web/src/app/checklist.ts`). The PDF report uses the same list.
 
 ## 4. My commute
 
