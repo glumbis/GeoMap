@@ -12,8 +12,8 @@ Two homes, both in Bærum/Oslo, both near a bus and a school. On paper they look
 
 | Role | Address | Id | What it shows |
 |---|---|---|---|
-| Start: the calm case | Grevlingåsen 17, 1362 Hosle | `3201-1574-17` | No warnings. Naturfare 100. Bus 82 m, school 256 m, kindergarten 226 m. |
-| Contrast: the hidden risk | Arendalsgata 22, 0463 Oslo | `0301-10223-22` | Warnings: quick-clay zone, faregrad **høy** (NVE), and road noise 65–70 dB (strategic noise map). Also a registered polluted-ground site 17 m away (low). Naturfare 30. Bus 31 m. |
+| Start: the calm case | Grevlingåsen 17, 1362 Hosle | `3201-1574-17` | Overall **60**. Naturfare 100: no quick clay, flood or noise zone. One warning: høy radonaktsomhet (common around Oslo). Bus 82 m, school 256 m, kindergarten 226 m. |
+| Contrast: the hidden risk | Arendalsgata 22, 0463 Oslo | `0301-10223-22` | Warnings: quick-clay zone, faregrad **høy** (NVE), and road noise 65–70 dB (strategic noise map), meget høy radonaktsomhet, marine clay and a polluted-ground site 17 m away. Overall **40**. Naturfare 30. Bus 31 m. |
 | Backup / extra | Nedre Rælingsveg 148, 2005 Rælingen | `3224-8900-148` | Two warnings: 200-year flood zone and red road noise zone. |
 
 Numbers above are from the profile on 2026-11-07. Check them again before the demo (see checklist): they change when data or the rating changes.
@@ -32,7 +32,7 @@ Times are a guide. Bold = what you click or show.
 
 **0:45–1:30 — Det rolige eksempelet: Grevlingåsen 17**
 **Type "Grevlingåsen 17", pick the one in 1362 Hosle.** There is also a Grevlingåsen 17 in 1386 Asker: don't pick that one.
-> Her er et vanlig hus på Hosle i Bærum. Ingen advarsler. Det ligger ikke i noen kartlagt faresone for kvikkleire, ikke i flomsone og ikke i støysone. Bussen er 82 meter unna, skolen 256 meter.
+> Her er et vanlig hus på Hosle i Bærum. Samlet karakter 60. Det ligger ikke i noen kartlagt faresone for kvikkleire, ikke i flomsone og ikke i støysone. Den eneste advarselen er høy aktsomhet for radon, som er vanlig rundt Oslo. Bussen er 82 meter unna, skolen 256 meter.
 **Point at the category cards, then open one data point to show its source and explanation.**
 > Alt vi viser har en kilde. Og vi forklarer hva det betyr for den som bor der.
 
@@ -40,7 +40,8 @@ Times are a guide. Bold = what you click or show.
 **Go back, type "Arendalsgata 22", pick it.**
 > Så en leilighet på Sagene i Oslo. Like nær buss og skole. Men øverst ser du advarsler, den alvorligste først: eiendommen ligger i en faresone for kvikkleireskred med høy faregrad, fra NVE. I tillegg veistøy på 65–70 dB og forurenset grunn registrert i nærheten.
 **Point at the warnings and the low Naturfare score.** (Once Erik adds the quick-clay layer to the map, also point at the zone around the pin.)
-> Karakteren for naturfare faller fra 100 til 30. Den alvorligste risikoen står alltid først, og den kan ikke gjemmes i et snitt.
+**Point at "Begrenset til 40 på grunn av: Faresone for kvikkleireskred" under the score.**
+> Samlet karakter faller fra 60 til 40, og naturfare fra 100 til 30. Og siden står hvorfor: kvikkleiren låser karakteren til maks 40. Den alvorligste risikoen står alltid først, og den kan ikke gjemmes i et snitt.
 
 **2:15–2:40 — Ærlighet om data**
 **Point at a data point shown as "Ikke tilgjengelig".**
@@ -62,12 +63,12 @@ What the pitch needs, and who it depends on. Update this as things land.
 | Address page: warnings, category cards, data points with source | Works | Erik |
 | "Ikke tilgjengelig" for missing data | Works (e.g. Steinsprang under Naturfare) | Erik |
 | Quick-clay zone visible on the map | Not yet: data at `/api/nve_kvikkleire`, no map layer | Erik |
-| Overall rating (a number) | Not yet: "Kan ikke vurderes" until ground data (radon, løsmasser) is loaded | Sverre, Lukas |
+| Overall rating (a number) | Works: Grevlingåsen 60, Arendalsgata 40. Note: any medium warning caps the overall at 60, and high radon is common, so most addresses get exactly 60 | Lukas |
 | Explanations under each data point | Not shown yet: texts in `docs/TEXTS.md`, not in the profile | Lukas |
 | AI summary | Not on the page yet. Endpoint uses `docs/FACTS.md`; needs `ANTHROPIC_API_KEY` | Lukas, Erik |
 | Map tiles | Take 3–5 seconds to appear the first time. Open both pages before presenting | — |
 
-If the overall rating still says "insufficient data" on the day, that is fine: use it in the 2:15 part as the example of honesty.
+For the 2:15 part, open Naturfare on Grevlingåsen: Steinsprang shows "Ikke tilgjengelig".
 
 ## Checklist before presenting
 

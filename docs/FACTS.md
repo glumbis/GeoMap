@@ -55,8 +55,10 @@ Rules for every sentence:
 
 | When | Sentence | Rank |
 |---|---|---|
-| warning (høy) | Adressen ligger i et område med høy aktsomhet for radon ({src}). | 2 |
-| value starts with "moderat" | Adressen ligger i et område med moderat til lav aktsomhet for radon ({src}). | 5 |
+| value "megetHøy" | Adressen ligger i et område med meget høy aktsomhet for radon ({src}). | 2 |
+| value "høy" | Adressen ligger i et område med høy aktsomhet for radon ({src}). | 2 |
+| value "middels" | Adressen ligger i et område med middels aktsomhet for radon ({src}). | 6 |
+| value "lav" | Adressen ligger i et område med lav aktsomhet for radon ({src}). | 5 |
 
 ### Natural hazards
 
@@ -197,5 +199,5 @@ From `docs/TEST_ADDRESSES.md`. After a change here or in `summary.ts`, the facts
 | 1 | Arendalsgata 22 | Kvikkleire, høy faregrad (rank 1). Veistøy 65–70 dB from the strategic map (rank 2) | Any T-1442 noise zone (no coverage in Oslo) |
 | 2 | Nedre Rælingsveg 148 | 200-årsflom (rank 2). Rød støysone (rank 2) | A second noise warning (strategic map does not warn outside Oslo) |
 | 3 | Gamle Drammensvei 207 | Rød støysone (rank 2) | Kvikkleire, flom |
-| 4 | Grevlingåsen 17 | "ikke i en kartlagt" for quick clay and flood, no noise zone (rank 5) | Any warning |
-| 5 | Holmenkollveien 196 | No warnings. Frognerseteren as nearest stop | Kvikkleire, flom, støy |
+| 4 | Grevlingåsen 17 | "ikke i en kartlagt" for quick clay and flood, no noise zone (rank 5). Høy radonaktsomhet (rank 2) | Any other warning |
+| 5 | Holmenkollveien 196 | Høy radonaktsomhet (rank 2). Frognerseteren as nearest stop | Kvikkleire, flom, støy |

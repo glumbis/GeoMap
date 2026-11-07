@@ -33,7 +33,9 @@ The id is the address id from `docs/PROFILE.md` (`<kommunenummer>-<adressekode>-
 
 - Ski tracks at #5: Turrutebasen (`turruter`) has a trail 45 m away but the nearest ski track 1.2 km away (TRY-løypa). Turrutebasen lacks most Nordmarka ski tracks, so this does not show the ski area well.
 - Polluted ground (`grunnforurensning`) on 2026-11-07: #1 has a registered site 17 m away ("Arendalsgata 3-22", påvirkningsgrad 2: acceptable with today's use). The others have none within 100 m.
-- Radon, soil type (løsmasser), rockfall and avalanche were not checked for any address.
+- Radon and soil type (from Sverre's `radon` and `losmasser`) on 2026-11-07: #1 meget høy radon, marine clay (hav- og fjordavsetning). #2 middels radon, fluvial deposit. #3 meget høy radon. #4 høy radon, fill (fyllmasse). #5 høy radon, bare rock. Not checked against NGU's own map.
+- Overall rating on 2026-11-07: #1 40, #2–#5 60 (medium warnings cap the overall at 60).
+- Rockfall and avalanche were not checked for any address.
 - Strategic noise map (`stoy_strategisk`, 2021) on 2026-11-07: #2 65–70 dB, #3 70–75 dB, #4 no zone (unknown), backup Kjelsåsveien 162 55–60 dB.
 - The road noise map (`Stoyvarselkart`) only covers national and county roads and has no data inside central Oslo. That is why the noisy-road case is in Bærum.
 

@@ -21,8 +21,9 @@ How to use this file:
 
 ### `radon` — Radon
 **Forklaring:** Radon er en radioaktiv gass fra berggrunnen som kan sive inn i hus. Det er den viktigste årsaken til lungekreft etter røyking.
-- **Når høy aktsomhet:** Det er større sjanse enn ellers for at hus i området har for mye radon. Bare en måling i huset kan si hvor mye radon det faktisk er.
-- **Når moderat til lav aktsomhet:** Det er mindre sjanse for høye radonverdier, men enkelthus kan likevel ha mye radon.
+- **Når høy eller meget høy aktsomhet:** Det er større sjanse enn ellers for at hus i området har for mye radon. Bare en måling i huset kan si hvor mye radon det faktisk er.
+- **Når middels aktsomhet:** Noen hus i området kan ha for mye radon. Bare en måling i huset kan si hvor mye det faktisk er.
+- **Når lav aktsomhet:** Det er mindre sjanse for høye radonverdier, men enkelthus kan likevel ha mye radon.
 
 ## Naturfare
 
