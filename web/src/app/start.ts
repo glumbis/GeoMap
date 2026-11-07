@@ -1,4 +1,4 @@
-// Start page (docs/DESIGN.md): the logo, a rolling line of things you can check, one big search field,
+// Start page (docs/DESIGN.md): the logo, a fading line saying who Omnium is for, one big search field,
 // all on top of a slowly drifting map of Oslo, faded into the paper colour like the window in the logo.
 import { Map } from "maplibre-gl";
 import { basemapStyle } from "./basemap";
@@ -6,19 +6,26 @@ import { h } from "./dom";
 import { navigate } from "./router";
 import { createSearch } from "./search";
 import { destroyMap } from "./map";
+import "./start.css";
 
-// "Sjekk ..." + one of these, rolling. Keep them short, plain and true to data we have or plan to have.
-const IDEAS = [
-  "radon i grunnen",
-  "støy fra veien",
-  "kvikkleire under huset",
-  "flomfare",
-  "nærmeste skole",
-  "nærmeste barnehage",
-  "bussen og trikken",
-  "forurenset grunn",
-  "turstier og skiløyper",
-  "steinsprang",
+// "For <who>: <what they get>", one at a time. Short, plain and true to data we have or plan to have.
+const SLOGANS: [who: string, what: string][] = [
+  ["boligkjøpere", "kvikkleire, flom og radon før du byr"],
+  ["boligeiere", "se hva som er kartlagt om din egen tomt"],
+  ["byggere", "grunnforhold og løsmasser før du graver"],
+  ["utbyggere", "skred- og flomfare før du kjøper tomt"],
+  ["arkitekter", "fare- og grunnforhold før du tegner"],
+  ["eiendomsmeglere", "et tydelig sammendrag av tomten"],
+  ["takstmenn", "faresoner og grunn samlet på ett sted"],
+  ["banker", "naturfare og risiko knyttet til en bolig"],
+  ["forsikring", "flom, stormflo og skred ved adressen"],
+  ["kommuneplanleggere", "fare, støy og grunn i ett kart"],
+  ["barnefamilier", "nærmeste skole, barnehage og turstier"],
+  ["leietakere", "støy og kollektivtilbud før du flytter inn"],
+  ["graveentreprenører", "marin leire og alunskifer i grunnen"],
+  ["borettslag", "oversikt over flom, støy og skredfare"],
+  ["journalister", "åpne data om fare og grunn for en adresse"],
+  ["studenter", "bussen, trikken og støynivået der du skal bo"],
 ];
 
 let bg: Map | undefined;
@@ -74,31 +81,35 @@ function driftingMap(container: HTMLElement) {
   bg = new Map({ container, style: basemapStyle(), center: [10.76, 59.92], zoom: 13.2, interactive: false, attributionControl: false });
 }
 
-/** "Sjekk" + a word that rolls up like a slot machine, a new idea every 2.4 s. */
+/** "For <who>: <what>" that fades to the next phrase every 3 s. Reduced motion: one static line. */
 function ideaRoller() {
-  const items = [...IDEAS, IDEAS[0]]; // the copy of the first lets the loop wrap without a visible jump
-  const track = h("span", { class: "roller-track" }, ...items.map((t) => h("span", { class: "roller-item" }, t)));
+  const who = h("b", { class: "for-who" }, SLOGANS[0][0]);
+  const what = h("span", {}, SLOGANS[0][1]);
+  const line = h("span", { class: "for-line", "aria-hidden": "true" }, "For ", who, ": ", what);
   const el = h(
     "p",
-    { class: "start-roller" },
-    h("span", { class: "sr-only" }, `Sjekk ${IDEAS.join(", ")}.`),
-    h("span", { "aria-hidden": "true", class: "roller-line" }, "Sjekk", h("span", { class: "roller-window" }, track)),
+    { class: "start-for" },
+    h("span", { class: "sr-only" }, `Omnium er for ${SLOGANS.map(([w, t]) => `${w}: ${t}`).join(". ")}.`),
+    line,
   );
 
   if (reducedMotion()) return { el, stop: () => {} };
   let i = 0;
+  let swap: number | undefined;
   const timer = window.setInterval(() => {
-    i++;
-    track.style.transition = "transform 450ms cubic-bezier(.2,.7,.2,1)";
-    track.style.transform = `translateY(${-i * 1.3}em)`;
-    if (i === IDEAS.length) {
-      // On the copy of the first item: snap back to the real first one, which looks identical.
-      setTimeout(() => {
-        track.style.transition = "none";
-        track.style.transform = "translateY(0)";
-        i = 0;
-      }, 500);
-    }
-  }, 2400);
-  return { el, stop: () => clearInterval(timer) };
+    line.classList.add("is-out");
+    swap = window.setTimeout(() => {
+      i = (i + 1) % SLOGANS.length;
+      who.textContent = SLOGANS[i][0];
+      what.textContent = SLOGANS[i][1];
+      line.classList.remove("is-out");
+    }, 200);
+  }, 3000);
+  return {
+    el,
+    stop: () => {
+      clearInterval(timer);
+      clearTimeout(swap);
+    },
+  };
 }
