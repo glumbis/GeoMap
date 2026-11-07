@@ -13,6 +13,11 @@ export interface Hit {
 
 const API = "https://ws.geonorge.no/adresser/v1/sok";
 const MAX_SHOWN = 8;
+// Ask for many hits nationwide (common street names have hundreds outside our area), but only the fields we use,
+// so 1000 hits stay small and fast (about 0.5 s).
+const FIELDS = ["adressetekst", "kommunenummer", "adressekode", "nummer", "bokstav", "postnummer", "poststed", "kommunenavn", "objtype"]
+  .map((f) => `adresser.${f}`)
+  .join(",");
 
 const inArea = (kommunenummer: string) => kommunenummer === "0301" || kommunenummer.startsWith("32");
 
@@ -20,7 +25,7 @@ const inArea = (kommunenummer: string) => kommunenummer === "0301" || kommunenum
 const addressId = (a: any) => `${a.kommunenummer}-${a.adressekode}-${a.nummer}${(a.bokstav ?? "").toUpperCase()}`;
 
 async function search(text: string, signal: AbortSignal): Promise<Hit[]> {
-  const url = `${API}?sok=${encodeURIComponent(text)}&fuzzy=true&treffPerSide=50&utkoordsys=4326`;
+  const url = `${API}?sok=${encodeURIComponent(text)}&fuzzy=true&treffPerSide=1000&filtrer=${FIELDS}&utkoordsys=4326`;
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`Geonorge ${res.status}`);
   const body = await res.json();
