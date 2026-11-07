@@ -19,7 +19,8 @@ permissions:
 
 concurrency:
   group: docker
-  cancel-in-progress: true
+  # Let a running build finish (the team pushes often); only the newest waiting push builds next.
+  cancel-in-progress: false
 
 jobs:
   image:
