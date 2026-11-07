@@ -45,11 +45,9 @@ body {
   background: var(--paper);
   -webkit-font-smoothing: antialiased;
 }
-body {
-  min-width: 1280px;
-}
 #app {
   height: 100%;
+  overflow: hidden; /* each page fills the window; only the address panel scrolls, and never sideways */
 }
 * {
   box-sizing: border-box;
@@ -86,7 +84,7 @@ button {
   color: var(--ink-muted);
 }
 .search--large {
-  width: 40rem;
+  width: min(40rem, 100vw - 2rem);
 }
 .search--large .search-input {
   font-size: 1.375rem;
@@ -137,23 +135,127 @@ button {
 }
 
 /* ---------- Start page ---------- */
+.page-start {
+  position: relative;
+  overflow: hidden;
+}
+/* The drifting map behind everything: drawn once, 12% bigger than the screen on each side, and slid around
+   by a slow CSS transform (GPU, smooth, no map re-render per frame). */
+.start-map {
+  position: absolute;
+  inset: -12%;
+  will-change: transform;
+  animation: start-drift 120s ease-in-out infinite;
+}
+@keyframes start-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  25% {
+    transform: translate3d(-8%, 4%, 0);
+  }
+  50% {
+    transform: translate3d(-2%, -7%, 0);
+  }
+  75% {
+    transform: translate3d(8%, -2%, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .start-map {
+    animation: none;
+  }
+}
+/* Paper in the middle fading out toward the edges: the map shows around the content like the window in the logo. */
+.start-fade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 38rem 30rem at 50% 47%,
+      var(--paper) 0%,
+      var(--paper) 45%,
+      color-mix(in srgb, var(--paper) 70%, transparent) 70%,
+      color-mix(in srgb, var(--paper) 15%, transparent) 100%
+    ),
+    linear-gradient(color-mix(in srgb, var(--paper) 25%, transparent), color-mix(in srgb, var(--paper) 25%, transparent));
+}
 .start {
+  position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2rem;
-  padding-bottom: 12vh;
+  gap: 1.5rem;
+  padding-bottom: 8vh;
 }
+/* The ring (transparent PNG) + the word mark in type, so no logo background box shows on the page. */
 .start-logo {
-  width: 16rem;
-  height: auto;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+.start-logo img {
+  width: 9rem;
+  height: 9rem;
+}
+.start-logo span {
+  font-size: 4rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--ink);
+}
+.start-roller {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+  font-weight: 500;
+  color: var(--navy);
+}
+.roller-line {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3em;
+}
+.roller-window {
+  display: inline-block;
+  height: 1.3em;
+  line-height: 1.3em;
+  overflow: hidden;
+  vertical-align: bottom;
+  /* soft top and bottom edges as the words roll through */
+  mask-image: linear-gradient(transparent 0, #000 22%, #000 78%, transparent 100%);
+}
+.roller-track {
+  display: flex;
+  flex-direction: column;
+}
+.roller-item {
+  height: 1.3em;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 .start-tagline {
   margin: 0;
   color: var(--ink-muted);
   font-size: 1.125rem;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 /* ---------- Address page layout ---------- */

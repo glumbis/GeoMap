@@ -1,14 +1,7 @@
-// The map on the address page: Kartverket basemap, warmed up to sit on the paper colour, strictly top-down.
+// The map on the address page: the Omnium basemap (basemap.ts), strictly top-down.
 // Map layer files in src/features/ get the map once it has loaded: export default function (map: Map).
-import { Map, Marker, NavigationControl, ScaleControl, setWorkerUrl } from "maplibre-gl";
-import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
-import { cssVar } from "./dom";
-
-// Let Vite bundle MapLibre's web worker (it can't find it on its own after bundling).
-setWorkerUrl(workerUrl);
-
-const kartverket = (layer: string) =>
-  `https://cache.kartverket.no/v1/wmts/1.0.0/${layer}/default/webmercator/{z}/{y}/{x}.png`;
+import { Map, Marker, NavigationControl, ScaleControl } from "maplibre-gl";
+import { basemapStyle } from "./basemap";
 
 const features = import.meta.glob<{ default: (map: Map) => void | Promise<void> }>("../features/*.ts", { eager: true });
 
@@ -39,28 +32,7 @@ export function showMap(container: HTMLElement, lng: number, lat: number) {
       dragRotate: false,
       pitchWithRotate: false,
       touchPitch: false,
-      style: {
-        version: 8,
-        sources: {
-          basemap: {
-            type: "raster",
-            tiles: [kartverket("topograatone")],
-            tileSize: 256,
-            maxzoom: 18,
-            attribution: "© Kartverket",
-          },
-        },
-        layers: [
-          { id: "paper", type: "background", paint: { "background-color": cssVar("--map-land") } },
-          {
-            id: "basemap",
-            type: "raster",
-            source: "basemap",
-            // Grey tiles over the warm background: lower opacity lets the paper colour through.
-            paint: { "raster-opacity": 0.78, "raster-contrast": -0.1, "raster-brightness-min": 0.08 },
-          },
-        ],
-      },
+      style: basemapStyle(),
     });
     map.touchZoomRotate.disableRotation();
     map.keyboard.disableRotation();
