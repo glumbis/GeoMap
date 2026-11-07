@@ -1,0 +1,36 @@
+/* Top-bar logo ring: spins on hover and while loading (.is-loading). The mark itself never rotates (the pin stays upright). */
+.logo-ring {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+.logo-ring::after {
+  content: "";
+  position: absolute;
+  inset: -0.1875rem;
+  border-radius: 50%;
+  background: conic-gradient(var(--orange), var(--teal), var(--navy), var(--orange));
+  -webkit-mask-image: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
+  mask-image: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
+  pointer-events: none;
+  animation: logo-ring-spin 1.6s linear infinite;
+  animation-play-state: paused;
+}
+.topbar-logo:hover .logo-ring::after,
+.topbar-logo:focus-visible .logo-ring::after,
+.topbar-logo.is-loading .logo-ring::after {
+  animation-play-state: running;
+}
+.topbar-logo.is-loading .logo-ring::after {
+  animation-duration: 1s; /* a bit faster while working */
+}
+@keyframes logo-ring-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .logo-ring::after {
+    animation: none;
+  }
+}

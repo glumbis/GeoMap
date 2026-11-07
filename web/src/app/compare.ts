@@ -3,6 +3,7 @@
 import "./compare.css";
 import { LngLatBounds, Map as MapLibre, Marker, NavigationControl } from "maplibre-gl";
 import { cssVar, h, titleCase } from "./dom";
+import { topbarLogo } from "./logo";
 import { navigate } from "./router";
 import { createSearch } from "./search";
 import { basemapStyle } from "./basemap";
@@ -38,11 +39,7 @@ export function renderCompare(app: HTMLElement, idA: string, idB: string) {
   maps.forEach((m) => m.remove());
   maps = [];
 
-  const logo = h("a", { href: "/", class: "topbar-logo", "aria-label": "Til forsiden" }, h("img", { src: "/logo-mark.png", alt: "" }), h("span", {}, "Omnium"));
-  logo.addEventListener("click", (e) => {
-    e.preventDefault();
-    navigate("/");
-  });
+  const logo = topbarLogo();
 
   const ids = [idA, idB];
   const cols = ids.map((id, i) => {

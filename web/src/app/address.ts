@@ -2,6 +2,7 @@
 // Renders whatever the profile contains (docs/PROFILE.md). Never a hard-coded category list, never a fake number.
 import { h, titleCase } from "./dom";
 import { navigate } from "./router";
+import { topbarLogo, setLogoLoading } from "./logo";
 import { createSearch } from "./search";
 import { showMap } from "./map";
 import { summaryCard } from "./summary";
@@ -16,20 +17,22 @@ export async function renderAddress(app: HTMLElement, id: string) {
   const req = ++current;
   app.className = "page-address";
 
-  const logo = h("a", { href: "/", class: "topbar-logo", "aria-label": "Til forsiden" }, h("img", { src: "/logo-mark.png", alt: "" }), h("span", {}, "Omnium"));
-  logo.addEventListener("click", (e) => {
-    e.preventDefault();
-    navigate("/");
-  });
+  const logo = topbarLogo();
 
   const panel = h("section", { class: "panel", "aria-live": "polite" }, loading());
   const mapEl = h("div", { class: "map" });
   app.replaceChildren(
-    h("header", { class: "topbar" }, logo, createSearch({ size: "compact", onPick: (hit) => navigate(`/a/${hit.id}`) })),
+    h(
+      "header",
+      { class: "topbar" },
+      logo,
+      createSearch({ size: "compact", onPick: (hit) => navigate(`/a/${hit.id}`), onLoadingChange: (on) => setLogoLoading(logo, on) }),
+    ),
     h("div", { class: "address-layout" }, panel, mapEl),
   );
 
   let profile: Profile;
+  setLogoLoading(logo, true); // the logo ring spins while the address loads
   try {
     const res = await fetch(`/api/address/${encodeURIComponent(id)}/profile`);
     const body = await res.json().catch(() => null);
@@ -39,6 +42,8 @@ export async function renderAddress(app: HTMLElement, id: string) {
   } catch {
     if (req !== current) return;
     return panel.replaceChildren(errorState(0));
+  } finally {
+    setLogoLoading(logo, false);
   }
 
   const a = profile.address;
