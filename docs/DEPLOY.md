@@ -47,7 +47,7 @@ Needs about **1 GB RAM** (DuckDB + Chromium for the PDF report); 512 MB works if
 |---|---|---|
 | Raw downloads (GeoJSON, zip, GTFS, JSON) | ~730 MB | `data/raw/` locally; thrown away in the image |
 | Database, 34 tables, ~250 000 rows | ~150 MB | `data/geomap.duckdb` locally; `/app/data/` in the image |
-| Image | ~1 GB | GitHub Container Registry (free for public repos) |
+| Image | ~620 MB download | GitHub Container Registry, public (free for public repos) |
 | AI summaries | a few KB | table `summaries` in the database; lost when the container is replaced |
 
 Nothing is stored outside the database file. The browser only gets what is in view or matches a search.
