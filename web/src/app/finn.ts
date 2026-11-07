@@ -1,11 +1,15 @@
 // "Finn område" page /finn: reverse search. The user describes a place (or sets filters) and the map highlights the
-// 500 m squares that fit. Data: GET /api/finn (GeoJSON squares) and GET /api/finn/tolk (free text -> criteria).
+// 500 m squares that fit. Data: GET /api/finn (GeoJSON squares), GET /api/finn/kommuner (the kommune list),
+// GET /api/finn/tolk (free text -> criteria) and GET /api/finn/tolk/status (is the free text search available?).
 // Criteria live in the URL query string so a search can be shared. Layers on the shared map are removed in leaveFinn().
-import { LngLatBounds, Popup, type GeoJSONSource, type LngLatLike } from "maplibre-gl";
+// The last search, map view and selected square are kept in sessionStorage, so coming back (browser back or the
+// "Tilbake til Finn område" link on the address page) shows the same place again.
+import { LngLatBounds, Popup, type GeoJSONSource, type Offset } from "maplibre-gl";
 import { cssVar, h, titleCase } from "./dom";
 import { topbarLogo, setLogoLoading } from "./logo";
 import { getMap, showMapOverview } from "./map";
-import { clickHook } from "../features/hazards";
+import { navigate } from "./router";
+import { clickHook, setQuietLayers } from "../features/hazards";
 import "./finn.css";
 
 // ---------- Criteria ----------
@@ -46,6 +50,15 @@ const REGION: [[number, number], [number, number]] = [[10.15, 59.45], [11.95, 60
 const LIMIT = 5000;
 const nb = new Intl.NumberFormat("nb-NO");
 
+/** Same words as the overall rating on the address page (address.ts scoreWord). */
+function scoreWord(score: number) {
+  if (score >= 80) return "Svært god";
+  if (score >= 60) return "God";
+  if (score >= 40) return "Middels";
+  return "Svak";
+}
+const SCALE = "80+ svært god · 60–79 god · 40–59 middels · under 40 svak";
+
 function readUrl(): Criteria {
   const c: Criteria = {};
   const p = new URLSearchParams(location.search);
@@ -56,12 +69,60 @@ function readUrl(): Criteria {
   return c;
 }
 
-function writeUrl(c: Criteria) {
+const finnUrl = (c: Criteria) => {
   const qs = new URLSearchParams(c).toString();
-  history.replaceState(history.state, "", `/finn${qs ? `?${qs}` : ""}`);
+  return `/finn${qs ? `?${qs}` : ""}`;
+};
+
+function writeUrl(c: Criteria) {
+  history.replaceState(history.state, "", finnUrl(c));
+  remember({ url: finnUrl(c) });
 }
 
-/** Criteria from /api/finn/tolk (numbers, booleans, nulls) -> our string form. Unknown keys and empty values are dropped. */
+// ---------- Remembered search (sessionStorage; may be unavailable, then we simply don't remember) ----------
+
+const LAST = "omnium.finn.last"; // { url, center, zoom, cid } of the /finn page, kept up to date while it is open
+const BACK = "omnium.finn.back"; // the /finn URL to go back to, set when the user leaves /finn for an address
+type Saved = { url: string; center?: [number, number]; zoom?: number; cid?: string | number };
+
+function readStore<T>(key: string): T | undefined {
+  try {
+    const raw = sessionStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+function writeStore(key: string, value: unknown) {
+  try {
+    if (value === undefined) sessionStorage.removeItem(key);
+    else sessionStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* private mode or storage blocked: fine */
+  }
+}
+function remember(patch: Partial<Saved>) {
+  const prev = readStore<Saved>(LAST);
+  const url = patch.url ?? prev?.url ?? "/finn";
+  // A new search starts with a fresh view and no selection.
+  const base = prev && prev.url === url ? prev : { url };
+  writeStore(LAST, { ...base, ...patch, url });
+}
+
+/** "← Tilbake til Finn område" for the address page, when the user came there from /finn. */
+export function finnBackLink(): HTMLElement | null {
+  const url = readStore<string>(BACK);
+  if (!url || !url.startsWith("/finn")) return null;
+  const a = h("a", { class: "finn-back", href: url }, "← Tilbake til Finn område");
+  a.addEventListener("click", (e) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    navigate(url);
+  });
+  return a;
+}
+
+/** Choices from /api/finn/tolk (numbers, booleans, nulls) -> our string form. Unknown keys and empty values are dropped. */
 function fromTolk(raw: Record<string, unknown> | undefined): Criteria {
   const c: Criteria = {};
   for (const k of KNOWN) {
@@ -104,6 +165,8 @@ type Props = {
   noiseDb?: number | null;
   transitDepartures?: number | null;
   kommune?: string | null;
+  place?: string | null;
+  bydel?: string | null;
   capText?: string | null;
   [k: string]: unknown;
 };
@@ -111,7 +174,17 @@ type Square = { type: "Feature"; geometry: { type: string; coordinates: any }; p
 type Result = { type: "FeatureCollection"; features: Square[]; matched?: number; total?: number };
 
 const num = (v: unknown): number | undefined => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
-const placeName = (p: Props) => (p.kommune ? titleCase(String(p.kommune)) : "Ukjent kommune");
+const kommuneName = (p: Props) => (p.kommune ? titleCase(String(p.kommune)) : "Ukjent kommune");
+/** Oslo's "Marka" and "Sentrum" are not called "Bydel ...". */
+const bydelName = (b: string) => (/^(marka|sentrum)$/i.test(b) ? b : `Bydel ${b}`);
+/** Main name of a square: its grunnkrets ("Ljan"), else the kommune. */
+const placeName = (p: Props) => (p.place ? String(p.place) : kommuneName(p));
+/** Where that is: "Bydel Nordstrand, Oslo" or "Gjerdrum"; empty when the main name already is the kommune. */
+function areaName(p: Props): string {
+  if (!p.place) return "";
+  return p.bydel ? `${bydelName(String(p.bydel))}, ${kommuneName(p)}` : kommuneName(p);
+}
+const capLine = (t: string) => `Trukket ned av: ${t.charAt(0).toLowerCase()}${t.slice(1)}`;
 
 /** The 2–3 facts that matched the active criteria, e.g. "Skole 420 m · Rolig". */
 function matchedFacts(p: Props, c: Criteria): string[] {
@@ -146,6 +219,10 @@ let cleanup: (() => void) | undefined;
 
 /** Called by the router before any page renders: removes our layers, popup, click hook and timers from the shared map. */
 export function leaveFinn() {
+  const onAddress = /^\/a\//.test(location.pathname);
+  // Leaving /finn for an address: remember where to come back to. Anywhere else but /finn and addresses: forget it.
+  if (cleanup && onAddress) writeStore(BACK, readStore<Saved>(LAST)?.url ?? "/finn");
+  else if (!onAddress && !/^\/finn\/?$/.test(location.pathname)) writeStore(BACK, undefined);
   page++;
   cleanup?.();
   cleanup = undefined;
@@ -157,12 +234,18 @@ export function renderFinn(app: HTMLElement) {
   const alive = () => me === page;
   app.className = "page-address page-finn";
   document.title = "Finn område · Omnium";
+  writeStore(BACK, undefined);
 
   let criteria = readUrl();
   let last: Result | undefined;
   let ctrl: AbortController | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let tolkCtrl: AbortController | undefined;
+  // Coming back to the same search: put the map where it was and reselect the square, instead of fitting to all hits.
+  const saved = readStore<Saved>(LAST);
+  let restore: Saved | undefined = saved && saved.url === finnUrl(criteria) ? saved : undefined;
+  // How to draw the last result if the map layers only get ready after it arrived.
+  let pending: { fit: boolean; cid?: string | number } = { fit: !restore };
 
   const logo = topbarLogo();
 
@@ -175,11 +258,12 @@ export function renderFinn(app: HTMLElement) {
   });
   const askBtn = h("button", { class: "finn-btn", type: "submit" }, "Finn");
   const explain = h("p", { class: "finn-explain", "aria-live": "polite", hidden: true });
+  const askRow = h("div", { class: "finn-ask__row" }, ask, askBtn);
   const askForm = h(
     "form",
     { class: "finn-ask" },
     h("label", { class: "finn-ask__label", for: "finn-ask" }, "Beskriv hva du ser etter"),
-    h("div", { class: "finn-ask__row" }, ask, askBtn),
+    askRow,
     explain,
   );
   ask.addEventListener("keydown", (e) => {
@@ -192,6 +276,20 @@ export function renderFinn(app: HTMLElement) {
     e.preventDefault();
     void interpret(ask.value.trim());
   });
+  // Is the free text search there at all (needs an AI key on the server)? If not, say so once and let the filters lead.
+  void fetch("/api/finn/tolk/status")
+    .then((r) => (r.ok ? r.json() : null))
+    .then((s: { available?: boolean } | null) => {
+      if (!alive() || s?.available !== false) return;
+      askForm.classList.add("is-off");
+      askRow.hidden = true;
+      explain.hidden = false;
+      explain.className = "finn-explain is-note";
+      explain.textContent = "Tekstsøket er ikke tilgjengelig akkurat nå. Velg det som er viktig for deg i filtrene under.";
+    })
+    .catch(() => {
+      /* unknown: keep the box, interpret() explains a failure */
+    });
 
   // ---- Filters ----
   const inputs: Record<string, HTMLInputElement | HTMLSelectElement> = {};
@@ -230,9 +328,31 @@ export function renderFinn(app: HTMLElement) {
     return h("div", { class: "finn-dist" }, h("label", { for: id }, d.label), sel);
   });
 
-  const kommune = h("input", { id: "finn-kommune", type: "text", class: "finn-text", placeholder: "Alle", autocomplete: "off" });
+  // Kommune: a list of the kommuner we have data for (from the API), so nothing has to be spelt exactly.
+  const kommune = h("select", { id: "finn-kommune", class: "finn-select finn-select--wide" }, h("option", { value: "" }, "Alle kommuner"));
   inputs.kommune = kommune;
-  kommune.addEventListener("input", () => set("kommune", kommune.value.trim() || undefined));
+  kommune.addEventListener("change", () => set("kommune", kommune.value || undefined));
+  let kommuner: { name: string; number: string }[] = [];
+  void fetch("/api/finn/kommuner")
+    .then((r) => (r.ok ? r.json() : null))
+    .then((body: { kommuner?: { name: string; number: string }[] } | null) => {
+      if (!alive() || !body?.kommuner) return;
+      kommuner = body.kommuner;
+      kommune.replaceChildren(h("option", { value: "" }, "Alle kommuner"), ...kommuner.map((k) => h("option", { value: k.name }, titleCase(k.name))));
+      // A number or another spelling in the URL (or from the text search): show it as the name from the list.
+      if (criteria.kommune) {
+        const want = criteria.kommune.toLowerCase();
+        const hit = kommuner.find((k) => k.number === criteria.kommune || k.name.toLowerCase() === want);
+        if (hit && hit.name !== criteria.kommune) {
+          criteria.kommune = hit.name;
+          writeUrl(criteria);
+        }
+      }
+      syncControls();
+    })
+    .catch(() => {
+      /* the list stays at "Alle kommuner" (+ the one in the URL) */
+    });
 
   // Criteria without their own control (from the text search): shown as removable chips.
   const extras = h("div", { class: "finn-extras" });
@@ -240,17 +360,30 @@ export function renderFinn(app: HTMLElement) {
   const reset = h("button", { class: "finn-link", type: "button" }, "Nullstill");
   reset.addEventListener("click", () => {
     criteria = {};
-    explain.hidden = true;
+    if (!askForm.classList.contains("is-off")) explain.hidden = true;
     syncControls();
     changed(0);
   });
+
+  // The "Rolig" criterion: say what "quiet" is based on, so a missing square is not a mystery.
+  const quietNote = h(
+    "p",
+    { class: "finn-group__note", hidden: true },
+    "Rolig: under 55 dB veistøy (døgnmiddel) etter støykartene. Områder uten støydata regnes ikke som treff.",
+  );
 
   const filters = h(
     "section",
     { class: "finn-filters", "aria-label": "Kriterier" },
     h("div", { class: "finn-section__head" }, h("h2", {}, "Kriterier"), reset),
-    h("fieldset", { class: "finn-group" }, h("legend", {}, "Score minst"), ...scoreRows),
-    h("fieldset", { class: "finn-group finn-group--toggles" }, h("legend", {}, "Område"), ...toggleRows),
+    h(
+      "fieldset",
+      { class: "finn-group" },
+      h("legend", {}, "Score minst"),
+      ...scoreRows,
+      h("p", { class: "finn-scale" }, h("span", { class: "finn-scale__label" }, "Skala: "), SCALE),
+    ),
+    h("fieldset", { class: "finn-group finn-group--toggles" }, h("legend", {}, "Område"), ...toggleRows, quietNote),
     h("fieldset", { class: "finn-group" }, h("legend", {}, "Avstand, høyst"), h("div", { class: "finn-dists" }, ...distRows)),
     h("div", { class: "finn-group finn-kommune" }, h("label", { for: "finn-kommune" }, "Kommune"), kommune),
     extras,
@@ -260,9 +393,22 @@ export function renderFinn(app: HTMLElement) {
   const count = h("p", { class: "finn-count", "aria-live": "polite" });
   const status = h("p", { class: "finn-status", "aria-live": "polite" });
   const list = h("ol", { class: "finn-list" });
+  const bestHead = h("h2", { id: "finn-best-title", tabindex: -1 }, "Beste treff");
+  const best = h(
+    "section",
+    { class: "finn-best", "aria-labelledby": "finn-best-title" },
+    h("div", { class: "finn-best__head" }, bestHead, h("span", { class: "finn-best__col" }, "Samlet score")),
+    h("p", { class: "finn-scale" }, SCALE),
+    list,
+  );
+  // A shortcut from the pinned count down to the list, which sits below the filters.
+  const toBest = h("button", { class: "finn-link finn-tobest", type: "button", hidden: true }, "Se beste treff ↓");
+  toBest.addEventListener("click", () => {
+    best.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    bestHead.focus({ preventScroll: true });
+  });
   // The count stays pinned at the top of the panel while the user scrolls through the filters.
-  const results = h("section", { class: "finn-results", "aria-label": "Treff" }, count, status);
-  const best = h("section", { class: "finn-best", "aria-label": "Beste treff" }, h("h2", {}, "Beste treff"), list);
+  const results = h("section", { class: "finn-results", "aria-label": "Treff" }, h("div", { class: "finn-results__row" }, count, toBest), status);
 
   const notes = h(
     "div",
@@ -291,14 +437,18 @@ export function renderFinn(app: HTMLElement) {
   showMapOverview(mapEl);
   const map = getMap()!;
   map.stop();
-  map.fitBounds(REGION, { padding: 24, duration: 0 });
+  if (restore?.center && restore.zoom !== undefined) map.jumpTo({ center: restore.center, zoom: restore.zoom });
+  else map.fitBounds(REGION, { padding: 24, duration: 0 });
+  setQuietLayers(true); // the Kartlag panel folds away and its hazard layers go off while /finn is open
 
-  const popup = new Popup({ className: "hz-popup finn-popup", maxWidth: "19rem", offset: 4 });
+  const popup = new Popup({ className: "hz-popup finn-popup", maxWidth: "19rem" });
   let hookPrev: typeof clickHook.current;
   let selected: string | number | undefined;
+  let keepSelection = false; // true while we close the popup ourselves but want the square to stay selected
 
   const SRC = "finn";
-  const LAYERS = ["finn-fill", "finn-line", "finn-sel"];
+  const LAYERS = ["finn-fill", "finn-line", "finn-sel-fill", "finn-sel"];
+  const NONE: any = ["==", ["get", "cid"], "__none__"];
 
   function setupLayers() {
     if (!alive() || map.getSource(SRC)) return;
@@ -314,16 +464,28 @@ export function renderFinn(app: HTMLElement) {
       paint: { "fill-color": teal, "fill-opacity": ["interpolate", ["linear"], ["zoom"], 14, byScore as any, 16, 0.14] },
     });
     map.addLayer({ id: "finn-line", type: "line", source: SRC, paint: { "line-color": teal, "line-width": 0.6, "line-opacity": 0.8 } });
+    // The selected square: a light orange wash (stays readable over the streets at zoom 16) and a thick orange edge.
+    map.addLayer({
+      id: "finn-sel-fill",
+      type: "fill",
+      source: SRC,
+      filter: NONE,
+      paint: { "fill-color": orange, "fill-opacity": ["interpolate", ["linear"], ["zoom"], 12, 0.25, 15, 0.12] },
+    });
     map.addLayer({
       id: "finn-sel",
       type: "line",
       source: SRC,
-      filter: ["==", ["get", "cid"], "__none__"],
-      paint: { "line-color": orange, "line-width": 3 },
+      filter: NONE,
+      paint: { "line-color": orange, "line-width": ["interpolate", ["linear"], ["zoom"], 10, 2, 16, 4] },
     });
     map.on("mouseenter", "finn-fill", onEnter);
     map.on("mouseleave", "finn-fill", onLeave);
-    if (last) draw(last, true);
+    if (last) {
+      // The search came back before the layers were there: draw now, as the search would have.
+      draw(last, pending.fit);
+      if (pending.cid !== undefined) select(pending.cid);
+    }
   }
   const onEnter = () => map.getZoom() < 15 && (map.getCanvas().style.cursor = "pointer");
   const onLeave = () => (map.getCanvas().style.cursor = "");
@@ -332,7 +494,7 @@ export function renderFinn(app: HTMLElement) {
   // we show the square's popup instead; zoomed in, the click goes on to pick.ts so the user can choose an address.
   const hookMine: NonNullable<typeof clickHook.current> = (e, blocks) => {
     const hit = map.getLayer("finn-fill") && map.getZoom() < 15 ? map.queryRenderedFeatures(e.point, { layers: ["finn-fill"] })[0] : undefined;
-    if (hit) openPopup(hit.properties as Props, e.lngLat);
+    if (hit) openPopup(hit.properties as Props);
     else hookPrev?.(e, blocks);
   };
   /** Wrap whatever clickHook pick.ts set. It sets it in a microtask after "load", so check again whenever the map is idle. */
@@ -342,21 +504,42 @@ export function renderFinn(app: HTMLElement) {
     clickHook.current = hookMine;
   }
 
+  // The layers can go on as soon as the style is there. isStyleLoaded() is also false while tiles load (e.g. coming
+  // back to /finn), when "load" never fires again: so just try, and try again whenever the map is idle.
+  const trySetup = () => {
+    try {
+      setupLayers();
+    } catch {
+      /* style not ready yet: the next idle tries again */
+    }
+  };
   const onReady = () => {
-    setupLayers();
+    trySetup();
     setTimeout(ensureHook, 0);
   };
-  if (map.isStyleLoaded()) onReady();
-  else map.once("load", onReady);
-  map.on("idle", ensureHook);
+  const onIdle = () => {
+    trySetup();
+    ensureHook();
+  };
+  onReady();
+  map.once("load", onReady);
+  map.on("idle", onIdle);
+  const onMoveEnd = () => {
+    if (!alive()) return;
+    const c = map.getCenter();
+    remember({ center: [+c.lng.toFixed(5), +c.lat.toFixed(5)], zoom: +map.getZoom().toFixed(2) });
+  };
+  map.on("moveend", onMoveEnd);
 
   cleanup = () => {
     clearTimeout(timer);
     ctrl?.abort();
     tolkCtrl?.abort();
+    keepSelection = true; // leaving: keep the remembered selection for when the user comes back
     popup.remove();
     map.off("load", onReady);
-    map.off("idle", ensureHook);
+    map.off("idle", onIdle);
+    map.off("moveend", onMoveEnd);
     map.off("mouseenter", "finn-fill", onEnter);
     map.off("mouseleave", "finn-fill", onLeave);
     if (clickHook.current === hookMine) clickHook.current = hookPrev;
@@ -367,24 +550,41 @@ export function renderFinn(app: HTMLElement) {
       // the map may already be gone (start page destroys it)
     }
     map.getCanvas().style.cursor = "";
+    setQuietLayers(false);
     setLogoLoading(logo, false);
   };
 
   function select(cid: string | number | undefined) {
     selected = cid;
-    if (map.getLayer("finn-sel")) map.setFilter("finn-sel", ["==", ["get", "cid"], cid ?? "__none__"]);
+    const f: any = ["==", ["get", "cid"], cid ?? "__none__"];
+    if (map.getLayer("finn-sel")) map.setFilter("finn-sel", f);
+    if (map.getLayer("finn-sel-fill")) map.setFilter("finn-sel-fill", f);
     for (const li of list.querySelectorAll<HTMLElement>("[data-cid]")) li.classList.toggle("is-selected", li.dataset.cid === String(cid));
+    if (alive()) remember({ cid });
   }
 
-  function openPopup(p: Props, at: LngLatLike) {
+  /** Popup at the square's centre, pushed out past the square's edge on whichever side MapLibre puts it. */
+  function openPopup(p: Props) {
     const sq = last?.features.find((f) => String(f.properties.cid) === String(p.cid));
     const props = sq?.properties ?? p; // queryRenderedFeatures drops nulls; prefer the original
+    const b = sq ? boundsOf(sq.geometry) : undefined;
+    if (!b || b.isEmpty()) return;
+    const ne = map.project(b.getNorthEast());
+    const sw = map.project(b.getSouthWest());
+    const hx = Math.abs(ne.x - sw.x) / 2 + 6;
+    const hy = Math.abs(ne.y - sw.y) / 2 + 6;
+    const offset: Offset = {
+      center: [0, 0], top: [0, hy], bottom: [0, -hy], left: [hx, 0], right: [-hx, 0],
+      "top-left": [hx, hy], "top-right": [-hx, hy], "bottom-left": [hx, -hy], "bottom-right": [-hx, -hy],
+    };
     select(props.cid);
-    popup.setLngLat(at).setDOMContent(popupBody(props, sq)).addTo(map);
+    popup.setOffset(offset).setLngLat(b.getCenter()).setDOMContent(popupBody(props, b)).addTo(map);
   }
-  popup.on("close", () => select(undefined));
+  popup.on("close", () => {
+    if (!keepSelection) select(undefined);
+  });
 
-  function popupBody(p: Props, sq?: Square): HTMLElement {
+  function popupBody(p: Props, b: LngLatBounds): HTMLElement {
     const score = num(p.score);
     const persp = [
       ["Bo her", p.living],
@@ -411,24 +611,31 @@ export function renderFinn(app: HTMLElement) {
 
     const zoomBtn = h("button", { class: "finn-link finn-popup__zoom", type: "button" }, "Se adresser her →");
     zoomBtn.addEventListener("click", () => {
+      // Close the popup but keep the square selected, so the user still sees where they are at street level.
+      keepSelection = true;
       popup.remove();
-      const b = sq ? boundsOf(sq.geometry) : undefined;
-      const center = b && !b.isEmpty() ? b.getCenter() : popup.getLngLat();
-      map.flyTo({ center, zoom: 16, duration: 1200, essential: false });
-      status.textContent = "Klikk i kartet for å se nærmeste adresse.";
+      keepSelection = false;
+      // Zoom so the whole square shows with its orange edge, but at least to 15, where clicks pick addresses.
+      const fit = map.cameraForBounds(b, { padding: 32 });
+      map.flyTo({ center: b.getCenter(), zoom: Math.max(15, Math.min(16, fit?.zoom ?? 15)), duration: 1200, essential: false });
+      status.className = "finn-status";
+      status.textContent = `Klikk i kartet innenfor den oransje ruten (${placeName(p)}) for å se nærmeste adresse.`;
     });
 
+    const capped = !!p.capText;
+    const area = areaName(p);
     return h(
       "div",
       { class: "hz-popup__body finn-popup__body" },
-      h("p", { class: "finn-popup__place" }, placeName(p)),
+      h("p", { class: "finn-popup__place" }, placeName(p), area ? h("span", { class: "finn-popup__area" }, area) : null),
       h(
         "p",
-        { class: "finn-popup__score" },
-        score === undefined ? h("span", { class: "is-none" }, "Ingen score") : h("strong", {}, Math.round(score)),
+        { class: "finn-popup__score", title: "Samlet score for området, 0–100" },
+        score === undefined ? h("span", { class: "is-none" }, "Ingen samlet score (for lite data)") : h("strong", {}, Math.round(score)),
         score === undefined ? null : h("span", { class: "finn-popup__of" }, "/100"),
+        score === undefined ? null : h("span", { class: "finn-popup__word" }, scoreWord(capped ? Math.min(score, 59) : score)),
       ),
-      p.capText ? h("p", { class: "finn-popup__cap" }, String(p.capText)) : null,
+      p.capText ? h("p", { class: "finn-popup__cap" }, capLine(String(p.capText))) : null,
       h(
         "dl",
         { class: "finn-popup__persp" },
@@ -453,13 +660,16 @@ export function renderFinn(app: HTMLElement) {
       outputs[s.key].classList.toggle("is-off", !criteria[s.key]);
     }
     for (const t of TOGGLES) (inputs[t.key] as HTMLInputElement).checked = criteria[t.key] === "1";
+    quietNote.hidden = criteria.quiet !== "1";
     for (const d of DISTANCES) {
       const sel = inputs[d.key] as HTMLSelectElement;
       const v = criteria[d.key] ?? "";
       if (v && !Array.from(sel.options).some((o) => o.value === v)) sel.append(h("option", { value: v }, distLabel(Number(v))));
       sel.value = v;
     }
-    if (document.activeElement !== kommune) kommune.value = criteria.kommune ?? "";
+    const k = criteria.kommune ?? "";
+    if (k && !Array.from(kommune.options).some((o) => o.value === k)) kommune.append(h("option", { value: k }, titleCase(k)));
+    kommune.value = k;
     // Extras: criteria with no control of their own.
     extras.replaceChildren();
     if (criteria.minTransitDepartures) {
@@ -476,6 +686,7 @@ export function renderFinn(app: HTMLElement) {
       outputs[k].textContent = v ?? "Uansett";
       outputs[k].classList.toggle("is-off", !v);
     }
+    if (k === "quiet") quietNote.hidden = v !== "1";
     if (k === "minTransitDepartures") syncControls();
     changed();
   }
@@ -495,6 +706,7 @@ export function renderFinn(app: HTMLElement) {
       last = undefined;
       draw(undefined, false);
       count.replaceChildren();
+      toBest.hidden = true;
       status.className = "finn-status is-hint";
       status.textContent = "Velg minst ett kriterium, eller beskriv stedet med egne ord.";
       list.replaceChildren();
@@ -515,7 +727,12 @@ export function renderFinn(app: HTMLElement) {
       if (!res.ok) return showError(res.status, body?.message);
       last = body as Result;
       showResult(last);
-      draw(last, true);
+      const back = restore;
+      restore = undefined; // only the first search after coming back keeps the old view
+      const cid = back?.cid !== undefined && last.features.some((f) => String(f.properties.cid) === String(back.cid)) ? back.cid : undefined;
+      pending = { fit: !back, cid };
+      draw(last, !back);
+      if (cid !== undefined) select(cid);
     } catch (err) {
       if ((err as Error).name === "AbortError" || !alive()) return;
       showError(0);
@@ -534,6 +751,7 @@ export function renderFinn(app: HTMLElement) {
     last = undefined;
     draw(undefined, false);
     count.replaceChildren();
+    toBest.hidden = true;
     list.replaceChildren();
     status.className = "finn-status is-error";
     status.textContent =
@@ -553,6 +771,7 @@ export function renderFinn(app: HTMLElement) {
       h("strong", {}, nb.format(matched)),
       r.total ? ` av ${nb.format(r.total)} områder passer` : matched === 1 ? " område passer" : " områder passer",
     );
+    toBest.hidden = !matched;
     list.replaceChildren();
     if (!matched) {
       status.className = "finn-status is-empty";
@@ -562,28 +781,44 @@ export function renderFinn(app: HTMLElement) {
     }
     status.className = "finn-status";
     status.textContent = shown < matched ? `Kartet viser ${nb.format(shown)} av dem.` : "";
-    const best = [...r.features].sort((a, b) => (num(b.properties.score) ?? -1) - (num(a.properties.score) ?? -1)).slice(0, 8);
+    const top = [...r.features].sort((a, b) => (num(b.properties.score) ?? -1) - (num(a.properties.score) ?? -1)).slice(0, 8);
     list.replaceChildren(
-      ...best.map((f, i) => {
+      ...top.map((f, i) => {
         const p = f.properties;
         const score = num(p.score);
         const facts = matchedFacts(p, criteria);
+        const area = areaName(p);
         const btn = h(
           "button",
           { class: "finn-hit", type: "button" },
           h("span", { class: "finn-hit__rank" }, i + 1),
-          h("span", { class: "finn-hit__main" }, h("span", { class: "finn-hit__place" }, placeName(p)), facts.length ? h("span", { class: "finn-hit__facts" }, facts.join(" · ")) : null),
-          h("span", { class: `finn-hit__score${score === undefined ? " is-none" : ""}` }, score === undefined ? "–" : Math.round(score)),
+          h(
+            "span",
+            { class: "finn-hit__main" },
+            h("span", { class: "finn-hit__place" }, placeName(p), area ? h("span", { class: "finn-hit__area" }, ` · ${area}`) : null),
+            facts.length ? h("span", { class: "finn-hit__facts" }, facts.join(" · ")) : null,
+            p.capText ? h("span", { class: "finn-hit__cap" }, capLine(String(p.capText))) : null,
+          ),
+          h(
+            "span",
+            {
+              class: `finn-hit__score${score === undefined ? " is-none" : ""}`,
+              title: score === undefined ? "Ingen samlet score (for lite data)" : `Samlet score for området: ${Math.round(score)} av 100`,
+            },
+            score === undefined ? "–" : Math.round(score),
+          ),
         );
         btn.addEventListener("click", () => {
           const b = boundsOf(f.geometry);
           if (b.isEmpty()) return;
           const c = b.getCenter();
+          keepSelection = true;
           popup.remove();
+          keepSelection = false;
           select(p.cid);
           // Open the popup when the map has arrived, so it can pick the side with room.
-          map.once("moveend", () => alive() && selected === p.cid && openPopup(p, c));
-          map.flyTo({ center: c, offset: [0, map.getContainer().clientHeight * 0.25], zoom: Math.max(13, Math.min(map.getZoom() + 1, 14)), duration: 1000, essential: false });
+          map.once("moveend", () => alive() && selected === p.cid && openPopup(p));
+          map.flyTo({ center: c, offset: [0, map.getContainer().clientHeight * 0.15], zoom: Math.max(13, Math.min(map.getZoom() + 1, 14)), duration: 1000, essential: false });
         });
         return h("li", { "data-cid": String(p.cid ?? "") }, btn);
       }),

@@ -196,3 +196,8 @@
 .hz-popup__item a {
   color: var(--teal);
 }
+
+/* Phones: the folded panel takes only the room its title needs. */
+@media (max-width: 47.99rem) {
+  .hz-panel.is-collapsed { width: auto; }
+}
