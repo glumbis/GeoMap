@@ -1,23 +1,51 @@
 <!doctype html>
 <html lang="nb">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Omnium – Se mer. Vit mer.</title>
-<link rel="stylesheet" href="../../web/src/style.css">
-<style>
-  @font-face{font-family:Outfit;src:url(assets/Outfit.ttf)}
-  body{height:auto;min-height:100vh;padding:5vh 5vw;font-family:Outfit,system-ui;background:var(--paper);color:var(--ink)}
-  main{max-width:1440px;margin:auto}header{display:flex;align-items:center;gap:14px;margin-bottom:28px}header img{width:52px}h1{font-size:30px;margin:0;font-weight:500}
-  video{display:block;width:100%;aspect-ratio:16/9;border-radius:24px;background:var(--ink);box-shadow:var(--shadow)}
-  p{font-size:18px;color:var(--ink-muted);line-height:1.6}a{color:var(--teal)}
-</style>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Omnium – Se mer. Vit mer.</title>
+  <link rel="stylesheet" href="../../web/src/style.css">
+  <link rel="stylesheet" href="player.css">
+  <script src="player.js" defer></script>
+</head>
+<body>
 <main>
-  <header><img src="../../web/public/logo-mark.png" alt=""><h1>Se mer. Vit mer.</h1></header>
-  <video controls playsinline preload="metadata" poster="output/poster.jpg" aria-label="Omnium prosjektpresentasjon på norsk">
-    <source src="output/omnium-presentation.mp4" type="video/mp4">
-    Nettleseren støtter ikke denne videoen.
+  <header>
+    <a class="brand" href="http://localhost:5173" aria-label="Åpne Omnium-kartet">
+      <img src="../../web/public/logo-mark.png" alt=""><span>omnium</span>
+    </a>
+    <span class="edition">Prosjektfilm · 28 sekunder</span>
+  </header>
+  <div class="title-row"><h1>Se mer. Vit mer.</h1><span>Norsk · 1080p · 60 fps</span></div>
+  <video id="film" controls playsinline preload="metadata" poster="output/poster-v2.jpg" aria-label="Omnium prosjektfilm på norsk" aria-describedby="film-help">
+    <source src="output/omnium-v2.mp4" type="video/mp4">
+    <p>Nettleseren kan ikke spille filmen. <a href="output/omnium-v2.mp4">Last ned MP4-filen.</a></p>
   </video>
-  <p>36,5 sekunder · Norsk · 1080p · Originalt lydspor<br>
-  <a href="output/omnium-presentation.mp4" download>Last ned filmen</a> · <a href="output/storyboard.jpg">Se bildeoversikten</a></p>
+  <div class="controls">
+    <div class="transport"><button id="replay" type="button">↺ Spill igjen</button>
+      <label for="speed">Tempo <select id="speed"><option value="0.75">0,75×</option><option value="1" selected>1×</option><option value="1.25">1,25×</option></select></label>
+    </div>
+    <a class="download" href="output/omnium-v2.mp4" download>Last ned filmen ↓</a>
+  </div>
+  <nav class="chapters" aria-label="Hopp til en del av filmen">
+    <button type="button" data-time="0">01 <span>Én adresse</span></button>
+    <button type="button" data-time="4">02 <span>Søk</span></button>
+    <button type="button" data-time="7.2">03 <span>Risiko</span></button>
+    <button type="button" data-time="10.4">04 <span>Nærområdet</span></button>
+    <button type="button" data-time="13.6">05 <span>Fakta og kilder</span></button>
+    <button type="button" data-time="16.8">06 <span>For / Til</span></button>
+    <button type="button" data-time="23.2">07 <span>Omnium</span></button>
+  </nav>
+  <p id="film-help">Velg et kapittel for å spole. Bruk videospillerens kontroller for lyd og fullskjerm. Ingen automatisk avspilling.</p>
+  <p id="status" role="status" hidden></p>
+  <details>
+    <summary>Les filmens innhold uten bevegelse</summary>
+    <p>Én adresse. Hvor mye vet du? Omnium samler offentlig informasjon om eiendommer i Oslo og Akershus.</p>
+    <p>Søk opp en adresse. Se faresoner på kartet, varsler, en score og forklaringer. Utforsk skole, barnehage, kollektivtransport, natur og friluft. Se AI-sammendrag fra faktaene, og hva vi mangler data om.</p>
+    <p>For boligkjøpere til boligsjekken. For utbyggere til tidlig oversikt. For geologer til grunnforhold. For kommuner til områdeoversikt. For turgåere til nærmeste tursti. For nysgjerrige til nabolaget. For deg, til neste valg.</p>
+    <p>Omnium. Se mer. Vit mer.</p>
+  </details>
+  <footer>Faktiske skjermbilder fra Omnium, 7. november 2026. Kart: © Kartverket.</footer>
 </main>
+</body>
 </html>

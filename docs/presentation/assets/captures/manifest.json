@@ -1,0 +1,13 @@
+{
+  "capturedOn": "2026-11-07",
+  "viewport": [
+    1280,
+    720
+  ],
+  "source": "Omnium running at localhost:5173",
+  "files": {
+    "neighborhood.png": "ee44e670cba98329d155e66aeeaa1afdb79e5a2f55edb61fe63bf1b37cf0c8a8",
+    "risk.png": "2a41989d0cd61bbf1071daa76c37cd6851273feb8694cfc17619520208f8e491",
+    "summary.png": "0f28bf75f5aa5622072c028993f32bfeb3a7353c0cc598a9530bacf259f66573"
+  }
+}
