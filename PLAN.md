@@ -115,7 +115,7 @@ Each role lists: what you own, your tasks in order, and when a task is done.
 4. **Addresses and buildings** (Kartverket), if the profile needs them beyond the Geonorge address API.
 5. For each dataset: one ingest script (copy `data/scripts/kommuner.ts`), one route (copy `api/src/routes/kommuner.ts`), one entry in Lukas' data-point list, and a line in `SOURCES.md`.
    *Done when (per dataset):* `npm run ingest <name>` works from a clean clone, the layer shows on the map at `/api/<name>`, and the profile of a test address shows the data point.
-6. Large layers: if a layer is too big to send as GeoJSON, simplify geometry on ingest (`ST_SimplifyPreserveTopology`) or aggregate at low zoom.
+6. ~~Large layers: if a layer is too big to send as GeoJSON, simplify geometry on ingest (`ST_SimplifyPreserveTopology`) or aggregate at low zoom.~~ Done 2026-11-07: big layers are simplified on ingest, and `layer()` now cuts shapes to the view and rounds to 6 decimals (radon at zoom 16: 1 MB → under 1 kB). Still heavy, both off by default: `stoy_strategisk` (~1.5 MB in one street block, dense shapes) and `veistoy` (~4 MB at zoom 11).
 
 ### Erik — frontend and design
 
