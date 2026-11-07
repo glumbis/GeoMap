@@ -116,7 +116,7 @@ export const SOURCES: Source[] = [
   { id: "mdir-naturvern", name: "Naturvernområder (Naturbase)", owner: "Miljødirektoratet", url: "https://kartkatalog.geonorge.no/metadata/naturvernomraader/5857ec0a-8d2c-4cd8-baa2-0dc54ae213b4", licence: "NLOD 2.0" },
   { id: "mdir-friluft", name: "Statlig sikra friluftslivsområder", owner: "Miljødirektoratet", url: "https://kart.miljodirektoratet.no/arcgis/rest/services/friluftsliv_statlig_sikra/MapServer/0", licence: "NLOD 2.0" },
   { id: "ra-kulturminner", name: "Kulturminner - Lokaliteter, Enkeltminner og Sikringssoner", owner: "Riksantikvaren", url: "https://kartkatalog.geonorge.no/metadata/kulturminner-lokaliteter-enkeltminner-og-sikringssoner/c72906a0-2bc2-41d7-bea2-c92d368e3c49", licence: "NLOD 2.0" },
-  { id: "ssb-krim", name: "Anmeldte lovbrudd etter gjerningssted (tabell 08487)", owner: "SSB", url: "https://www.ssb.no/statbank/table/08487", licence: "CC BY 4.0" },
+  { id: "ssb-krim", name: "Anmeldte lovbrudd etter gjerningssted (SSB 08487; Oslo per bydel: Oslo kommune KRI002)", owner: "SSB / Oslo kommune", url: "https://www.ssb.no/statbank/table/08487", licence: "CC BY 4.0 / NLOD" },
   { id: "ssb-kommune", name: "Statistikkbanken", owner: "SSB", url: "https://www.ssb.no/statbank", licence: "CC BY 4.0" },
 ];
 
@@ -127,7 +127,8 @@ const metres = (m: number) => (m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).t
 const decimal = (n: number) => String(Math.round(n * 10) / 10).replace(".", ",");
 
 /**
- * SSB crime per 1000 residents for the municipality (krim_kommuner), with Norway next to it.
+ * Crime per 1000 residents (krim_omrader): the Oslo bydel when the address has one (Oslo kommune, with Oslo and Norway
+ * next to it), otherwise the municipality (SSB, with Norway next to it).
  * Scored against the national rate (ratio = municipality / Norway): at most 0.6× = 100, ... over 1.8× = 15.
  * Municipal numbers, so no warning and no cap: they say nothing certain about the street. Weighed most in "Familie".
  * Without a national rate there is nothing to compare with: neutral, not scored.
@@ -135,18 +136,27 @@ const decimal = (n: number) => String(Math.round(n * 10) / 10).replace(".", ",")
 const CRIME_STEPS: [number, number][] = [[0.6, 100], [0.85, 85], [1.1, 70], [1.4, 50], [1.8, 30]];
 
 function crimeReading(rows: Row[], type: "total" | "violence"): Reading | null {
-  const v = rows[0]?.[`${type}Per1000`];
+  const r = rows.find((x) => x.level === "bydel") ?? rows[0];
+  if (!r) return null;
+  const v = r[`${type}Per1000`];
+  const count = r[`${type}Count`];
+  // Sentrum bydel: about 1 500 residents, so a per-1000 number would be meaningless. Show the count, never scored.
+  if (v == null && count != null) {
+    return { value: null, display: `${Number(count).toLocaleString("nb-NO")} anmeldt i ${r.name} (${r.period}), få bor der`, effect: "neutral" };
+  }
   if (v == null) return null;
-  const norway = rows[0][`${type}Per1000Norway`];
-  const country = norway != null ? `, landet ${decimal(Number(norway))}` : "";
+  const norway = r[`${type}Per1000Norway`];
+  const oslo = r[`${type}Per1000Oslo`];
+  const where = r.level === "bydel" ? ` i ${r.name}` : "";
+  const compare = [oslo != null ? `Oslo ${decimal(Number(oslo))}` : "", norway != null ? `landet ${decimal(Number(norway))}` : ""].filter(Boolean).join(", ");
   // Ullensaker (3209) counts crime at Oslo lufthavn Gardermoen (e.g. smuggling), which lifts its numbers.
-  const isAirport = rows[0].kommunenummer === "3209";
+  const isAirport = r.kommunenummer === "3209";
   const airport = isAirport ? ", inkl. Gardermoen" : "";
-  const reading: Reading = { value: Number(v), unit: "per 1000 innbyggere", display: `${decimal(Number(v))} per 1000 innbyggere (${rows[0].period})${country}${airport}`, effect: "neutral" };
+  const reading: Reading = { value: Number(v), unit: "per 1000 innbyggere", display: `${decimal(Number(v))} per 1000 innbyggere${where} (${r.period})${compare ? `, ${compare}` : ""}${airport}`, effect: "neutral" };
   // Ullensaker's total is mostly airport cases (smuggling, customs), not life in the municipality: shown, not scored.
   // Oslo (0301): one number for 700 000 people says nothing about the bydel, and would score every Oslo address the same.
-  // Shown, not scored, until we have crime per bydel (SSB 08487 has none).
-  const isOslo = rows[0].kommunenummer === "0301";
+  // Bydel numbers now exist (row.level 'bydel', Oslo kommune KRI002, scored or not is Lukas's call): still not scored.
+  const isOslo = r.kommunenummer === "0301";
   if (norway == null || Number(norway) <= 0 || isOslo || (isAirport && type === "total")) return reading;
   const ratio = Number(v) / Number(norway);
   const score = CRIME_STEPS.find(([max]) => ratio <= max)?.[1] ?? 15;
@@ -594,15 +604,15 @@ export const DATA_POINTS: DataPoint[] = [
         : null,
   },
   {
-    // data/scripts/ssb_krim.ts (Even): krim_kommuner, SSB 08487, per 1000 residents, two-year average (period "2024–2025").
+    // data/scripts/ssb_krim.ts (Even): krim_omrader: Oslo bydel (Oslo kommune KRI002, 1 year) or kommune (SSB 08487, 2-year average).
     // Scored against Norway's rate (crimeReading). Weighed most in the family perspective (api/src/perspectives.ts).
-    id: "crimeRate", label: "Anmeldte lovbrudd i kommunen", category: "area", source: "ssb-krim", importance: "normal",
-    table: "krim_kommuner", find: { kind: "within" },
+    id: "crimeRate", label: "Anmeldte lovbrudd i området", category: "area", source: "ssb-krim", importance: "normal",
+    table: "krim_omrader", find: { kind: "within" },
     read: (rows) => crimeReading(rows, "total"),
   },
   {
-    id: "violentCrime", label: "Anmeldt vold i kommunen", category: "area", source: "ssb-krim", importance: "normal",
-    table: "krim_kommuner", find: { kind: "within" },
+    id: "violentCrime", label: "Anmeldt vold i området", category: "area", source: "ssb-krim", importance: "normal",
+    table: "krim_omrader", find: { kind: "within" },
     read: (rows) => crimeReading(rows, "violence"),
   },
   {

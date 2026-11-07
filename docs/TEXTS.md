@@ -161,13 +161,16 @@ How to use this file:
 ### `medianIncome` — Medianinntekt etter skatt (husholdning)
 **Forklaring:** Halvparten av husholdningene i kommunen har mer enn dette etter skatt, og halvparten har mindre. Inntektene kan variere mye mellom ulike deler av kommunen, særlig i Oslo.
 
-### `crimeRate` — Anmeldte lovbrudd i kommunen
-**Forklaring:** Antall lovbrudd som ble anmeldt i kommunen per 1000 innbyggere, som et årlig snitt over to år, med tallet for hele landet ved siden av. Tallet gjelder hele kommunen, og i Oslo kan det variere mye mellom bydelene.
+### `crimeRate` — Anmeldte lovbrudd i området
+**Forklaring:** Antall lovbrudd som ble anmeldt der de skjedde, per 1000 innbyggere. I Oslo gjelder tallet bydelen (siste år) og sammenlignes med Oslo og landet; ellers gjelder det hele kommunen (snitt over to år) og sammenlignes med landet.
+- **Når bydel i Oslo:** Bydeler med mye handel, uteliv og trafikk, som sentrumsbydelene, får flere anmeldelser enn folketallet tilsier. Tallet sier ikke hvor trygt det er akkurat i gata.
+- **Når få bor der:** I Sentrum bydel bor det så få at et tall per 1000 innbyggere ikke gir mening, så vi viser antallet.
 - **Når Gardermoen er med:** Lovbrudd på Oslo lufthavn Gardermoen, for eksempel smugling, blir talt med i Ullensaker og trekker tallet opp.
 - Ikke alle lovbrudd blir anmeldt, og hvor mye politiet kontrollerer påvirker også tallet.
 
-### `violentCrime` — Anmeldt vold i kommunen
-**Forklaring:** Antall anmeldte saker om vold og mishandling i kommunen per 1000 innbyggere, som et årlig snitt over to år. Tallet tar også med vold i nære relasjoner og sier ikke hvor trygt det er akkurat i nabolaget.
+### `violentCrime` — Anmeldt vold i området
+**Forklaring:** Antall anmeldte saker om vold og mishandling per 1000 innbyggere, i bydelen i Oslo og ellers i hele kommunen. Tallet tar også med vold i nære relasjoner og sier ikke hvor trygt det er akkurat i nabolaget.
+- **Når få bor der:** I Sentrum bydel bor det så få at et tall per 1000 innbyggere ikke gir mening, så vi viser antallet.
 - **Når Gardermoen er med:** Lovbrudd på Oslo lufthavn Gardermoen blir talt med i Ullensaker.
 
 ### `culturalHeritage` — Kulturminner innen 50 m

@@ -592,8 +592,16 @@ NGU datasets: https://www.ngu.no/geologiske-kart/datasett (download per county, 
     - 06265 Boliger: dwellings and share detached, semi-detached, terraced, apartment (2026)
     - 09429 Utdanningsnivå: share of people 16+ with a university or college degree (2025)
   - Not loaded yet: anything per grunnkrets.
-  - **Crime loaded** (2026-11-07) as table `krim_kommuner` by `data/scripts/ssb_krim.ts`, API `/api/krim_kommuner`: SSB table 08487 (anmeldte lovbrudd etter gjerningssted), per 1000 residents, yearly average over the latest two years (2024–2025), for all lovbrudd, vold og mishandling, eiendomstyveri and rusmiddellovbrudd, with Norway's number next to each. Data points `crimeRate` and `violentCrime` (info only, not scored).
-  - Watch out: Oslo is one number for the whole city (SSB has no bydel numbers in this table). Ullensaker includes crime at Gardermoen airport (145,5 vs 59,9 for Norway).
+  - **Crime loaded** (2026-11-07) as table `krim_omrader` by `data/scripts/ssb_krim.ts`, API `/api/krim_omrader`, one row per area (`level` 'kommune' | 'bydel'):
+    - every municipality: SSB table 08487 (anmeldte lovbrudd etter gjerningssted), per 1000 residents, yearly average over the latest two years (2024–2025): all lovbrudd, vold og mishandling, eiendomstyveri, rusmiddellovbrudd, with Norway next to each.
+    - Oslo per bydel: Oslo kommune statistikkbank KRI002 (`https://statistikkbanken.oslo.kommune.no/statbank/api/v1/no/db1/Kriminalitet/KRI002.px`, PxWeb, keyless, `json-stat` only; the `år` variable can't be sent in a query, so all years are fetched), counts for the latest year (2024) divided by bydel population from `oslo_bydeler`. Compared with all of Oslo and Norway.
+    - Data points `crimeRate` and `violentCrime` use the bydel row when there is one.
+  - Watch out: Sentrum bydel has about 1 500 residents, so it gets counts but no per-1000 number. Marka has no crime numbers of its own (falls back to Oslo kommune). Ullensaker includes crime at Gardermoen airport (145,5 vs 59,9 for Norway).
+
+- **Name:** Oslo bydeler (built)
+  - Owner: SSB (Klass) + Kartverket/SSB grunnkretser
+  - URL: https://data.ssb.no/api/klass/v1/correspondencetables/2467 (Bydelsinndeling 2020 - Grunnkretsinndeling 2025)
+  - What: no keyless bydel polygon file exists, so `data/scripts/oslo_bydeler.ts` merges the `grunnkretser` polygons per bydel using SSB's official grunnkrets -> bydel table. Table `oslo_bydeler` (id 030101..030117, name, population). All 591 Oslo grunnkretser get a bydel.
 
 - **Name:** Kulturminner - Lokaliteter, Enkeltminner og Sikringssoner
   - Owner: Riksantikvaren

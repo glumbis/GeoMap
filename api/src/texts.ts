@@ -83,9 +83,12 @@ export const OUTCOMES: Record<string, Record<string, (r: Reading) => boolean>> =
     "ingen registrert": (r) => r.value === null,
   },
   crimeRate: {
+    "bydel i Oslo": (r) => r.value !== null && / bydel /.test(r.display),
+    "få bor der": (r) => r.display.includes("få bor der"),
     "Gardermoen er med": (r) => r.display.includes("Gardermoen"),
   },
   violentCrime: {
+    "få bor der": (r) => r.display.includes("få bor der"),
     "Gardermoen er med": (r) => r.display.includes("Gardermoen"),
   },
   transitDepartures: {
