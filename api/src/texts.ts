@@ -62,6 +62,11 @@ export const OUTCOMES: Record<string, Record<string, (r: Reading) => boolean>> =
     "55–65 dB": (r) => Number(r.value) >= 55 && Number(r.value) < 65,
     "50–55 dB": (r) => Number(r.value) >= 50 && Number(r.value) < 55,
   },
+  aircraftNoise: {
+    "rød sone (62 dB eller mer)": (r) => r.value === "rød",
+    "gul sone (52–62 dB)": (r) => r.value === "gul",
+    "ikke i sone": (r) => r.value === null,
+  },
   pollutedGround: {
     "registrert i nærheten": (r) => r.value !== null,
   },

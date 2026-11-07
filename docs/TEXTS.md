@@ -80,7 +80,10 @@ How to use this file:
 - Uten treff vet vi ikke om det er stille eller om stedet ikke er kartlagt, så da vises det som ikke tilgjengelig.
 
 ### `aircraftNoise` — Flystøy
-**Forklaring:** Støysonene viser beregnet flystøy rundt Oslo lufthavn Gardermoen, som et snitt over døgnet der kveld og natt teller mer. Rød sone er 62 dB eller mer og regnes som lite egnet for boliger; gul sone er 52–62 dB, der kommunen vurderer støy særskilt ved nye boliger (retningslinje T-1442).
+**Forklaring:** Avinor har beregnet støysoner rundt Oslo lufthavn Gardermoen, som et snitt over døgnet der kveld og natt teller mer. Sonene bygger på ventet flytrafikk og sier ikke hvor ofte eller hvor lavt flyene går over akkurat denne adressen.
+- **Når rød sone (62 dB eller mer):** Flystøyen er så høy at området regnes som lite egnet for boliger. Etter retningslinjen T-1442 bør nye boliger som hovedregel unngås her.
+- **Når gul sone (52–62 dB):** Flystøyen er merkbar, og kommunen vurderer støy særskilt når det skal bygges nytt.
+- **Når ikke i sone:** Adressen ligger utenfor støysonene til Avinors lufthavner. Det kan likevel høres fly, og kartet tar ikke med helikopter, militære flyplasser eller små flyplasser.
 
 ### `pollutedGround` — Forurenset grunn
 **Forklaring:** Miljødirektoratet registrerer steder der grunnen er eller kan være forurenset, for eksempel gamle fyllinger, industritomter og skytebaner.

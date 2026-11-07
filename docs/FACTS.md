@@ -160,6 +160,17 @@ Note: the noise map has no data on municipal roads. Oslo is marked "no coverage"
 
 It only warns in Oslo. Outside Oslo, `roadNoise` already gives the warning: don't write two warning sentences about the same noise. When it is missing, it goes under "Missing data" (no zone = unknown, never "stille").
 
+**`aircraftNoise` (Flystøy)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value "rød" | Adressen ligger i rød flystøysone fra {airport}, med 62 dB eller mer ({src}). | 2 |
+| value "gul" | Adressen ligger i gul flystøysone fra {airport}, med 52–62 dB ({src}). | 3 |
+| no warning | Adressen ligger ikke i en flystøysone fra Avinors lufthavner ({src}). | 5 |
+
+`{display}` is "Rød flystøysone, Oslo lufthavn Gardermoen (over 62 dB)": `{airport}` is the text between the comma and the brackets. Example (3209-2340-35): "Adressen ligger i rød flystøysone fra Oslo lufthavn Gardermoen, med 62 dB eller mer (Avinor)."
+Road and aircraft noise are different sources, so an address can get one sentence for each. The "no warning" sentence must keep "Avinors lufthavner" so it stays true (helicopters and military airfields are not in the map).
+
 **`pollutedGround` (Forurenset grunn)**
 
 | When | Sentence | Rank |
