@@ -1,7 +1,9 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { readdirSync } from "node:fs";
+import { serveStatic } from "@hono/node-server/serve-static";
+import { existsSync, readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const app = new Hono();
 
@@ -12,6 +14,15 @@ for (const file of readdirSync(routesDir).filter((f) => f.endsWith(".ts"))) {
   const mod = await import(new URL(file, routesDir).href);
   app.route(`/api/${name}`, mod.default);
   console.log(`route /api/${name}`);
+}
+
+// Production: also serve the built web app (web/dist from `npm run build`), so one process on one port is the whole site.
+// Unknown non-API paths get index.html: the web app routes on the URL path (web/src/app/router.ts).
+const dist = fileURLToPath(new URL("../../web/dist/", import.meta.url));
+if (existsSync(dist)) {
+  app.use("*", serveStatic({ root: dist }));
+  app.get("*", (c, next) => (c.req.path.startsWith("/api/") ? next() : serveStatic({ root: dist, path: "index.html" })(c, next)));
+  console.log(`web app from ${dist}`);
 }
 
 // Errors are JSON too (see AGENTS.md).
@@ -25,5 +36,6 @@ app.onError((err, c) => {
   return c.json({ error: "internal", message: err.message }, 500);
 });
 
-const port = Number(process.env.API_PORT ?? 3000);
+// PORT is what hosting platforms set; API_PORT is ours for local dev.
+const port = Number(process.env.PORT ?? process.env.API_PORT ?? 3000);
 serve({ fetch: app.fetch, port }, () => console.log(`API on http://localhost:${port}`));

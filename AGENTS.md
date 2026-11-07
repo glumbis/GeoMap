@@ -40,6 +40,7 @@ npm run dev                 # API on :3000 + web on http://localhost:5173 (open 
 - AI summaries need `ANTHROPIC_API_KEY` in `.env` (copy `.env.example`). Everything else runs without keys.
 - Check the API: `http://localhost:5173/api/health` lists loaded tables. Address profile: `http://localhost:5173/api/address/0301-10223-22/profile`. PDF report: `http://localhost:5173/api/address/0301-10223-22/report.pdf` (needs Chrome or Edge installed, or `CHROME_PATH` in `.env`).
 - In the browser console (dev only), `map` is the MapLibre map.
+- Production: `npm run build`, then `npm start -w api` serves web app + API on one port (`PORT`, default 3000). Docker: `docker run -p 3000:3000 ghcr.io/glumbis/geomap` (built by `.github/workflows/docker.yml` on every push). See `docs/DEPLOY.md`.
 
 ## Add things (no shared file to edit)
 - **Dataset:** `data/scripts/<name>.ts` (copy `kommuner.ts`). Helpers in `data/scripts/lib.ts`: `download`, `getJson`, `rawPath`. Use `conn` from `api/src/db.ts`. Clip to Oslo + Akershus with `WHERE ST_Intersects(geom, (SELECT ST_Union_Agg(geom) FROM kommuner))`.

@@ -30,6 +30,8 @@ You don't need to learn the commands. Your coding agent sets up, syncs, commits 
 
 If you ever want to do it yourself, the commands are in `AGENTS.md` under "Run it" (`npm run setup`, then `npm run dev`).
 
+Just want to run the finished site? `docker run -p 3000:3000 ghcr.io/glumbis/geomap`, then open http://localhost:3000. See `docs/DEPLOY.md`.
+
 ## Who does what
 
 The full task lists are in `PLAN.md` under "Roles". In short:
