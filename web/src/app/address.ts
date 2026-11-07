@@ -1,7 +1,7 @@
 // Address page: top bar, left column, map on the right. Layout: docs/DESIGN.md.
 // Top bar: logo, search, Del / Skriv ut / Sammenlign. Left column, top to bottom: address, overall rating, warnings,
 // the perspectives ("Vurdering for deg"), summary,
-// PDF report, "Spør megleren" checklist, every data point by category, sources.
+// PDF report, ("Spør megleren" checklist: switched off, see SHOW_CHECKLIST), every data point by category, sources.
 // Renders whatever the profile contains (docs/PROFILE.md). Never a hard-coded category list, never a fake number.
 import { h, titleCase } from "./dom";
 import { navigate } from "./router";
@@ -14,6 +14,9 @@ import { shareActions } from "./share";
 import { reportLink } from "./report";
 import { checklistSection } from "./checklist";
 import { finnBackLink } from "./finn";
+
+// "Spør megleren" is switched off for now (docs/AVVIKLET.md). The code stays; set to true to show it again.
+const SHOW_CHECKLIST = false;
 import "./address.css";
 import type { Category, DataPoint, Missing, Profile, Severity } from "./profile";
 
@@ -66,7 +69,7 @@ export async function renderAddress(app: HTMLElement, id: string) {
     audienceSection(profile) ?? "",
     summaryCard(id, () => req === current),
     reportLink(a.id),
-    checklistSection(profile, openDataPoint) ?? "",
+    (SHOW_CHECKLIST && checklistSection(profile, openDataPoint)) || "",
     h(
       "section",
       { class: "all-points", "aria-labelledby": "all-points-title" },
