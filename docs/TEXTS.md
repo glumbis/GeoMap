@@ -174,6 +174,10 @@ How to use this file:
 ### `medianIncome` — Medianinntekt etter skatt (husholdning)
 **Forklaring:** Halvparten av husholdningene i kommunen har mer enn dette etter skatt, og halvparten har mindre. Inntektene kan variere mye mellom ulike deler av kommunen, særlig i Oslo.
 
+### `areaIncome` — Medianinntekt i nærområdet (husholdning)
+**Forklaring:** Halvparten av husholdningene i området har mer enn dette etter skatt, og halvparten har mindre. Området er SSBs delområde, en gruppe grunnkretser med noen tusen innbyggere (i Oslo ofte en del av en bydel), og kommunens tall står ved siden av.
+- Der SSB ikke har tall for delområdet, vises bydelen eller kommunen.
+
 ### `crimeRate` — Anmeldte lovbrudd i området
 **Forklaring:** Antall lovbrudd som ble anmeldt der de skjedde, per 1000 innbyggere. I Oslo gjelder tallet bydelen (siste år) og sammenlignes med Oslo og landet; ellers gjelder det hele kommunen (snitt over to år) og sammenlignes med landet.
 - **Når bydel i Oslo:** Bydeler med mye handel, uteliv og trafikk, som sentrumsbydelene, får flere anmeldelser enn folketallet tilsier. Tallet sier ikke hvor trygt det er akkurat i gata.

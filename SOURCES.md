@@ -598,6 +598,12 @@ NGU datasets: https://www.ngu.no/geologiske-kart/datasett (download per county, 
     - Data points `crimeRate` and `violentCrime` use the bydel row when there is one.
   - Watch out: Sentrum bydel has about 1 500 residents, so it gets counts but no per-1000 number. Marka has no crime numbers of its own (falls back to Oslo kommune). Ullensaker includes crime at Gardermoen airport (145,5 vs 59,9 for Norway).
 
+- **Name:** Household income per delområde / bydel (SSB 06944)
+  - Owner: SSB
+  - URL: https://www.ssb.no/statbank/table/06944
+  - **Loaded** (2026-11-07) as table `inntekt_omrader` by `data/scripts/ssb_inntekt_omrader.ts`, API `/api/inntekt_omrader`: median household income after tax (2024) for 206 delområder (codes like 32010100 = grunnkretser 320101xx, polygons built from `grunnkretser`), 17 Oslo bydeler (codes like 030101a) and 22 kommuner. Data point `areaIncome` (smallest area with a number, info only).
+  - Watch out: SSB hides a few small delområder (2 without a number); those fall back to bydel or kommune.
+
 - **Name:** Oslo bydeler (built)
   - Owner: SSB (Klass) + Kartverket/SSB grunnkretser
   - URL: https://data.ssb.no/api/klass/v1/correspondencetables/2467 (Bydelsinndeling 2020 - Grunnkretsinndeling 2025)

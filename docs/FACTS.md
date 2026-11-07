@@ -311,6 +311,7 @@ Area numbers are for the whole municipality. Always say "i kommunen", never "i n
 | `municipality` | Adressen ligger i {display} ({src}). | 6 |
 | `population` | Kommunen hadde {value} innbyggere i {year} ({src}). | 6 |
 | `medianIncome` | Medianinntekten etter skatt for husholdninger i kommunen var {value} kr i {year} ({src}). | 6 |
+| `areaIncome` | Medianinntekten etter skatt for husholdninger i {area} var {value} kr i {year}, mot {kommune} kr i hele kommunen ({src}). | 6 |
 | `crimeRate`, kommune | Det ble anmeldt {value} lovbrudd per 1000 innbyggere i kommunen i snitt per år i {period}, mot {norway} i hele landet ({src}). | 6 |
 | `crimeRate`, Oslo bydel | Det ble anmeldt {value} lovbrudd per 1000 innbyggere i {area} i {period}, mot {oslo} i hele Oslo og {norway} i landet ({src}). | 6 |
 | `violentCrime`, kommune | Det ble anmeldt {value} saker om vold og mishandling per 1000 innbyggere i kommunen i snitt per år i {period}, mot {norway} i hele landet ({src}). | 6 |
@@ -339,6 +340,8 @@ Area numbers are for the whole municipality. Always say "i kommunen", never "i n
 
 `{display}` is "Myren arbeiderboliger - Arendalsgata (vernet etter plan- og bygningsloven), 26 m unna, og 1 til": `{name}` is the text before the last bracket pair, `{status}` the text in it, `{distance}` the "26 m" part. Leave out "og 1 til". Example (Arendalsgata 22): "Det er registrert et kulturminne 26 m fra adressen: Myren arbeiderboliger - Arendalsgata, vernet etter plan- og bygningsloven (Riksantikvaren)."
 Use `{status}` exactly. Only write "fredet" when the status says so ("kommunalt listeført" is not fredet).
+
+`areaIncome`: `{display}` is "711 200 kr i Østerås (2024), kommunen 650 000 kr": `{area}` is the name after "i", `{kommune}` the number after "kommunen" (leave out ", mot …" when it is missing). It is about SSB's delområde, not the street.
 
 Crime (`crimeRate`, `violentCrime`): kommune `{display}` is "51,7 per 1000 innbyggere (2024–2025), landet 59,9"; Oslo bydel `{display}` is "81,7 per 1000 innbyggere i Sagene bydel (2024), Oslo 88, landet 59,9" (has " i … bydel"). `{value}` is the first number, `{area}` the "… bydel" text, `{period}` the year(s) in brackets, `{oslo}` and `{norway}` the numbers after "Oslo" and "landet". Sentrum `{display}` is "12 345 anmeldt i Sentrum bydel (2024), få bor der": `{count}` is the first number. `{src}` is Oslo kommune for a bydel, SSB for a kommune. When `{display}` ends with "inkl. Gardermoen" (Ullensaker), add: "Tallet tar med lovbrudd på Oslo lufthavn Gardermoen." Never call an area "trygt" or "utrygt": these are numbers for the whole municipality, not for the neighbourhood.
 

@@ -116,6 +116,7 @@ export const SOURCES: Source[] = [
   { id: "mdir-naturvern", name: "Naturvernområder (Naturbase)", owner: "Miljødirektoratet", url: "https://kartkatalog.geonorge.no/metadata/naturvernomraader/5857ec0a-8d2c-4cd8-baa2-0dc54ae213b4", licence: "NLOD 2.0" },
   { id: "mdir-friluft", name: "Statlig sikra friluftslivsområder", owner: "Miljødirektoratet", url: "https://kart.miljodirektoratet.no/arcgis/rest/services/friluftsliv_statlig_sikra/MapServer/0", licence: "NLOD 2.0" },
   { id: "ra-kulturminner", name: "Kulturminner - Lokaliteter, Enkeltminner og Sikringssoner", owner: "Riksantikvaren", url: "https://kartkatalog.geonorge.no/metadata/kulturminner-lokaliteter-enkeltminner-og-sikringssoner/c72906a0-2bc2-41d7-bea2-c92d368e3c49", licence: "NLOD 2.0" },
+  { id: "ssb-inntekt-omrader", name: "Inntekt for husholdninger etter region (tabell 06944, delområde og bydel)", owner: "SSB", url: "https://www.ssb.no/statbank/table/06944", licence: "CC BY 4.0" },
   { id: "ssb-krim", name: "Anmeldte lovbrudd etter gjerningssted (SSB 08487; Oslo per bydel: Oslo kommune KRI002)", owner: "SSB / Oslo kommune", url: "https://www.ssb.no/statbank/table/08487", licence: "CC BY 4.0 / NLOD" },
   { id: "ssb-kommune", name: "Statistikkbanken", owner: "SSB", url: "https://www.ssb.no/statbank", licence: "CC BY 4.0" },
 ];
@@ -602,6 +603,22 @@ export const DATA_POINTS: DataPoint[] = [
       rows[0]?.incomeMedianAfterTax != null
         ? { value: Number(rows[0].incomeMedianAfterTax), display: `${Number(rows[0].incomeMedianAfterTax).toLocaleString("nb-NO")} kr (${rows[0].incomeYear})`, unit: "kr", effect: "neutral" }
         : null,
+  },
+  {
+    // data/scripts/ssb_inntekt_omrader.ts (Even): inntekt_omrader, SSB 06944, levels 'delomrade' | 'bydel' | 'kommune'.
+    // The smallest area with a number wins; the municipality is shown next to it. Info only: never scored.
+    id: "areaIncome", label: "Medianinntekt i nærområdet (husholdning)", category: "area", source: "ssb-inntekt-omrader", importance: "normal",
+    table: "inntekt_omrader", find: { kind: "within" },
+    read: (rows) => {
+      const order = ["delomrade", "bydel", "kommune"];
+      const withValue = rows.filter((r) => r.medianAfterTax != null).sort((a, b) => order.indexOf(String(a.level)) - order.indexOf(String(b.level)));
+      const r = withValue[0];
+      if (!r) return null;
+      const kommune = withValue.find((x) => x.level === "kommune");
+      const nok = (v: unknown) => `${Number(v).toLocaleString("nb-NO")} kr`;
+      const compare = r.level !== "kommune" && kommune ? `, kommunen ${nok(kommune.medianAfterTax)}` : "";
+      return { value: Number(r.medianAfterTax), unit: "kr", display: `${nok(r.medianAfterTax)} i ${r.name} (${r.year})${compare}`, effect: "neutral" };
+    },
   },
   {
     // data/scripts/ssb_krim.ts (Even): krim_omrader: Oslo bydel (Oslo kommune KRI002, 1 year) or kommune (SSB 08487, 2-year average).
