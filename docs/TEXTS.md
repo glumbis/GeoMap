@@ -85,6 +85,10 @@ How to use this file:
 - **Når bare i år 2100:** Området er ikke utsatt i dag, men kan bli det når havet stiger.
 - **Når ikke i stormflosone:** Adressen ligger utenfor sonene Kartverket har beregnet. Kartet gjelder bare vann fra sjøen, ikke fra elver eller regn.
 
+### `pastSlides` — Registrerte skred innen 500 m
+**Forklaring:** Skred som NVE har registrert innen 500 meter i luftlinje, for eksempel leirskred, kvikkleireskred, steinsprang og utglidning av vei, med hva slags skred det nærmeste var og når det gikk. Et skred i nærheten sier at grunnen eller fjellet her har rast ut før.
+- Registeret er langt fra komplett: mange eldre og små skred er aldri registrert, og noen er plassert omtrentlig. At ingen skred er registrert, betyr ikke at det aldri har gått skred her.
+
 ## Miljø
 
 ### `roadNoise` — Veistøy
@@ -145,6 +149,10 @@ How to use this file:
 **Forklaring:** Antall trafikkulykker med personskade som politiet har registrert innen 200 meter i luftlinje siden 2016, fra Statens vegvesen, og hvor mange av dem som gjaldt en fotgjenger eller syklist. Det kan si noe om hvor trygg veien til skole og butikk er.
 - Ulykker uten personskade er ikke med, og noen ulykker med lettere skader blir aldri meldt til politiet. Steder med mye trafikk får naturlig flere ulykker.
 
+### `speedLimit` — Fartsgrense på nærmeste vei
+**Forklaring:** Skiltet fartsgrense på nærmeste offentlige vei innen 100 meter, fra Statens vegvesen. Lav fartsgrense, som 30 km/t, gjør det tryggere for barn å gå og sykle, og gir ofte mindre støy.
+- Nærmeste vei er ikke alltid den adressen har innkjørsel fra. Private veier er ikke med.
+
 ### `school` — Nærmeste grunnskole
 **Forklaring:** Avstanden er målt i luftlinje til nærmeste barne- eller ungdomsskole. Det er ikke sikkert dette er skolen adressen hører til, for kommunen bestemmer skolekretsen, og skolen kan være privat.
 
@@ -167,6 +175,13 @@ How to use this file:
 **Forklaring:** Avstanden er i luftlinje til nærmeste legekontor eller legesenter med allmennleger, hentet fra OpenStreetMap. Hvilken fastlege man får, avhenger av ledige plasser hos legene, ikke av avstand.
 - **Når ingen innen 5 km:** Det er ikke registrert noe legekontor innen 5 km i luftlinje. OpenStreetMap kan mangle noen kontorer.
 
+### `fireStation` — Nærmeste brannstasjon
+**Forklaring:** Avstanden i luftlinje til nærmeste brannstasjon fra DSB sitt register. Hvor raskt brannvesenet kommer frem, avhenger også av veien dit og av om stasjonen har mannskap på vakt hele døgnet.
+
+### `shelter` — Nærmeste offentlige tilfluktsrom
+**Forklaring:** Avstanden i luftlinje til nærmeste offentlige tilfluktsrom, med hvor mange personer det har plass til. Tilfluktsrom skal beskytte befolkningen ved krig og andre alvorlige hendelser.
+- Mange boliger, skoler og arbeidsplasser har egne private tilfluktsrom, som ikke er med her. Kommunen kan svare på hvilket tilfluktsrom som gjelder for adressen.
+
 ## Natur og friluft
 
 ### `trails` — Nærmeste tursti eller skiløype
@@ -181,6 +196,19 @@ How to use this file:
 
 ### `recreationArea` — Nærmeste sikra friluftsområde
 **Forklaring:** Statlig sikra friluftsområder er strender, badeplasser, øyer, parker og skog som staten har sikret slik at alle kan bruke dem. Avstanden er i luftlinje, og mange andre turområder og parker er ikke med i denne listen.
+
+### `playground` — Nærmeste lekeplass
+**Forklaring:** Avstanden i luftlinje til nærmeste lekeplass, hentet fra OpenStreetMap. Lekeplassene er registrert av frivillige, så noen kan mangle, særlig små lekeplasser i borettslag.
+
+### `sportsFacility` — Nærmeste idrettsanlegg
+**Forklaring:** Avstanden i luftlinje til nærmeste idrettshall, stadion, ishall eller navngitte idrettsbane, hentet fra OpenStreetMap. Ubemannede småbaner som ballbinger uten navn er ikke med.
+
+### `bathingSpot` — Nærmeste badeplass eller strand
+**Forklaring:** Avstanden i luftlinje til nærmeste badeplass eller strand, ved sjøen eller en innsjø, hentet fra OpenStreetMap. Vannkvaliteten er ikke med: kommunen tar prøver og varsler om badevannet om sommeren.
+
+### `nearestSea` — Nærmeste sjø
+**Forklaring:** Avstanden i luftlinje til nærmeste sjø i NIBIO sitt arealressurskart AR50. Kartet er grovt, så smale viker og sund kan mangle, og avstanden kan da bli for lang.
+- Nær sjøen kan stormflo og havnivåstigning bli aktuelt. Se "Stormflo" under Naturfare.
 
 ## Område
 

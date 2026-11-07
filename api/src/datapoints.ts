@@ -154,6 +154,11 @@ export const SOURCES: Source[] = [
   { id: "ssb-gebyrer", name: "Kommunale gebyrer knyttet til bolig (KOSTRA, tabell 12842)", owner: "SSB", url: "https://www.ssb.no/statbank/table/12842", licence: "CC BY 4.0" },
   { id: "ssb-eiendomsskatt", name: "Eiendomsskatt (KOSTRA, tabell 14674)", owner: "SSB", url: "https://www.ssb.no/statbank/table/14674", licence: "CC BY 4.0" },
   { id: "kartverket-n50-arealdekke", name: "N50 Kartdata, arealdekke", owner: "Kartverket", url: "https://kartkatalog.geonorge.no/metadata/n50-kartdata/ea192681-d039-42ec-b1bc-f3ce04c189ac", licence: "CC BY 4.0" },
+  { id: "nve-skredhendelser", name: "Skredhendelser (nasjonal skreddatabase)", owner: "NVE", url: "https://kart.nve.no/enterprise/rest/services/Skredhendelser2/MapServer", licence: "NLOD 2.0" },
+  { id: "nvdb-fartsgrense", name: "Fartsgrense fra Nasjonal vegdatabank, vegobjekttype 105", owner: "Statens vegvesen", url: "https://nvdbapiles.atlas.vegvesen.no/", licence: "NLOD 2.0" },
+  { id: "dsb-tilfluktsrom", name: "Tilfluktsrom - Offentlige", owner: "DSB", url: "https://kartkatalog.geonorge.no/metadata/dbae9aae-10e7-4b75-8d67-7f0e8828f3d8", licence: "NLOD 1.0" },
+  { id: "dsb-brannstasjoner", name: "Brannstasjoner", owner: "DSB", url: "https://kartkatalog.geonorge.no/metadata/0ccce81d-a72e-46ca-8bd9-57b362376485", licence: "NLOD 1.0" },
+  { id: "nibio-ar50", name: "Arealressurskart AR50", owner: "NIBIO", url: "https://kartkatalog.geonorge.no/metadata/4bc2d1e0-f693-4bf2-820d-c11830d849a3", licence: "NLOD 1.0" },
   { id: "udir-elevundersokelsen", name: "Elevundersøkelsen, mobbing på skolen", owner: "Utdanningsdirektoratet", url: "https://www.udir.no/tall-og-forskning/statistikk/statistikk-grunnskole/elevundersokelsen/", licence: "NLOD 2.0" },
 ];
 
@@ -468,6 +473,24 @@ export const DATA_POINTS: DataPoint[] = [
       };
     },
   },
+  {
+    // data/scripts/nve_skredhendelser.ts (Even): skredhendelser, slide events NVE has registered (release point),
+    // typeName ("Leirskred", "Steinsprang (under ~100 m3)", "Utglidning av veg", ...), year (NULL when unknown).
+    // Count within 500 m and the nearest one. Info only: never scored (the database is far from complete).
+    id: "pastSlides", label: "Registrerte skred innen 500 m", category: "hazards", source: "nve-skredhendelser", importance: "normal",
+    table: "skredhendelser", find: { kind: "around", radiusM: 500 },
+    read: (rows) => {
+      if (!rows.length) return { value: 0, display: "Ingen registrerte skred innen 500 m", effect: "neutral" };
+      const r = rows[0];
+      const when = r.year != null ? `, ${r.year}` : "";
+      const n = rows.length;
+      return {
+        value: n, unit: "skred",
+        display: `${n} ${n === 1 ? "registrert skred" : "registrerte skred"}, nærmeste ${metres(Number(r.distanceM))} unna (${r.typeName}${when})`,
+        effect: "neutral",
+      };
+    },
+  },
 
   // Environment.
   {
@@ -639,6 +662,17 @@ export const DATA_POINTS: DataPoint[] = [
     },
   },
   {
+    // data/scripts/nvdb_fartsgrense.ts (Even): fartsgrenser, NVDB speed limit per road stretch (kmh).
+    // Speed limit on the nearest public road within 100 m. Info only: never scored.
+    id: "speedLimit", label: "Fartsgrense på nærmeste vei", category: "location", source: "nvdb-fartsgrense", importance: "normal",
+    table: "fartsgrenser", find: { kind: "nearest", maxM: 100 },
+    read: (rows) => {
+      const r = rows[0];
+      if (!r) return { value: null, display: "Ingen offentlig vei innen 100 m", effect: "neutral" };
+      return { value: Number(r.kmh), unit: "km/t", display: `${r.kmh} km/t, ${metres(Number(r.distanceM))} unna`, effect: "neutral" };
+    },
+  },
+  {
     id: "school", label: "Nærmeste grunnskole", category: "location", source: "udir-skoler", importance: "normal",
     table: "schools", find: { kind: "nearest", maxM: 5000, where: "isPrimary" },
     read: nearestScore([[500, 100], [1000, 80], [2000, 50], [5000, 20]]),
@@ -680,6 +714,29 @@ export const DATA_POINTS: DataPoint[] = [
     id: "doctor", label: "Nærmeste legekontor", category: "location", source: "osm", importance: "normal",
     table: "tjenester", find: { kind: "nearest", maxM: 5000, where: "kind = 'lege'" },
     read: nearestScore([[800, 100], [1500, 80], [3000, 50], [5000, 20]]),
+  },
+  {
+    // data/scripts/dsb_beredskap.ts (Even): brannstasjoner, DSB fire stations and depots (name, fireService).
+    // Straight-line distance; response time depends on roads and crews. Info only: never scored.
+    id: "fireStation", label: "Nærmeste brannstasjon", category: "location", source: "dsb-brannstasjoner", importance: "normal",
+    table: "brannstasjoner", find: { kind: "nearest", maxM: 30000 },
+    read: (rows) => {
+      const r = rows[0];
+      if (!r) return null;
+      return { value: Math.round(Number(r.distanceM)), unit: "m", display: `${metres(Number(r.distanceM))} unna (${r.name}, ${r.fireService})`, effect: "neutral" };
+    },
+  },
+  {
+    // data/scripts/dsb_beredskap.ts (Even): tilfluktsrom, DSB public shelters (name = address, places).
+    // Many homes and workplaces have their own private shelter, which is not in this set. Info only: never scored.
+    id: "shelter", label: "Nærmeste offentlige tilfluktsrom", category: "location", source: "dsb-tilfluktsrom", importance: "normal",
+    table: "tilfluktsrom", find: { kind: "nearest", maxM: 5000 },
+    read: (rows) => {
+      const r = rows[0];
+      if (!r) return { value: null, display: "Ingen offentlige innen 5 km", effect: "neutral" };
+      const places = r.places != null ? `, ${Number(r.places).toLocaleString("nb-NO")} plasser` : "";
+      return { value: Math.round(Number(r.distanceM)), unit: "m", display: `${metres(Number(r.distanceM))} unna (${r.name}${places})`, effect: "neutral" };
+    },
   },
 
   // Nature & leisure.
@@ -733,6 +790,47 @@ export const DATA_POINTS: DataPoint[] = [
       const near: Pick<Reading, "score" | "effect"> = d <= 500 ? { effect: "good", score: 100 } : d <= 1000 ? { effect: "good", score: 85 } : { effect: "neutral" };
       if (d === 0) return { value: 0, unit: "m", display: `Inne i ${rows[0].name}`, ...near };
       return { value: Math.round(d), unit: "m", display: `${rows[0].name}, ${metres(d)}`, ...near };
+    },
+  },
+  {
+    // data/scripts/osm_fritid.ts (Even): fritid, OSM leisure places, kind 'lekeplass' | 'idrett' | 'badeplass'.
+    // OpenStreetMap is volunteer data and can miss some. Info only: never scored.
+    id: "playground", label: "Nærmeste lekeplass", category: "nature", source: "osm", importance: "normal",
+    table: "fritid", find: { kind: "nearest", maxM: 1000, where: "kind = 'lekeplass'" },
+    read: (rows) => {
+      const r = rows[0];
+      if (!r) return { value: null, display: "Ingen registrert innen 1 km", effect: "neutral" };
+      const name = r.named ? ` (${r.name})` : "";
+      return { value: Math.round(Number(r.distanceM)), unit: "m", display: `${metres(Number(r.distanceM))} unna${name}`, effect: "neutral" };
+    },
+  },
+  {
+    id: "sportsFacility", label: "Nærmeste idrettsanlegg", category: "nature", source: "osm", importance: "normal",
+    table: "fritid", find: { kind: "nearest", maxM: 3000, where: "kind = 'idrett'" },
+    read: (rows) => {
+      const r = rows[0];
+      if (!r) return { value: null, display: "Ingen registrert innen 3 km", effect: "neutral" };
+      return { value: Math.round(Number(r.distanceM)), unit: "m", display: `${metres(Number(r.distanceM))} unna (${r.name})`, effect: "neutral" };
+    },
+  },
+  {
+    id: "bathingSpot", label: "Nærmeste badeplass eller strand", category: "nature", source: "osm", importance: "normal",
+    table: "fritid", find: { kind: "nearest", maxM: 5000, where: "kind = 'badeplass'" },
+    read: (rows) => {
+      const r = rows[0];
+      if (!r) return { value: null, display: "Ingen registrert innen 5 km", effect: "neutral" };
+      return { value: Math.round(Number(r.distanceM)), unit: "m", display: `${metres(Number(r.distanceM))} unna (${r.name})`, effect: "neutral" };
+    },
+  },
+  {
+    // data/scripts/nibio_ar50.ts (Even): arealtyper, NIBIO AR50 land cover polygons; typeCode 82 = sea (Hav).
+    // Straight line to the nearest sea polygon. AR50 is coarse, so small bays can be missing. Info only: never scored.
+    id: "nearestSea", label: "Nærmeste sjø", category: "nature", source: "nibio-ar50", importance: "normal",
+    table: "arealtyper", find: { kind: "nearest", maxM: 10000, where: "typeCode = 82" },
+    read: (rows) => {
+      const r = rows[0];
+      if (!r) return { value: null, display: "Over 10 km til sjøen", effect: "neutral" };
+      return { value: Math.round(Number(r.distanceM)), unit: "m", display: `${metres(Number(r.distanceM))} unna`, effect: "neutral" };
     },
   },
 

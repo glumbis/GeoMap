@@ -185,6 +185,15 @@ Rockfall, debris-slide and avalanche maps are *aktsomhetsområder*: coarse maps 
 
 Always "aktsomhetsområde", never "faresone": these are coarse maps of where something is possible. When `quickClay` or `flood200` already gives a zone sentence, still add this one: they are different maps.
 
+**`pastSlides` (Registrerte skred innen 500 m)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value > 0 | NVE har registrert {value} skred innen 500 meter i luftlinje; det nærmeste var et {type} {distance} unna{year} ({src}). | 5 |
+| value 0 | No sentence: the register is far from complete, so "ingen skred" would claim too much. | — |
+
+`{display}` is "3 registrerte skred, nærmeste 120 m unna (Leirskred, 1978)": `{value}` is the first number, `{distance}` the "120 m" part, `{type}` the slide type in brackets in lower case ("leirskred"), `{year}` " i {year}" when a year is in the brackets, else empty. Use "1 skred" for one. Never say the address is at risk because of it.
+
 ### Environment
 
 **`roadNoise` (Veistøy)**
@@ -301,6 +310,25 @@ Say "på en vanlig hverdag", never "per dag" or "hver dag": weekends have fewer.
 
 `{display}` is "12 ulykker med personskade siden 2016, 3 med fotgjenger eller syklist": `{soft}` is ", {n} av dem med fotgjenger eller syklist" when the display has that part, else empty. Use "1 trafikkulykke" for one. Never call the area or a road "farlig" or "trygg".
 
+**`speedLimit` (Fartsgrense på nærmeste vei)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value is a number | Fartsgrensen på nærmeste offentlige vei, {distance} unna, er {value} km/t ({src}). | 6 |
+| value is empty | No sentence. | — |
+
+`{display}` is "30 km/t, 15 m unna": `{value}` is the number, `{distance}` the "15 m" part. Never call the road "trygg" or "farlig".
+
+**`fireStation` (Nærmeste brannstasjon)** and **`shelter` (Nærmeste offentlige tilfluktsrom)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| `fireStation`, value is a number | Nærmeste brannstasjon er {name}, {distance} unna i luftlinje ({src}). | 6 |
+| `shelter`, value is a number | Nærmeste offentlige tilfluktsrom er i {name}, {distance} unna i luftlinje, med plass til {places} personer ({src}). | 6 |
+| `shelter`, value is empty | Det er ikke noe offentlig tilfluktsrom innen 5 km i luftlinje ({src}). | 6 |
+
+`fireStation` `{display}` is "2,1 km unna (Sentrum, Oslo brann- og redningsetat)": `{name}` is the first part in brackets (add the fire service after "i" only if it reads naturally), `{distance}` the part before "unna". `shelter` `{display}` is "450 m unna (Torget 6, 390 plasser)": `{name}` is the address in brackets, `{places}` the number before "plasser" (leave out ", med plass til …" when missing). Never say the address has no shelter: private shelters are not in the data.
+
 **`school` (Nærmeste grunnskole)**
 
 | When | Sentence | Rank |
@@ -362,6 +390,26 @@ Example (Grevlingåsen 17): "Nærmeste registrerte tursti er 32 m unna i luftlin
 | `recreationArea`, value is empty | Det er ikke noe statlig sikra friluftsområde innen 3 km i luftlinje ({src}). | 6 |
 
 `{display}` is "Kalvøya naturreservat, 662 m": `{name}` is the part before the last comma, `{distance}` the part after it. When value is 0, `{display}` is "Inne i <name>". Example (Gamle Drammensvei 207): "Nærmeste verneområde er Kalvøya naturreservat, 662 m unna i luftlinje (Miljødirektoratet)."
+
+**`greenArea` (Natur innen 500 m)**
+
+| When | Sentence | Rank |
+|---|---|---|
+| value is a number | {value} prosent av området innen 500 meter er skog, mark, park eller vann, mest {kind} ({src}). | 6 |
+
+`{display}` is "42 % skog, mark, park eller vann (mest skog)": `{value}` is the number, `{kind}` the word after "mest" (leave out ", mest {kind}" when missing). Say "innen 500 meter", never "i nabolaget". The map is coarse: never say there is no park nearby.
+
+**`playground`, `sportsFacility`, `bathingSpot`, `nearestSea`**
+
+| When | Sentence | Rank |
+|---|---|---|
+| `playground`, value is a number | Nærmeste registrerte lekeplass er {distance} unna i luftlinje ({src}). | 6 |
+| `sportsFacility`, value is a number | Nærmeste registrerte idrettsanlegg er {name}, {distance} unna i luftlinje ({src}). | 6 |
+| `bathingSpot`, value is a number | Nærmeste registrerte badeplass eller strand er {name}, {distance} unna i luftlinje ({src}). | 6 |
+| `nearestSea`, value is a number | Det er {distance} til sjøen i luftlinje ({src}). | 6 |
+| any of them, value is empty | No sentence: OpenStreetMap and AR50 can miss places. | — |
+
+`{display}` is "250 m unna (Rykkinnhallen)": `{distance}` is the part before "unna", `{name}` the text in brackets. A playground without a name has no brackets: leave the name out.
 
 ### Area
 
