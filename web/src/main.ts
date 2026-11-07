@@ -17,9 +17,9 @@ const app = document.getElementById("app")!;
 
 function route() {
   const m = /^\/a\/([^/]+)$/.exec(location.pathname);
-  const c = /^\/compare\/([^/]+)\/([^/]+)$/.exec(location.pathname);
+  const c = /^\/compare\/([^/]+)(?:\/([^/]*))?$/.exec(location.pathname); // /compare/<a>/ : B empty
   if (m) renderAddress(app, decodeURIComponent(m[1]));
-  else if (c) renderCompare(app, decodeURIComponent(c[1]), decodeURIComponent(c[2]));
+  else if (c) renderCompare(app, decodeURIComponent(c[1]), decodeURIComponent(c[2] ?? ""));
   else if (/^\/kart\/?$/.test(location.pathname)) renderKart(app);
   else renderStart(app);
 }

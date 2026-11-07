@@ -68,6 +68,13 @@
   flex-direction: column;
   gap: 0.75rem;
 }
+.cmp-empty {
+  padding: 2rem 0;
+  border-top: 1px solid var(--ink);
+  color: var(--ink-muted);
+}
+.cmp-empty p { margin: 0 0 0.25rem; }
+.cmp-empty p:first-child { font-family: var(--serif); font-size: 1.5rem; color: var(--ink); }
 .cmp-title {
   margin: 0;
   font-size: 2rem;

@@ -467,6 +467,7 @@ export default function (map: Map) {
     const bbox = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].map((n) => n.toFixed(5)).join(",");
     const ctrl = new AbortController();
     aborts[L.id] = ctrl;
+    busy(1);
     try {
       const res = await fetch(`${L.endpoint}?bbox=${bbox}&limit=${LIMIT}`, { signal: ctrl.signal });
       if (res.status === 503) {
@@ -485,7 +486,34 @@ export default function (map: Map) {
       if (Array.isArray(data.features) && data.features.length >= LIMIT) setStatus(L, "Zoom inn for alle");
     } catch (err) {
       if ((err as Error).name !== "AbortError") console.warn(`${L.id}: fetch failed`, err);
+    } finally {
+      busy(-1);
     }
+  }
+
+  // "Laster faresoner …" on the map while zones are fetched, so an empty map right after the fly-in
+  // doesn't read as "no hazard". Hides once the map has drawn the new data.
+  const loading = document.createElement("div");
+  loading.className = "hz-loading";
+  loading.setAttribute("role", "status");
+  loading.textContent = "Laster faresoner …";
+  loading.hidden = true;
+  map.getContainer().append(loading);
+  let pending = 0;
+  let showTimer: ReturnType<typeof setTimeout> | undefined;
+  function busy(d: number) {
+    pending = Math.max(0, pending + d);
+    if (pending > 0) {
+      if (loading.hidden && !showTimer) showTimer = setTimeout(() => ((loading.hidden = false), (showTimer = undefined)), 200);
+      return;
+    }
+    // Drawing big zones takes time too: keep the timer running until the map is idle.
+    map.once("idle", () => {
+      if (pending > 0) return;
+      clearTimeout(showTimer);
+      showTimer = undefined;
+      loading.hidden = true;
+    });
   }
 
   function setStatus(L: MapLayer, text: string) {
@@ -632,7 +660,9 @@ export default function (map: Map) {
   map.once("remove", () => {
     clearTimeout(timer);
     for (const c of Object.values(aborts)) c?.abort();
+    clearTimeout(showTimer);
     panel.remove();
+    loading.remove();
   });
 
   loadAll();

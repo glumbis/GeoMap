@@ -1,6 +1,10 @@
-// "Del" and "Skriv ut" on the address page: two quiet text buttons. Styles and print layout: share.css.
+// "Del", "Skriv ut" and "Sammenlign" on the address page: quiet text buttons. Styles and print layout: share.css.
 import { h } from "./dom";
+import { navigate } from "./router";
 import "./share.css";
+
+const ICON_COMPARE =
+  '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h5v10H2zM9 3h5v10H9z"/></svg>';
 
 const ICON_SHARE =
   '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10V2M5 5l3-3 3 3M3 8v5h10V8"/></svg>';
@@ -35,7 +39,8 @@ function action(label: string, aria: string, icon: string) {
   return b;
 }
 
-export function shareActions(): HTMLElement {
+/** compareId: this address. "Sammenlign" opens /compare/<id>/ with an empty B side to search. */
+export function shareActions(compareId?: string): HTMLElement {
   registerPrintHooks();
   const share = action("Del", "Del denne adressen", ICON_SHARE);
   const print = action("Skriv ut", "Skriv ut adresserapporten", ICON_PRINT);
@@ -99,6 +104,8 @@ export function shareActions(): HTMLElement {
     else showInput(data.url);
   });
   print.addEventListener("click", () => window.print());
+  const compare = compareId ? action("Sammenlign", "Sammenlign med en annen adresse", ICON_COMPARE) : null;
+  compare?.addEventListener("click", () => navigate(`/compare/${encodeURIComponent(compareId!)}/`));
 
-  return h("div", { class: "share", role: "group", "aria-label": "Del eller skriv ut" }, share, print, note, fallbackBox);
+  return h("div", { class: "share", role: "group", "aria-label": "Del, skriv ut eller sammenlign" }, share, print, compare, note, fallbackBox);
 }

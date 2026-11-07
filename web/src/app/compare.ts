@@ -54,7 +54,7 @@ export function renderCompare(app: HTMLElement, idA: string, idB: string) {
     const list = search.querySelector(".search-list")!;
     list.id = `search-list-${i}`;
     search.querySelector("input")!.setAttribute("aria-controls", list.id);
-    const body = h("div", { class: "cmp-body", "aria-live": "polite" }, skeleton());
+    const body = h("div", { class: "cmp-body", "aria-live": "polite" }, id ? skeleton() : emptySide());
     return { search, body, el: h("section", { class: "cmp-col" }, h("div", { class: "cmp-switch" }, h("span", { class: "cmp-tag" }, i === 0 ? "A" : "B"), search), body) };
   });
 
@@ -68,7 +68,14 @@ export function renderCompare(app: HTMLElement, idA: string, idB: string) {
   document.title = "Sammenlign · Omnium";
 
   const results: (Result | undefined)[] = [undefined, undefined];
+  if (!idB) {
+    // Opened from "Sammenlign" on the address page: only A is known, B is picked with its search.
+    const input = cols[1].search.querySelector("input")!;
+    input.setAttribute("placeholder", "Søk etter adresse B");
+    requestAnimationFrame(() => input.focus());
+  }
   ids.forEach(async (id, i) => {
+    if (!id) return;
     const r = await load(id);
     if (req !== current) return;
     results[i] = r;
@@ -325,6 +332,10 @@ function table(A: Profile, B: Profile) {
 
 function notice() {
   return h("p", { class: "cmp-none" }, "Tabellen vises når begge adressene er lastet.");
+}
+
+function emptySide() {
+  return h("div", { class: "cmp-empty" }, h("p", {}, "Velg en adresse å sammenligne med."), h("p", {}, "Søk over, så vises de to adressene side om side."));
 }
 
 // ---------- states ----------

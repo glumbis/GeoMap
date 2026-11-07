@@ -75,7 +75,7 @@ function summary(p: Profile) {
     { class: "summary" },
     h("h1", { class: `address-title${a.text.length > 20 ? " is-long" : ""}` }, a.text),
     h("p", { class: "address-sub" }, `${a.postcode} ${a.place} · ${a.municipality} kommune`),
-    shareActions(),
+    shareActions(a.id),
     overall(r),
     reportLink(a.id),
     p.warnings.length ? warnings(p) : null,
